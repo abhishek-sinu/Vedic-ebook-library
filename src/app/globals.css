@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/* Vedic/Sanskrit themed color palette */
+:root {
+  --background: #fef7e0; /* Soft cream background */
+  --foreground: #2d1b0e; /* Deep brown text */
+  --saffron: #ff9933; /* Traditional saffron */
+  --gold: #ffd700; /* Sacred gold */
+  --deep-blue: #003366; /* Sacred blue */
+  --earth-brown: #8b4513; /* Earth brown */
+  --soft-orange: #ffcc99; /* Soft orange */
+  --cream: #fff8e7; /* Light cream */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1a1410; /* Dark brown background */
+    --foreground: #f5f1e8; /* Cream text */
+    --saffron: #ff9933;
+    --gold: #ffd700;
+    --deep-blue: #4a90e2;
+    --earth-brown: #8b4513;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Times New Roman", Georgia, serif;
+  line-height: 1.7;
+  font-size: 16px;
+}
+
+/* Custom scrollbar for Vedic theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--saffron);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
+
+/* Reading container styles */
+.reading-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  line-height: 1.8;
+}
+
+/* Sanskrit/Devanagari text styling */
+.sanskrit-text {
+  font-family: "Noto Sans Devanagari", "Times New Roman", serif;
+  font-size: 1.1em;
+  line-height: 1.9;
+}
+
+/* Chapter headings */
+.chapter-heading {
+  color: var(--deep-blue);
+  border-bottom: 2px solid var(--saffron);
+  padding-bottom: 0.5rem;
+  margin: 2rem 0 1rem 0;
+}
+
+/* Verse styling */
+.verse {
+  background: var(--cream);
+  border-left: 4px solid var(--saffron);
+  padding: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+}
+
+/* Upload area styling */
+.upload-area {
+  border: 2px dashed var(--saffron);
+  background: var(--cream);
+  transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+  border-color: var(--gold);
+  background: var(--soft-orange);
+}
