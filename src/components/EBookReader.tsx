@@ -51,7 +51,15 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
   const [searchResults, setSearchResults] = useState<{pageIndex: number, matches: string[]}[]>([]);
   const [currentSearchResult, setCurrentSearchResult] = useState(0);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [fontSize, setFontSize] = useState(16);
+  // Initialize responsive font size based on screen width
+  const getDefaultFontSize = () => {
+    if (typeof window !== 'undefined') {
+      return 20; // 20px for both mobile and desktop for better accessibility
+    }
+    return 20; // Default for SSR
+  };
+  
+  const [fontSize, setFontSize] = useState(getDefaultFontSize());
   const [lineHeight, setLineHeight] = useState(1.8);
   const [showSettings, setShowSettings] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -123,6 +131,20 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
     console.log('Current page content length:', currentPageContent.length);
     console.log('Current page:', currentPage);
   }, [pages.length, currentPageContent.length, currentPage]);
+
+  // Handle responsive font size on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const newDefaultSize = 20; // Unified 20px for all devices
+      // Only update if font size is close to default (not manually adjusted)
+      if (Math.abs(fontSize - getDefaultFontSize()) <= 2) {
+        setFontSize(newDefaultSize);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [fontSize]);
 
   // Search functionality for entire book with IAST normalization
   const performSearch = (query: string) => {
@@ -309,11 +331,11 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
   };
 
   const increaseFontSize = () => {
-    setFontSize(prev => Math.min(prev + 2, 24));
+    setFontSize(prev => Math.min(prev + 2, 28)); // Increased max to 28px for accessibility
   };
 
   const decreaseFontSize = () => {
-    setFontSize(prev => Math.max(prev - 2, 12));
+    setFontSize(prev => Math.max(prev - 2, 14)); // Decreased min to 14px
   };
 
   const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {

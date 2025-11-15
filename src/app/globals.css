@@ -56,12 +56,13 @@ body {
   background: var(--gold);
 }
 
-/* Reading container styles */
+/* Reading container styles with accessibility-focused font sizes */
 .reading-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
-  line-height: 1.8;
+  line-height: 1.7;
+  /* Base font size will be controlled by component state for dynamic adjustment */
 }
 
 /* Mobile responsive reading container */
@@ -70,6 +71,24 @@ body {
     padding: 1rem;
     max-width: 100%;
   }
+}
+
+/* Enhanced text readability for all age groups */
+.reading-container .prose {
+  max-width: none;
+}
+
+.reading-container p {
+  margin-bottom: 1.5em;
+  text-align: justify;
+}
+
+.reading-container h1,
+.reading-container h2,
+.reading-container h3 {
+  margin-top: 2em;
+  margin-bottom: 1em;
+  color: var(--deep-blue);
 }
 
 /* Sanskrit/Devanagari text styling */
