@@ -2,7 +2,7 @@
   "apps": [{
     "name": "vedic-ebooks",
     "script": "server.js",
-    "cwd": "/var/www/vedic-ebooks",
+    "cwd": "/var/www/Vedic-ebook-library",
     "instances": 1,
     "autorestart": true,
     "watch": false,
@@ -11,8 +11,8 @@
       "NODE_ENV": "production",
       "PORT": 3001
     },
-    "error_file": "/var/www/vedic-ebooks/logs/err.log",
-    "out_file": "/var/www/vedic-ebooks/logs/out.log",
-    "log_file": "/var/www/vedic-ebooks/logs/combined.log"
+    "error_file": "/var/www/Vedic-ebook-library/logs/err.log",
+    "out_file": "/var/www/Vedic-ebook-library/logs/out.log",
+    "log_file": "/var/www/Vedic-ebook-library/logs/combined.log"
   }]
 }
