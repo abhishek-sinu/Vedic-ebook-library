@@ -5,10 +5,11 @@ import { Upload, FileText, AlertCircle, User, Tag, BookOpen, FileCheck } from 'l
 import { uploadBook, formatFileSize } from '../lib/bookStorage';
 
 interface FileUploadProps {
-  onUploadSuccess: () => void;
+  onUploadSuccess?: () => void;
+  onUploadComplete?: () => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComplete }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string>('');
@@ -60,7 +61,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
         tags: metadata.tags ? metadata.tags.split(',').map(tag => tag.trim()) : undefined
       });
 
-      onUploadSuccess();
+      // Call both callbacks if they exist
+      onUploadSuccess?.();
+      onUploadComplete?.();
       
       setShowMetadataForm(false);
       setCurrentFile(null);
