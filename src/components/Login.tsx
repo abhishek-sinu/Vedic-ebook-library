@@ -84,7 +84,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">वेदिक ग्रंथालय</h1>
           <h2 className="text-lg sm:text-xl text-orange-600 mb-2">Vedic E-Books Library</h2>
-          <p className="text-black-100 text-xs sm:text-sm">ISKCON & Gaudiya Vaisnava Literature</p>
+          <p className="text-black-100 text-xs sm:text-sm">Gaudiya Vaisnava Literature</p>
         </div>
 
         {/* Login Form */}
