@@ -7,9 +7,10 @@ import { BookOpen, Search, Clock, Trash2, Plus, FileText, User, Calendar, HardDr
 interface LibraryProps {
   onBookSelect: (book: Book) => void;
   onUploadNew: () => void;
+  user?: { role: string; username: string; name?: string } | null;
 }
 
-const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew }) => {
+const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew, user }) => {
   const [books, setBooks] = useState<Book[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'title' | 'uploadDate' | 'lastRead'>('uploadDate');
@@ -138,14 +139,16 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew }) => {
             </select>
           )}
 
-          <button
-            onClick={onUploadNew}
-            className="flex items-center space-x-2 px-6 py-3 rounded-lg transition-colors text-white font-medium"
-            style={{background: 'var(--saffron)'}}
-          >
-            <Plus className="w-5 h-5" />
-            <span>Add Book</span>
-          </button>
+          {user?.role === 'admin' && (
+            <button
+              onClick={onUploadNew}
+              className="flex items-center space-x-2 px-6 py-3 rounded-lg transition-colors text-white font-medium"
+              style={{background: 'var(--saffron)'}}
+            >
+              <Plus className="w-5 h-5" />
+              <span>Add Book</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -169,7 +172,7 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew }) => {
               : 'Try adjusting your search or filter criteria'
             }
           </p>
-          {books.length === 0 && (
+          {books.length === 0 && user?.role === 'admin' && (
             <button
               onClick={onUploadNew}
               className="px-8 py-3 rounded-lg transition-colors text-white font-medium"
@@ -191,13 +194,15 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew }) => {
               <div className="p-6 border-b border-orange-100" style={{background: 'var(--cream)'}}>
                 <div className="flex items-start justify-between mb-3">
                   <FileText className="w-8 h-8 text-orange-600 flex-shrink-0" />
-                  <button
-                    onClick={(e) => handleDeleteBook(book.id, e)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-all"
-                    title="Delete book"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={(e) => handleDeleteBook(book.id, e)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-all"
+                      title="Delete book"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  )}
                 </div>
                 
                 <h3 className="text-lg font-bold mb-2 line-clamp-2" style={{color: 'var(--deep-blue)'}}>
