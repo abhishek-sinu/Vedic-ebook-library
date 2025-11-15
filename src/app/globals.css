@@ -31,6 +31,13 @@ body {
   font-size: 16px;
 }
 
+/* Mobile responsive base */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+}
+
 /* Custom scrollbar for Vedic theme */
 ::-webkit-scrollbar {
   width: 8px;
@@ -55,6 +62,14 @@ body {
   margin: 0 auto;
   padding: 2rem;
   line-height: 1.8;
+}
+
+/* Mobile responsive reading container */
+@media (max-width: 768px) {
+  .reading-container {
+    padding: 1rem;
+    max-width: 100%;
+  }
 }
 
 /* Sanskrit/Devanagari text styling */

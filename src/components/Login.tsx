@@ -35,6 +35,14 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         body: JSON.stringify({ username, password }),
       });
 
+      // Check if response is actually JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Received non-JSON response:', text);
+        throw new Error('Server returned invalid response format');
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -67,20 +75,20 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(135deg, var(--deep-blue) 0%, var(--navy) 100%)'}}>
-      <div className="max-w-md w-full mx-4">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{background: 'linear-gradient(135deg, var(--deep-blue) 0%, var(--navy) 100%)'}}>
+      <div className="max-w-md w-full">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{background: 'var(--saffron)'}}>
-            <BookOpen className="w-8 h-8" style={{color: 'var(--deep-blue)'}} />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-3 sm:mb-4" style={{background: 'var(--saffron)'}}>
+            <BookOpen className="w-6 h-6 sm:w-8 sm:h-8" style={{color: 'var(--deep-blue)'}} />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">वेदिक ग्रंथालय</h1>
-          <h2 className="text-xl text-orange-200 mb-2">Vedic E-Books Library</h2>
-          <p className="text-orange-100 text-sm">Sacred texts and spiritual literature</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">वेदिक ग्रंथालय</h1>
+          <h2 className="text-lg sm:text-xl text-orange-200 mb-2">Vedic E-Books Library</h2>
+          <p className="text-orange-100 text-xs sm:text-sm">Sacred texts and spiritual literature</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8" style={{background: 'var(--cream)'}}>
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8" style={{background: 'var(--cream)'}}>
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-semibold" style={{color: 'var(--deep-blue)'}}>

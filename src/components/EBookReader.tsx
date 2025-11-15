@@ -71,7 +71,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
         const result = await fetchBookContent(bookId);
         if (result) {
           setContent(result.content);
-          setHighlightedContent(result.content);
+          // Don't set highlightedContent here - let it be handled by the page content effect
         } else {
           setError('Failed to load book content');
         }
@@ -116,6 +116,13 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
 
   const totalPages = pages.length;
   const currentPageContent = pages[currentPage - 1] || '';
+
+  // Debug log to check if pages are being created correctly
+  useEffect(() => {
+    console.log('Pages created:', pages.length);
+    console.log('Current page content length:', currentPageContent.length);
+    console.log('Current page:', currentPage);
+  }, [pages.length, currentPageContent.length, currentPage]);
 
   // Search functionality for entire book with IAST normalization
   const performSearch = (query: string) => {
@@ -271,7 +278,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [searchResults.length, searchTerm]);
+  }, [searchResults.length, searchTerm, currentPage, totalPages]);
 
   const scrollToChapter = (chapterText: string) => {
     // Find which page contains this chapter
@@ -349,7 +356,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
     <div className="flex flex-col lg:flex-row min-h-screen">
       {/* Sidebar - Table of Contents */}
       <div className="lg:w-80 border-r-2 border-orange-200" style={{background: 'var(--cream)'}}>
-        <div className="p-6 border-b border-orange-200">
+        <div className="p-4 lg:p-6 border-b border-orange-200">
           <button
             onClick={onBack}
             className="flex items-center space-x-2 mb-4 px-3 py-2 rounded-lg hover:bg-orange-100 transition-colors"
@@ -358,7 +365,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
             <span className="text-sm">पीछे जाएं / Go Back</span>
           </button>
           
-          <h2 className="text-xl font-bold mb-4" style={{color: 'var(--deep-blue)'}}>
+          <h2 className="text-lg lg:text-xl font-bold mb-4" style={{color: 'var(--deep-blue)'}}>
             {title}
           </h2>
           
@@ -677,6 +684,68 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
               {currentPage === totalPages && (
                 <p>End of document reached.</p>
               )}
+            </div>
+
+            {/* Mobile Navigation Controls */}
+            <div className="lg:hidden mt-6 p-4 bg-white border border-orange-200 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: currentPage === 1 ? '#f3f4f6' : 'var(--saffron)',
+                    color: currentPage === 1 ? '#9ca3af' : 'var(--deep-blue)'
+                  }}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Previous</span>
+                </button>
+
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-medium">Page {currentPage} of {totalPages}</span>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max={totalPages}
+                      value={currentPage}
+                      onChange={handlePageInput}
+                      className="w-16 px-2 py-1 text-center border border-orange-300 rounded text-sm"
+                    />
+                    <span className="text-xs opacity-60">Go to page</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: currentPage === totalPages ? '#f3f4f6' : 'var(--saffron)',
+                    color: currentPage === totalPages ? '#9ca3af' : 'var(--deep-blue)'
+                  }}
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${(currentPage / totalPages) * 100}%`,
+                    backgroundColor: 'var(--saffron)'
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-xs opacity-60 mt-1">
+                <span>Start</span>
+                <span>{Math.round((currentPage / totalPages) * 100)}% Complete</span>
+                <span>End</span>
+              </div>
             </div>
           </div>
         </div>

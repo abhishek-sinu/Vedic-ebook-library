@@ -89,37 +89,37 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew, user }) =>
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-4" style={{color: 'var(--deep-blue)'}}>
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4" style={{color: 'var(--deep-blue)'}}>
           वेदिक पुस्तकालय / Vedic Library
         </h1>
-        <p className="text-lg opacity-80">
+        <p className="text-sm sm:text-base lg:text-lg opacity-80">
           Your collection of spiritual texts and sacred literature
         </p>
       </div>
 
       {/* Search and Filter Controls */}
-      <div className="mb-8 space-y-4 md:space-y-0 md:flex md:items-center md:justify-between">
-        <div className="flex-1 max-w-md">
+      <div className="mb-6 sm:mb-8 space-y-4">
+        <div className="w-full">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 opacity-50" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 opacity-50" />
             <input
               type="text"
               placeholder="खोजें पुस्तकें / Search books..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-lg"
+              className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm sm:text-base"
             />
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-4 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="px-3 py-2 sm:px-4 sm:py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm sm:text-base"
           >
             <option value="lastRead">Recently Read</option>
             <option value="uploadDate">Recently Added</option>
@@ -130,7 +130,7 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew, user }) =>
             <select
               value={filterTag}
               onChange={(e) => setFilterTag(e.target.value)}
-              className="px-4 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="px-3 py-2 sm:px-4 sm:py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm sm:text-base"
             >
               <option value="all">All Categories</option>
               {allTags.map(tag => (
@@ -142,11 +142,12 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew, user }) =>
           {user?.role === 'admin' && (
             <button
               onClick={onUploadNew}
-              className="flex items-center space-x-2 px-6 py-3 rounded-lg transition-colors text-white font-medium"
+              className="flex items-center justify-center space-x-2 px-4 py-2 sm:px-6 sm:py-3 rounded-lg transition-colors text-white font-medium text-sm sm:text-base"
               style={{background: 'var(--saffron)'}}
             >
-              <Plus className="w-5 h-5" />
-              <span>Add Book</span>
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Add Book</span>
+              <span className="sm:hidden">Add</span>
             </button>
           )}
         </div>
@@ -161,12 +162,12 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew, user }) =>
           </div>
         </div>
       ) : filteredAndSortedBooks.length === 0 ? (
-        <div className="text-center py-16">
-          <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-30" />
-          <h3 className="text-xl font-semibold mb-2 opacity-60">
+        <div className="text-center py-12 sm:py-16">
+          <BookOpen className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 opacity-30" />
+          <h3 className="text-lg sm:text-xl font-semibold mb-2 opacity-60">
             {books.length === 0 ? 'No books in your library yet' : 'No books match your search'}
           </h3>
-          <p className="opacity-50 mb-6">
+          <p className="opacity-50 mb-4 sm:mb-6 text-sm sm:text-base px-4">
             {books.length === 0 
               ? 'Upload your first Vedic scripture or spiritual text to get started'
               : 'Try adjusting your search or filter criteria'
@@ -175,7 +176,7 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew, user }) =>
           {books.length === 0 && user?.role === 'admin' && (
             <button
               onClick={onUploadNew}
-              className="px-8 py-3 rounded-lg transition-colors text-white font-medium"
+              className="px-6 py-2 sm:px-8 sm:py-3 rounded-lg transition-colors text-white font-medium text-sm sm:text-base"
               style={{background: 'var(--saffron)'}}
             >
               Upload Your First Book
@@ -183,7 +184,7 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew, user }) =>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredAndSortedBooks.map((book) => (
             <div
               key={book.id}
@@ -191,9 +192,9 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew, user }) =>
               className="cursor-pointer bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-l-4 border-orange-400 overflow-hidden group"
             >
               {/* Book Cover/Header */}
-              <div className="p-6 border-b border-orange-100" style={{background: 'var(--cream)'}}>
+              <div className="p-4 sm:p-6 border-b border-orange-100" style={{background: 'var(--cream)'}}>
                 <div className="flex items-start justify-between mb-3">
-                  <FileText className="w-8 h-8 text-orange-600 flex-shrink-0" />
+                  <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 flex-shrink-0" />
                   {user?.role === 'admin' && (
                     <button
                       onClick={(e) => handleDeleteBook(book.id, e)}
@@ -205,7 +206,7 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew, user }) =>
                   )}
                 </div>
                 
-                <h3 className="text-lg font-bold mb-2 line-clamp-2" style={{color: 'var(--deep-blue)'}}>
+                <h3 className="text-base sm:text-lg font-bold mb-2 line-clamp-2" style={{color: 'var(--deep-blue)'}}>
                   {book.title}
                 </h3>
                 
@@ -264,31 +265,31 @@ const Library: React.FC<LibraryProps> = ({ onBookSelect, onUploadNew, user }) =>
               </div>
 
               {/* Book Metadata */}
-              <div className="p-4 space-y-2 text-sm">
-                <div className="flex items-center justify-between">
+              <div className="p-3 sm:p-4 space-y-2 text-xs sm:text-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0">
                   <div className="flex items-center opacity-60">
-                    <Calendar className="w-4 h-4 mr-2" />
+                    <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                     <span>Added: {formatDate(book.uploadDate)}</span>
+                  </div>
+                  
+                  <div className="flex items-center opacity-60">
+                    <HardDrive className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                    <span>{formatFileSize(Number(book.fileSize) || 0)}</span>
                   </div>
                 </div>
 
                 {book.lastRead && (
                   <div className="flex items-center opacity-60">
-                    <Clock className="w-4 h-4 mr-2" />
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                     <span>Last read: {formatDate(book.lastRead)}</span>
                   </div>
                 )}
 
-                <div className="flex items-center opacity-60">
-                  <HardDrive className="w-4 h-4 mr-2" />
-                  <span>{book.fileSize}</span>
-                </div>
-
                 {/* Action Button */}
                 <div className="pt-2">
-                  <div className="flex items-center justify-center py-2 rounded-lg transition-colors group-hover:bg-orange-50">
+                  <div className="flex items-center justify-center py-2 sm:py-3 rounded-lg transition-colors group-hover:bg-orange-50">
                     <BookOpen className="w-4 h-4 mr-2" style={{color: 'var(--saffron)'}} />
-                    <span className="font-medium" style={{color: 'var(--saffron)'}}>
+                    <span className="font-medium text-sm sm:text-base" style={{color: 'var(--saffron)'}}>
                       {book.currentPage ? 'Continue Reading' : 'Start Reading'}
                     </span>
                   </div>
