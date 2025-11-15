@@ -143,7 +143,7 @@ Fonts are configured in `src/app/layout.tsx`:
 
 ## 📄 License
 
-This project is dedicated to preserving and sharing Vedic wisdom. Use it freely for educational and spiritual purposes.
+This project is dedicated to preserving and sharing Vedic wisdom in the service of Srila Prabhupad Founder Acarya of ISKCON and Sri Srimad Goura Govinda Swami Maharaj. Use it freely for educational and spiritual purposes.
 
 ## 🙏 Acknowledgments
 

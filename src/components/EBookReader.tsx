@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, ChevronLeft, ChevronRight, BookOpen, ArrowLeft, ZoomIn, ZoomOut, Settings, SkipForward, SkipBack, AlertCircle } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, BookOpen, ArrowLeft, ZoomIn, ZoomOut, Settings, SkipForward, SkipBack, AlertCircle, Bookmark, BookmarkCheck } from 'lucide-react';
 import { updateBookProgress, fetchBookContent } from '../lib/bookStorage';
+import { useAuth } from '../contexts/AuthContext';
 
 // IAST (Sanskrit) character normalization for search
 const normalizeIAST = (text: string): string => {
@@ -65,10 +66,16 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [wordsPerPage, setWordsPerPage] = useState(500);
   const [content, setContent] = useState<string>('');
+  const [bookTitle, setBookTitle] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [highlightedContent, setHighlightedContent] = useState('');
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarks, setBookmarks] = useState<{[key: string]: number}>({});
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Get user context for bookmark functionality
+  const { user } = useAuth();
 
   // Load book content when component mounts
   useEffect(() => {
@@ -93,6 +100,16 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
 
     loadContent();
   }, [bookId]);
+
+  // Load user's bookmark after content is loaded
+  useEffect(() => {
+    if (content && user) {
+      const bookmarkedPage = loadBookmark();
+      console.log('Loading bookmark for user:', user.username, 'book:', bookId, 'page:', bookmarkedPage);
+      setCurrentPage(bookmarkedPage);
+      setIsBookmarked(!!localStorage.getItem(getBookmarkKey()!));
+    }
+  }, [content, user, bookId]);
 
   // Split content into pages based on word count
   const pages = useMemo(() => {
@@ -131,6 +148,15 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
     console.log('Current page content length:', currentPageContent.length);
     console.log('Current page:', currentPage);
   }, [pages.length, currentPageContent.length, currentPage]);
+
+  // Auto-save bookmark when page changes (but not on initial load)
+  useEffect(() => {
+    // Only auto-save if we have content, user, and it's not the first page
+    if (user && content && currentPage > 1) {
+      console.log('Auto-saving bookmark for user:', user.username, 'book:', bookId, 'page:', currentPage);
+      saveBookmark(currentPage);
+    }
+  }, [currentPage, user, content, bookId]);
 
   // Handle responsive font size on window resize
   useEffect(() => {
@@ -336,6 +362,71 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
 
   const decreaseFontSize = () => {
     setFontSize(prev => Math.max(prev - 2, 14)); // Decreased min to 14px
+  };
+
+  // Bookmark functions
+  const getBookmarkKey = () => {
+    if (!user || !bookId) return null;
+    return `vedic_bookmark_${user.username}_${bookId}`;
+  };
+
+  const saveBookmark = (pageNumber: number) => {
+    const key = getBookmarkKey();
+    if (key) {
+      const bookmarkData = {
+        page: pageNumber,
+        timestamp: Date.now(),
+        bookTitle: bookTitle || `Book ${bookId}`
+      };
+      localStorage.setItem(key, JSON.stringify(bookmarkData));
+      console.log('Bookmark saved:', key, bookmarkData);
+      setIsBookmarked(true);
+      
+      // Update bookmarks state
+      setBookmarks(prev => ({
+        ...prev,
+        [bookId]: pageNumber
+      }));
+    }
+  };
+
+  const loadBookmark = () => {
+    const key = getBookmarkKey();
+    if (key) {
+      const saved = localStorage.getItem(key);
+      console.log('Loading bookmark with key:', key, 'data:', saved);
+      if (saved) {
+        try {
+          const bookmarkData = JSON.parse(saved);
+          console.log('Parsed bookmark data:', bookmarkData);
+          return bookmarkData.page;
+        } catch (e) {
+          console.error('Error parsing bookmark:', e);
+        }
+      }
+    }
+    return 1; // Default to first page
+  };
+
+  const removeBookmark = () => {
+    const key = getBookmarkKey();
+    if (key) {
+      localStorage.removeItem(key);
+      setIsBookmarked(false);
+      setBookmarks(prev => {
+        const updated = { ...prev };
+        delete updated[bookId];
+        return updated;
+      });
+    }
+  };
+
+  const toggleBookmark = () => {
+    if (isBookmarked) {
+      removeBookmark();
+    } else {
+      saveBookmark(currentPage);
+    }
   };
 
   const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -576,6 +667,23 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
                 <ZoomIn className="w-4 h-4" />
               </button>
               
+              {/* Bookmark Button */}
+              <button
+                onClick={toggleBookmark}
+                className={`p-2 rounded-lg transition-colors ${
+                  isBookmarked 
+                    ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100' 
+                    : 'hover:bg-orange-100'
+                }`}
+                title={isBookmarked ? 'Remove bookmark' : 'Bookmark this page'}
+              >
+                {isBookmarked ? (
+                  <BookmarkCheck className="w-4 h-4" />
+                ) : (
+                  <Bookmark className="w-4 h-4" />
+                )}
+              </button>
+              
               <button
                 onClick={() => setShowSettings(!showSettings)}
                 className="p-2 rounded-lg hover:bg-orange-100 transition-colors"
@@ -767,6 +875,27 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, onBack }) => {
                 <span>Start</span>
                 <span>{Math.round((currentPage / totalPages) * 100)}% Complete</span>
                 <span>End</span>
+              </div>
+              
+              {/* Mobile Bookmark Button */}
+              <div className="flex justify-center mt-3">
+                <button
+                  onClick={toggleBookmark}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                    isBookmarked 
+                      ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' 
+                      : 'bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100'
+                  }`}
+                >
+                  {isBookmarked ? (
+                    <BookmarkCheck className="w-4 h-4" />
+                  ) : (
+                    <Bookmark className="w-4 h-4" />
+                  )}
+                  <span className="text-sm font-medium">
+                    {isBookmarked ? 'Bookmarked' : 'Bookmark Page'}
+                  </span>
+                </button>
               </div>
             </div>
           </div>

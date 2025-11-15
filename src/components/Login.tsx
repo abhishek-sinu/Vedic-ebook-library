@@ -83,8 +83,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             <BookOpen className="w-6 h-6 sm:w-8 sm:h-8" style={{color: 'var(--deep-blue)'}} />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">वेदिक ग्रंथालय</h1>
-          <h2 className="text-lg sm:text-xl text-orange-200 mb-2">Vedic E-Books Library</h2>
-          <p className="text-orange-100 text-xs sm:text-sm">Sacred texts and spiritual literature</p>
+          <h2 className="text-lg sm:text-xl text-orange-600 mb-2">Vedic E-Books Library</h2>
+          <p className="text-black-100 text-xs sm:text-sm">ISKCON & Gaudiya Vaisnava Literature</p>
         </div>
 
         {/* Login Form */}
@@ -213,9 +213,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <p className="text-orange-200 text-sm">
-            🕉️ Dedicated to the service of Śrī Kṛṣṇa 🕉️
-          </p>
+          <div className="text-black text-sm font-bold max-w-lg mx-auto px-4">
+            <div className="mb-1 whitespace-nowrap">🪷 Dedicated to the service of Śrīla Prabhupāda Founder Ācārya of ISKCON 🪷</div>
+            <div className="whitespace-nowrap">🪷 & Śrī Śrīmad Gaura Govinda Svāmī Mahārāja 🪷</div>
+          </div>
         </div>
       </div>
     </div>
