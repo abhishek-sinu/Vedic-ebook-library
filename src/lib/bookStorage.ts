@@ -18,17 +18,10 @@ export interface BookMetadata {
   books: Book[];
 }
 
-// Helper function to get the correct API base path
-const getApiBasePath = (): string => {
-  // In production, use /ebooks prefix; in development, use no prefix
-  return process.env.NODE_ENV === 'production' ? '/ebooks' : '';
-};
-
 // API functions for file-based storage
 export const fetchBooks = async (): Promise<Book[]> => {
   try {
-    const basePath = getApiBasePath();
-    const response = await fetch(`${basePath}/api/books/list`);
+    const response = await fetch('/api/books/list');
     const data = await response.json();
     return data.books || [];
   } catch (error) {
@@ -39,8 +32,7 @@ export const fetchBooks = async (): Promise<Book[]> => {
 
 export const fetchBookContent = async (bookId: string): Promise<{ content: string; metadata: Book } | null> => {
   try {
-    const basePath = getApiBasePath();
-    const response = await fetch(`${basePath}/api/books/read/${bookId}`);
+    const response = await fetch(`/api/books/read/${bookId}`);
     if (!response.ok) return null;
     return await response.json();
   } catch (error) {
@@ -55,8 +47,7 @@ export const uploadBook = async (file: File, metadata: { title: string; author?:
     formData.append('file', file);
     formData.append('metadata', JSON.stringify(metadata));
 
-    const basePath = getApiBasePath();
-    const response = await fetch(`${basePath}/api/books/upload`, {
+    const response = await fetch('/api/books/upload', {
       method: 'POST',
       body: formData
     });
@@ -76,8 +67,7 @@ export const uploadBook = async (file: File, metadata: { title: string; author?:
 
 export const deleteBookFile = async (bookId: string): Promise<boolean> => {
   try {
-    const basePath = getApiBasePath();
-    const response = await fetch(`${basePath}/api/books/delete/${bookId}`, {
+    const response = await fetch(`/api/books/delete/${bookId}`, {
       method: 'DELETE'
     });
     return response.ok;
