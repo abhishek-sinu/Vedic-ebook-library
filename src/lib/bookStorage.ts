@@ -32,9 +32,20 @@ export const fetchBooks = async (): Promise<Book[]> => {
 
 export const fetchBookContent = async (bookId: string): Promise<{ content: string; metadata: Book } | null> => {
   try {
+    console.log('Fetching book content from:', `/api/books/read/${bookId}`);
     const response = await fetch(`/api/books/read/${bookId}`);
-    if (!response.ok) return null;
-    return await response.json();
+    console.log('Response status:', response.status);
+    
+    if (!response.ok) {
+      console.error('Failed to fetch book content, status:', response.status);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      return null;
+    }
+    
+    const data = await response.json();
+    console.log('Book content fetched successfully, content length:', data.content?.length);
+    return data;
   } catch (error) {
     console.error('Error fetching book content:', error);
     return null;
