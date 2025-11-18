@@ -3,10 +3,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
-  id: string;
+  _id: string;
   username: string;
+  email: string;
   role: string;
-  name: string;
+  profile: {
+    firstName: string;
+    lastName: string;
+    preferences: {
+      defaultLanguage: string;
+      theme: string;
+    };
+  };
+  isActive: boolean;
+  emailVerified: boolean;
 }
 
 interface AuthContextType {
@@ -46,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (storedToken && storedUser) {
           // Verify token with backend
-          const response = await fetch('/api/auth/verify', {
+          const response = await fetch('http://localhost:5000/api/auth/verify', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

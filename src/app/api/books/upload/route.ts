@@ -7,6 +7,7 @@ import mammoth from 'mammoth';
 interface BookMetadata {
   title: string;
   author?: string;
+  category?: string;
   description?: string;
   tags?: string[];
 }
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
       uploadDate: new Date().toISOString(),
       fileSize: formatFileSize(file.size),
       description: metadata.description,
-      tags: metadata.tags,
+      tags: metadata.category ? [metadata.category, ...(metadata.tags || [])] : metadata.tags,
       lastRead: null,
       currentPage: 0,
       totalPages: 0,

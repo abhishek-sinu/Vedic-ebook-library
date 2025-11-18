@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, BookOpen, ArrowLeft, ZoomIn, ZoomOut, Settings, SkipForward, SkipBack, AlertCircle, Bookmark, BookmarkCheck, User, Upload, Bug, ChevronDown, Plus, FileText, Search } from 'lucide-react';
 import { updateBookProgress, fetchBookContent, fetchBooks, Book } from '../lib/bookStorage';
 import { useAuth } from '../contexts/AuthContext';
+import Header from './Header';
+import SideNav from './SideNav';
+import CategoryPanel from './CategoryPanel';
+import FooterControls from './FooterControls';
 
 interface EBookReaderProps {
   bookId?: string;
@@ -26,9 +30,12 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [isNavigatingToSearch, setIsNavigatingToSearch] = useState(false);
+  const [pendingSearchScroll, setPendingSearchScroll] = useState<{pageIndex: number; matchIndex: number} | null>(null);
   const [currentTextIndex, setCurrentTextIndex] = useState(0); // For loading text animation
   const [selectedLanguage, setSelectedLanguage] = useState('english');
   const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
+  const [isCategoryPanelVisible, setIsCategoryPanelVisible] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
   
   // IAST normalization function
@@ -79,9 +86,62 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   const [highlightedContent, setHighlightedContent] = useState('');
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarks, setBookmarks] = useState<{[key: string]: number}>({});
+  
+  // Backend pagination state
+  const [paginationInfo, setPaginationInfo] = useState<any>(null);
+  const [isContentHtml, setIsContentHtml] = useState(false);
+  const lastLoadedPageRef = useRef<number>(1);
+  const bookmarkLoadedRef = useRef<boolean>(false);
 
   // Get user context for bookmark functionality
   const { user: authUser } = useAuth();
+
+  // Content loading function
+  const loadContent = useCallback(async () => {
+    if (!bookId) return;
+    
+    // Prevent race conditions - if we're already loading this page, don't reload
+    if (lastLoadedPageRef.current === currentPage && !isLoading) {
+      console.log(`Content for page ${currentPage} is already loaded, skipping...`);
+      return;
+    }
+    
+    console.log('Loading content for book ID:', bookId, 'page:', currentPage);
+    setIsLoading(true);
+    setError('');
+    try {
+      // Request HTML format to preserve formatting with pagination
+      const result = await fetchBookContent(
+        bookId, 
+        currentPage, 
+        'html'
+      );
+      console.log('fetchBookContent result:', result);
+      
+      if (result) {
+        console.log('Setting paginated content with length:', result.content.length);
+        setContent(result.content);
+        if (result.pagination) {
+          setPaginationInfo(result.pagination);
+          setIsContentHtml(result.pagination.format === 'html');
+        }
+        if (result.metadata) {
+          setBookTitle(result.metadata.title || `Book ${bookId}`);
+        }
+        // Track the page we just loaded
+        lastLoadedPageRef.current = currentPage;
+        console.log(`Successfully loaded page ${currentPage}, updated lastLoadedPageRef`);
+      } else {
+        console.error('fetchBookContent returned null/undefined');
+        setError('Failed to load book content');
+      }
+    } catch (err) {
+      console.error('Error loading book:', err);
+      setError('Error loading book content');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [bookId, currentPage, isLoading]);
 
   // Load books on component mount
   useEffect(() => {
@@ -102,20 +162,101 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
 
   // Organize books into categories
   const organizeBooks = (booksList: Book[]) => {
-    const categoryMap = new Map<string, Book[]>();
-    booksList.forEach(book => {
-      const category = (book.tags && book.tags.length > 0) ? book.tags[0] : 'Spiritual Literature';
-      if (!categoryMap.has(category)) {
-        categoryMap.set(category, []);
+    // Filter books by selected language first
+    const filteredBooks = booksList.filter(book => {
+      // You can add language detection logic here based on your book metadata
+      // For now, we'll assume all books are English unless specified otherwise
+      // This is where you'd implement language filtering based on book metadata
+      
+      if (selectedLanguage === 'english') {
+        // For English, show books that don't have a specific language tag or are tagged as English
+        return !book.tags?.some(tag => tag.toLowerCase().includes('telugu') || tag.toLowerCase().includes('sanskrit'));
+      } else if (selectedLanguage === 'telugu') {
+        // For Telugu, show books tagged with Telugu
+        return book.tags?.some(tag => tag.toLowerCase().includes('telugu'));
+      } else if (selectedLanguage === 'sanskrit') {
+        // For Sanskrit, show books tagged with Sanskrit
+        return book.tags?.some(tag => tag.toLowerCase().includes('sanskrit'));
       }
+      
+      return true; // Default: show all books
+    });
+
+    // Define the predefined categories in order
+    const predefinedCategories = [
+      'Srila Prabhupada',
+      'Acaryas',
+      'Great Vaishnavas',
+      'Vaishnavas of ISKCON',
+      'Contemporary vaishnavas',
+      'Vedic Sages',
+      'Other authors',
+      'Sastras',
+      'Other'
+    ];
+
+    const categoryMap = new Map<string, Book[]>();
+    
+    // Initialize all predefined categories
+    predefinedCategories.forEach(category => {
+      categoryMap.set(category, []);
+    });
+
+    filteredBooks.forEach(book => {
+      let category = 'Other'; // Default category
+      
+      // First, always check author for specific categorization
+      const authorCategory = getCategoryByAuthor(book.author);
+      
+      // If we have a specific author-based category, use it
+      if (authorCategory !== 'Acaryas' || !book.tags || book.tags.length === 0) {
+        category = authorCategory;
+      } else {
+        // Only use tag-based categorization for books without specific author categorization
+        // and if the first tag matches our predefined categories
+        const bookCategory = book.tags[0];
+        if (predefinedCategories.includes(bookCategory)) {
+          category = bookCategory;
+        } else if (bookCategory.toLowerCase().includes('scripture') || bookCategory.toLowerCase().includes('sastra')) {
+          // Only categorize as Sastras if author is not specifically categorized
+          category = 'Sastras';
+        } else {
+          category = 'Acaryas'; // Default for spiritual books
+        }
+      }
+
       categoryMap.get(category)!.push(book);
     });
 
-    const organizedCategories = Array.from(categoryMap.entries()).map(([name, books]) => ({
+    // Helper function for author-based categorization
+    function getCategoryByAuthor(author?: string): string {
+      if (!author) return 'Acaryas';
+      
+      const authorLower = author.toLowerCase();
+      
+      if (authorLower.includes('prabhupada') || authorLower.includes('a.c. bhaktivedanta')) {
+        return 'Srila Prabhupada';
+      } else if (authorLower.includes('vrindavana dasa thakura') || 
+                 authorLower.includes('krishnadasa kaviraja') || 
+                 authorLower.includes('narottama dasa thakura') ||
+                 authorLower.includes('srila rupa gosvami') ||
+                 authorLower.includes('srila sanatana gosvami') ||
+                 authorLower.includes('jiva gosvami') ||
+                 authorLower.includes('raghunatha dasa gosvami')) {
+        return 'Acaryas';
+      } else if (authorLower.includes('thakura') || authorLower.includes('gosvami') || authorLower.includes('goswami')) {
+        return 'Great Vaishnavas';
+      } else {
+        return 'Other authors'; // For unknown authors
+      }
+    }
+
+    // Create organized categories, filtering out empty ones
+    const organizedCategories = predefinedCategories.map(name => ({
       name,
-      books,
-      expanded: true
-    }));
+      books: categoryMap.get(name) || [],
+      expanded: false // Start with categories collapsed
+    })).filter(category => category.books.length > 0);
 
     setCategories(organizedCategories);
   };
@@ -133,8 +274,90 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     }
   };
 
-  // Search functionality
-  const performSearch = (query: string) => {
+  // Search functionality - Search entire book via backend
+  const performFullBookSearch = async (query: string) => {
+    console.log('🔍 performFullBookSearch called with:', { query, bookId });
+    
+    if (!query.trim() || !bookId) {
+      console.log('❌ Missing query or bookId:', { query: query.trim(), bookId });
+      setSearchResults([]);
+      setShowSearchResults(false);
+      setCurrentSearchIndex(0);
+      setIsSearchMode(false);
+      return;
+    }
+
+    try {
+      console.log('🔍 Performing full book search for:', query);
+      console.log('📖 Book ID:', bookId);
+      setIsLoading(true);
+      
+      // Call backend API directly with proper CORS handling
+      const apiUrl = `http://localhost:5000/api/books/${bookId}/search?q=${encodeURIComponent(query)}&limit=200`;
+      console.log('📡 Calling backend API directly:', apiUrl);
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors', // Enable CORS
+      });
+      
+      console.log('📥 API Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API call failed:', { status: response.status, statusText: response.statusText, errorText });
+        throw new Error(`Search failed: ${response.status} ${response.statusText}`);
+      }
+      
+      const searchData = await response.json();
+      console.log('📊 Search data received:', searchData);
+      
+      if (searchData.success && searchData.data.results) {
+        const results = searchData.data.results.map((result: any) => ({
+          pageIndex: result.pageNumber - 1, // Convert to 0-based index
+          context: result.context,
+          match: result.match,
+          beforeContext: result.beforeContext || '',
+          afterContext: result.afterContext || '',
+          fullContext: result.fullContext || result.context
+        }));
+        
+        console.log(`✅ Found ${results.length} matches returned (${searchData.data.totalMatches} total matches)`);
+        
+        if (searchData.data.hasMore) {
+          console.log(`📄 Note: Showing first ${results.length} of ${searchData.data.totalMatches} total matches`);
+        }
+        
+        setSearchResults(results);
+        setShowSearchResults(results.length > 0);
+        setIsSearchMode(results.length > 0);
+        setCurrentSearchIndex(0);
+        
+        // Navigate to first result if found
+        if (results.length > 0) {
+          setCurrentPage(results[0].pageIndex + 1);
+        }
+      } else {
+        console.log('No search results found');
+        setSearchResults([]);
+        setShowSearchResults(false);
+        setIsSearchMode(false);
+      }
+    } catch (error) {
+      console.error('❌ Backend search error:', error);
+      console.log('🔄 Falling back to local search');
+      // Fallback to local search if backend search fails
+      performLocalSearch(query);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Local search functionality (fallback)
+  const performLocalSearch = (query: string) => {
+    console.log('🏠 Performing LOCAL search for:', query);
     if (!query.trim() || !content) {
       setSearchResults([]);
       setShowSearchResults(false);
@@ -142,6 +365,8 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
       setIsSearchMode(false);
       return;
     }
+
+    console.log('📄 Searching in pages array, length:', pages.length);
 
     const results: {pageIndex: number; context: string; match: string; beforeContext: string; afterContext: string; fullContext: string}[] = [];
     const normalizedSearchTerm = normalizeIAST(query.toLowerCase());
@@ -184,21 +409,37 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     setIsSearchMode(results.length > 0);
     setCurrentSearchIndex(0);
     
+    console.log(`🏠 Local search completed: ${results.length} matches found`);
+    console.log('📍 Results by page:', results.map(r => `Page ${r.pageIndex + 1}`));
+    
     // Navigate to first result if found
     if (results.length > 0) {
       setCurrentPage(results[0].pageIndex + 1);
     }
   };
 
+  // Main search function (renamed from performSearch)
+  const performSearch = (query: string) => {
+    console.log('🎯 performSearch called with query:', query);
+    // Try full book search first, fallback to local search if needed
+    performFullBookSearch(query);
+  };
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
     
+    console.log('🔤 Search input changed to:', value);
+    
     // Debounce search to avoid too many calls
     if (value.trim()) {
-      const timeoutId = setTimeout(() => performSearch(value), 500);
-      return () => clearTimeout(timeoutId);
+      console.log('⏱️ Setting timeout for search...');
+      setTimeout(() => {
+        console.log('⏰ Timeout executed, calling performSearch');
+        performSearch(value);
+      }, 500);
     } else {
+      console.log('🧹 Clearing search results');
       setSearchResults([]);
       setShowSearchResults(false);
       setIsSearchMode(false);
@@ -206,39 +447,109 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   };
 
   // Function to scroll to a specific search match
-  const scrollToSearchMatch = (pageIndex: number, matchIndex: number = 0) => {
-    setTimeout(() => {
+  const scrollToSearchMatch = useCallback((pageIndex: number, matchIndex: number = 0) => {
+    console.log('🎯 scrollToSearchMatch called:', { pageIndex, matchIndex, currentPage });
+    
+    // If we're on the wrong page, navigate to the correct page first
+    if (pageIndex + 1 !== currentPage) {
+      console.log('📄 Setting page from', currentPage, 'to', pageIndex + 1);
+      
+      // When navigating to search result, we need to calculate the match index properly
+      // Find the current search result and calculate its index within the target page
+      const currentResult = searchResults[currentSearchIndex];
+      const matchesOnTargetPage = searchResults.filter(r => r.pageIndex === pageIndex);
+      const correctMatchIndex = matchesOnTargetPage.findIndex(r => r === currentResult);
+      
+      console.log('🎯 Calculated match index for target page:', {
+        currentSearchIndex,
+        pageIndex,
+        correctMatchIndex,
+        totalMatchesOnPage: matchesOnTargetPage.length
+      });
+      
+      setIsNavigatingToSearch(true);
+      setPendingSearchScroll({ pageIndex, matchIndex: correctMatchIndex >= 0 ? correctMatchIndex : matchIndex });
+      setCurrentPage(pageIndex + 1);
+      return;
+    }
+    
+    // Clear navigation flag since we're on the right page
+    setIsNavigatingToSearch(false);
+    setPendingSearchScroll(null);
+    
+    const scrollToMatch = () => {
       const matchElement = document.getElementById(`search-match-${pageIndex + 1}-${matchIndex}`);
       if (matchElement && contentRef.current) {
+        console.log('Found search match element, scrolling to it:', matchElement.id);
+        
         // Remove previous active highlighting from all matches
         document.querySelectorAll('span[id^="search-match-"]').forEach(span => {
           const element = span as HTMLElement;
           element.style.backgroundColor = '#fbbf24';
           element.style.boxShadow = 'none';
+          element.style.transform = 'none';
         });
         
-        // Highlight current match with different color
+        // Highlight current match with different color and animation
         matchElement.style.backgroundColor = '#f59e0b';
-        matchElement.style.boxShadow = '0 0 0 2px #f59e0b';
+        matchElement.style.boxShadow = '0 0 0 3px #f59e0b, 0 0 10px rgba(245, 158, 11, 0.5)';
+        matchElement.style.transform = 'scale(1.05)';
+        matchElement.style.transition = 'all 0.3s ease';
         
-        // Scroll to the match
-        matchElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'center'
+        // Scroll to the match with proper offset
+        const rect = matchElement.getBoundingClientRect();
+        const containerRect = contentRef.current.getBoundingClientRect();
+        const scrollTop = matchElement.offsetTop - containerRect.height / 2;
+        
+        contentRef.current.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth'
         });
+        
+        // Also use scrollIntoView as backup
+        setTimeout(() => {
+          matchElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'center'
+          });
+        }, 100);
+        
+        console.log('✅ Successfully scrolled to search match');
+        return true;
+      } else {
+        console.log('🔍 Search match element not found:', `search-match-${pageIndex + 1}-${matchIndex}`);
+        return false;
       }
-    }, 200); // Give time for the page content to update
-  };
+    };
+    
+    // Try multiple times with increasing delays
+    const maxAttempts = 10;
+    let attempts = 0;
+    
+    const tryScroll = () => {
+      attempts++;
+      if (scrollToMatch()) {
+        console.log(`✅ Successfully scrolled to search match on attempt ${attempts}`);
+        return;
+      }
+      
+      if (attempts < maxAttempts) {
+        setTimeout(tryScroll, attempts * 100); // Increasing delay: 100ms, 200ms, 300ms...
+      } else {
+        console.warn('❌ Failed to find search match element after', maxAttempts, 'attempts');
+      }
+    };
+    
+    tryScroll();
+  }, [currentPage, searchResults, currentSearchIndex]);
 
   const goToNextSearchResult = () => {
     if (searchResults.length > 0) {
       const nextIndex = (currentSearchIndex + 1) % searchResults.length;
       setCurrentSearchIndex(nextIndex);
-      const targetPage = searchResults[nextIndex].pageIndex + 1;
-      setCurrentPage(targetPage);
-      // Scroll to the match after page change
-      scrollToSearchMatch(searchResults[nextIndex].pageIndex, 0);
+      // Use goToSearchResult to handle proper navigation and match indexing
+      goToSearchResult(nextIndex);
     }
   };
 
@@ -246,27 +557,61 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     if (searchResults.length > 0) {
       const prevIndex = currentSearchIndex === 0 ? searchResults.length - 1 : currentSearchIndex - 1;
       setCurrentSearchIndex(prevIndex);
-      const targetPage = searchResults[prevIndex].pageIndex + 1;
-      setCurrentPage(targetPage);
-      // Scroll to the match after page change
-      scrollToSearchMatch(searchResults[prevIndex].pageIndex, 0);
+      // Use goToSearchResult to handle proper navigation and match indexing
+      goToSearchResult(prevIndex);
     }
   };
 
   // Function to jump to a specific search result
-  const goToSearchResult = (index: number) => {
+  const goToSearchResult = useCallback((index: number) => {
     if (index >= 0 && index < searchResults.length) {
+      const result = searchResults[index];
+      const targetPage = result.pageIndex + 1;
+      
+      console.log('🎯 goToSearchResult called:', {
+        index,
+        targetPage,
+        currentPage,
+        result: result.match,
+        resultPageIndex: result.pageIndex,
+        context: result.context.substring(0, 100) + '...',
+        pageMatch: `Search shows page ${result.pageIndex + 1}, navigating to page ${targetPage}`
+      });
+      
+      // Calculate match index within the target page
+      const matchesOnTargetPage = searchResults.filter(r => r.pageIndex === result.pageIndex);
+      const matchIndexInPage = matchesOnTargetPage.findIndex(r => r === result);
+      
+      console.log('🧮 Match calculation:', {
+        targetPageIndex: result.pageIndex,
+        matchesOnPage: matchesOnTargetPage.length,
+        matchIndexInPage,
+        totalSearchResults: searchResults.length,
+        systemMessage: 'Using updated pagination - backend and frontend should now match!'
+      });
+      
       setCurrentSearchIndex(index);
-      const targetPage = searchResults[index].pageIndex + 1;
-      setCurrentPage(targetPage);
-      // Scroll to the match after page change
-      scrollToSearchMatch(searchResults[index].pageIndex, 0);
+      
+      // If we need to change pages, do that first
+      if (currentPage !== targetPage) {
+        console.log('📄 Page change needed from', currentPage, 'to', targetPage, '- pagination systems should now match!');
+        setCurrentPage(targetPage);
+        // Scrolling will happen automatically via useEffect when content updates
+      } else {
+        // If we're on the same page, scroll immediately
+        console.log('📍 Same page, scrolling immediately to match', matchIndexInPage);
+        scrollToSearchMatch(result.pageIndex, matchIndexInPage);
+      }
     }
-  };
+  }, [searchResults, currentPage, scrollToSearchMatch]);
 
   // Language and category management
   const toggleLanguage = (language: string) => {
     setSelectedLanguage(language);
+  };
+
+  const toggleCategoryPanel = () => {
+    setIsCategoryPanelVisible(prev => !prev);
   };
 
   const toggleCategoryExpanded = (category: string) => {
@@ -284,10 +629,17 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   };
 
   const languageConfig = {
-    english: { label: 'English books', code: 'EN', icon: 'EN', count: 603 },
-    telugu: { label: 'Telugu books', code: 'TE', icon: 'తె', count: 45 },
-    sanskrit: { label: 'Sanskrit books', code: 'संस्कृत', icon: 'सं', count: 128 }
+    english: { label: 'English books', code: 'EN', icon: 'EN', count: 3 },
+    telugu: { label: 'Telugu books', code: 'TE', icon: 'తె', count: 1 },
+    sanskrit: { label: 'Sanskrit books', code: 'संस्कृत', icon: 'सं', count: 1 }
   };
+
+  // Re-organize books when language changes
+  useEffect(() => {
+    if (books.length > 0) {
+      organizeBooks(books);
+    }
+  }, [selectedLanguage, books]);
 
   // Fold/Unfold all categories
   const foldAllCategories = () => {
@@ -332,7 +684,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     'Connecting to higher wisdom...'
   ];
 
-  // Load book content when component mounts
+  // Load book content when component mounts or book changes
   useEffect(() => {
     if (!bookId) {
       setIsLoading(false);
@@ -341,40 +693,58 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
       return;
     }
 
-    const loadContent = async () => {
-      console.log('Loading content for book ID:', bookId);
+    console.log('Book changed to:', bookId, 'Resetting bookmark flag');
+    
+    // Reset bookmark loaded flag for new book
+    bookmarkLoadedRef.current = false;
+    
+    // Load bookmark immediately for new book (before content loads)
+    if ((user || authUser) && !bookmarkLoadedRef.current) {
+      const bookmarkedPage = loadBookmark();
+      console.log('Initial bookmark loading for user:', (user || authUser)?.username, 'book:', bookId, 'page:', bookmarkedPage);
+      if (bookmarkedPage > 1) {
+        console.log('Setting initial page to bookmarked page:', bookmarkedPage);
+        setCurrentPage(bookmarkedPage);
+      }
+      setIsBookmarked(!!localStorage.getItem(getBookmarkKey()!));
+      bookmarkLoadedRef.current = true;
+      console.log('Bookmark loading completed, flag set to true');
+    }
+    
+    // Load content directly for initial book load
+    const initialLoad = async () => {
+      console.log('Initial content loading for book:', bookId, 'page:', currentPage);
       setIsLoading(true);
       setError('');
       try {
-        const result = await fetchBookContent(bookId);
-        console.log('fetchBookContent result:', result);
+        const result = await fetchBookContent(bookId, currentPage, 'html');
+        console.log('Initial fetchBookContent result:', result);
+        
         if (result) {
-          console.log('Setting content with length:', result.content.length);
           setContent(result.content);
-        } else {
-          console.error('fetchBookContent returned null/undefined');
-          setError('Failed to load book content');
+          if (result.pagination) {
+            setPaginationInfo(result.pagination);
+            setIsContentHtml(result.pagination.format === 'html');
+          }
+          if (result.metadata) {
+            setBookTitle(result.metadata.title || `Book ${bookId}`);
+          }
+          lastLoadedPageRef.current = currentPage;
+          console.log(`Initial load completed for page ${currentPage}`);
         }
       } catch (err) {
-        console.error('Error loading book:', err);
+        console.error('Initial loading error:', err);
         setError('Error loading book content');
       } finally {
         setIsLoading(false);
       }
     };
+    
+    initialLoad();
+  }, [bookId]); // Removed loadContent dependency to prevent loops
 
-    loadContent();
-  }, [bookId]);
-
-  // Load user's bookmark after content is loaded
-  useEffect(() => {
-    if (content && (user || authUser) && bookId) {
-      const bookmarkedPage = loadBookmark();
-      console.log('Loading bookmark for user:', (user || authUser)?.username, 'book:', bookId, 'page:', bookmarkedPage);
-      setCurrentPage(bookmarkedPage);
-      setIsBookmarked(!!localStorage.getItem(getBookmarkKey()!));
-    }
-  }, [content, user, authUser, bookId]);
+  // Remove the problematic bookmark loading useEffect that depends on content
+  // This was causing the page to reset back to bookmark on every navigation
 
   // Split content into pages based on word count
   const pages = useMemo(() => {
@@ -412,8 +782,8 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     return pageArray;
   }, [content, wordsPerPage]);
 
-  const totalPages = pages.length;
-  const currentPageContent = pages[currentPage - 1] || '';
+  const totalPages = paginationInfo?.totalPages || pages.length;
+  const currentPageContent = paginationInfo ? content : (pages[currentPage - 1] || '');
 
   // Update highlighted content when page content changes or search query changes
   useEffect(() => {
@@ -461,18 +831,107 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     setHighlightedContent(highlighted);
   }, [currentPageContent, searchQuery, currentPage]);
 
+  // Reload content when page changes (for backend pagination)
+  useEffect(() => {
+    console.log('Page reload useEffect triggered:', {
+      bookId,
+      currentPage, 
+      lastLoaded: lastLoadedPageRef.current,
+      shouldReload: bookId && currentPage !== lastLoadedPageRef.current
+    });
+    
+    if (bookId && currentPage !== lastLoadedPageRef.current) {
+      console.log(`=== PAGE RELOAD: ${lastLoadedPageRef.current} → ${currentPage} ===`);
+      console.log('Current states:', { 
+        bookId, 
+        currentPage, 
+        lastLoaded: lastLoadedPageRef.current,
+        bookmarkLoaded: bookmarkLoadedRef.current,
+        hasPaginationInfo: !!paginationInfo 
+      });
+      
+      // Call loadContent directly instead of through dependency
+      const loadContentNow = async () => {
+        if (!bookId) return;
+        
+        console.log('Direct content loading for book:', bookId, 'page:', currentPage);
+        setIsLoading(true);
+        setError('');
+        try {
+          const result = await fetchBookContent(bookId, currentPage, 'html');
+          console.log('Direct fetchBookContent result:', result);
+          
+          if (result) {
+            console.log('Direct setting content with length:', result.content.length);
+            setContent(result.content);
+            if (result.pagination) {
+              setPaginationInfo(result.pagination);
+              setIsContentHtml(result.pagination.format === 'html');
+            }
+            if (result.metadata) {
+              setBookTitle(result.metadata.title || `Book ${bookId}`);
+            }
+            lastLoadedPageRef.current = currentPage;
+            console.log(`Direct load completed for page ${currentPage}`);
+          }
+        } catch (err) {
+          console.error('Direct loading error:', err);
+          setError('Error loading book content');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      loadContentNow();
+    }
+  }, [currentPage, bookId]);
+
   // Auto-scroll to current search result when page content updates
   useEffect(() => {
-    if (isSearchMode && searchResults.length > 0 && highlightedContent) {
-      // Check if current page has search results
+    if (isSearchMode && searchResults.length > 0 && highlightedContent && currentSearchIndex < searchResults.length) {
       const currentPageIndex = currentPage - 1;
-      const currentResultPage = searchResults[currentSearchIndex]?.pageIndex;
+      const currentResult = searchResults[currentSearchIndex];
+      const currentResultPage = currentResult?.pageIndex;
+      
+      console.log('Auto-scroll effect triggered:', {
+        isSearchMode,
+        currentPage,
+        currentPageIndex,
+        currentResultPage,
+        currentSearchIndex,
+        hasHighlightedContent: !!highlightedContent,
+        shouldScroll: currentResultPage === currentPageIndex
+      });
       
       if (currentResultPage === currentPageIndex) {
-        scrollToSearchMatch(currentPageIndex, 0);
+        // Calculate match index within current page
+        const matchesOnCurrentPage = searchResults.filter(r => r.pageIndex === currentPageIndex);
+        const currentResult = searchResults[currentSearchIndex];
+        const matchIndexInPage = matchesOnCurrentPage.findIndex(r => r === currentResult);
+        
+        console.log('Auto-scrolling to search match on current page:', {
+          matchIndexInPage,
+          totalMatchesOnPage: matchesOnCurrentPage.length,
+          currentSearchIndex
+        });
+        
+        scrollToSearchMatch(currentPageIndex, matchIndexInPage >= 0 ? matchIndexInPage : 0);
       }
     }
-  }, [highlightedContent, isSearchMode, currentSearchIndex, searchResults, currentPage]);
+  }, [highlightedContent, isSearchMode, currentSearchIndex, searchResults, currentPage, scrollToSearchMatch]);
+
+  // Handle pending search scroll after page navigation
+  useEffect(() => {
+    if (pendingSearchScroll && !isNavigatingToSearch && highlightedContent) {
+      console.log('🔄 Executing pending search scroll:', pendingSearchScroll);
+      const { pageIndex, matchIndex } = pendingSearchScroll;
+      
+      // Small delay to ensure content is rendered
+      setTimeout(() => {
+        scrollToSearchMatch(pageIndex, matchIndex);
+      }, 200);
+    }
+  }, [pendingSearchScroll, isNavigatingToSearch, highlightedContent, scrollToSearchMatch]);
 
   // Auto-save bookmark when page changes (but not on initial load)
   useEffect(() => {
@@ -554,15 +1013,39 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   };
 
   const goToNextPage = () => {
+    console.log('goToNextPage called. Current page:', currentPage, 'Total pages:', totalPages, 'bookmarkLoaded:', bookmarkLoadedRef.current);
     if (currentPage < totalPages) {
-      setCurrentPage(prev => prev + 1);
+      const newPage = currentPage + 1;
+      console.log('Setting next page from', currentPage, 'to', newPage);
+      setCurrentPage(newPage);
+      // Ensure bookmark doesn't override this navigation
+      if (!bookmarkLoadedRef.current) {
+        bookmarkLoadedRef.current = true;
+      }
     }
   };
 
   const goToPreviousPage = () => {
+    console.log('=== goToPreviousPage START ===');
+    console.log('Current state:', { 
+      currentPage, 
+      bookmarkLoaded: bookmarkLoadedRef.current,
+      lastLoaded: lastLoadedPageRef.current 
+    });
+    
     if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
+      const newPage = currentPage - 1;
+      console.log('Navigating from page', currentPage, 'to page', newPage);
+      
+      // Ensure bookmark loading is marked as complete to prevent interference
+      bookmarkLoadedRef.current = true;
+      
+      setCurrentPage(newPage);
+      console.log('setCurrentPage called with:', newPage);
+    } else {
+      console.log('Cannot go to previous page, already at page 1');
     }
+    console.log('=== goToPreviousPage END ===');
   };
 
   const goToFirstPage = () => {
@@ -676,103 +1159,102 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   // Extract chapters/sections from content
   const chapters = content.match(/<h[1-6][^>]*>.*?<\/h[1-6]>/gi) || [];
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-amber-50 to-amber-100">
-        <div className="text-center">
-          <div className="relative mx-auto mb-8" style={{ width: '200px', height: '150px' }}>
-            {/* Animated book pages */}
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute bg-white border border-amber-300 rounded-r-lg shadow-lg"
-                style={{
-                  width: '180px',
-                  height: '120px',
-                  left: `${i * 2}px`,
-                  top: `${i * 2}px`,
-                  transformOrigin: 'left center',
-                  animation: `pageFlipToLeft 4s ease-in-out infinite ${i * 0.5}s`,
-                  zIndex: 8 - i
-                }}
-              >
-                <div className="p-3 h-full flex flex-col">
-                  <div className="h-2 bg-amber-200 rounded mb-1"></div>
-                  <div className="h-1 bg-amber-100 rounded mb-1"></div>
-                  <div className="h-1 bg-amber-100 rounded mb-2"></div>
-                  <div className="h-1 bg-amber-100 rounded mb-1"></div>
-                  <div className="h-1 bg-amber-100 rounded"></div>
-                </div>
+  // Create loading component for main content area
+  const LoadingContent = () => (
+    <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-amber-50 to-amber-100">
+      <div className="text-center">
+        <div className="relative mx-auto mb-8" style={{ width: '200px', height: '150px' }}>
+          {/* Animated book pages */}
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute bg-white border border-amber-300 rounded-r-lg shadow-lg"
+              style={{
+                width: '180px',
+                height: '120px',
+                left: `${i * 2}px`,
+                top: `${i * 2}px`,
+                transformOrigin: 'left center',
+                animation: `pageFlipToLeft 4s ease-in-out infinite ${i * 0.5}s`,
+                zIndex: 8 - i
+              }}
+            >
+              <div className="p-3 h-full flex flex-col">
+                <div className="h-2 bg-amber-200 rounded mb-1"></div>
+                <div className="h-1 bg-amber-100 rounded mb-1"></div>
+                <div className="h-1 bg-amber-100 rounded mb-2"></div>
+                <div className="h-1 bg-amber-100 rounded mb-1"></div>
+                <div className="h-1 bg-amber-100 rounded"></div>
               </div>
-            ))}
-          </div>
-
-          <div className="text-lg font-medium text-amber-800 mb-6 h-8">
-            <span
-              key={currentTextIndex}
-              style={{
-                animation: 'showTwoWords 1s ease-in-out'
-              }}
-            >
-              {loadingTexts[currentTextIndex]}
-            </span>
-          </div>
-
-          <div className="w-64 mx-auto">
-            <div 
-              className="h-2 bg-amber-300 rounded-full overflow-hidden"
-              style={{
-                animation: 'progressFlow 3s ease-in-out infinite'
-              }}
-            >
             </div>
-          </div>
+          ))}
         </div>
 
-        <style jsx>{`
-          @keyframes pageFlipToLeft {
-            0% { 
-              transform: rotateY(0deg);
-              z-index: 10;
-            }
-            25% { 
-              transform: rotateY(-45deg);
-              z-index: 10;
-            }
-            50% { 
-              transform: rotateY(-90deg);
-              z-index: 10;
-            }
-            75% { 
-              transform: rotateY(-135deg);
-              z-index: 5;
-            }
-            100% { 
-              transform: rotateY(-180deg);
-              z-index: 5;
-            }
-          }
-          
-          @keyframes showTwoWords {
-            0%, 10% { 
-              opacity: 1;
-              transform: scale(1.05);
-            }
-            12.5%, 100% { 
-              opacity: 0;
-              transform: scale(1);
-            }
-          }
-          
-          @keyframes progressFlow {
-            0% { width: 0%; }
-            50% { width: 70%; }
-            100% { width: 100%; }
-          }
-        `}</style>
+        <div className="text-lg font-medium text-amber-800 mb-6 h-8">
+          <span
+            key={currentTextIndex}
+            style={{
+              animation: 'showTwoWords 1s ease-in-out'
+            }}
+          >
+            {loadingTexts[currentTextIndex]}
+          </span>
+        </div>
+
+        <div className="w-64 mx-auto">
+          <div 
+            className="h-2 bg-amber-300 rounded-full overflow-hidden"
+            style={{
+              animation: 'progressFlow 3s ease-in-out infinite'
+            }}
+          >
+          </div>
+        </div>
       </div>
-    );
-  }
+
+      <style jsx>{`
+        @keyframes pageFlipToLeft {
+          0% { 
+            transform: rotateY(0deg);
+            z-index: 10;
+          }
+          25% { 
+            transform: rotateY(-45deg);
+            z-index: 10;
+          }
+          50% { 
+            transform: rotateY(-90deg);
+            z-index: 10;
+          }
+          75% { 
+            transform: rotateY(-135deg);
+            z-index: 5;
+          }
+          100% { 
+            transform: rotateY(-180deg);
+            z-index: 5;
+          }
+        }
+        
+        @keyframes showTwoWords {
+          0%, 10% { 
+            opacity: 1;
+            transform: scale(1.05);
+          }
+          12.5%, 100% { 
+            opacity: 0;
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes progressFlow {
+          0% { width: 0%; }
+          50% { width: 70%; }
+          100% { width: 100%; }
+        }
+      `}</style>
+    </div>
+  );
 
   if (error) {
     return (
@@ -795,166 +1277,38 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   return (
     <div className="h-screen bg-gradient-to-br from-amber-50 to-amber-100 flex flex-col">
       {/* Header Bar */}
-      <div className="bg-gray-900 text-gray-100 px-4 py-3 flex-shrink-0">
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-bold text-yellow-400">GAURAMRITA</h1>
-            <div className="flex items-center space-x-1">
-              <BookOpen className="w-5 h-5" />
-              <span className="text-sm">Switch to reading mode</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            {user?.role === 'admin' && (
-              <>
-                <button
-                  onClick={() => onViewChange?.('upload')}
-                  className="p-2 hover:bg-gray-800 rounded transition-colors"
-                  title="Upload Books"
-                >
-                  <Upload className="w-5 h-5" />
-                </button>
-              </>
-            )}
-            <span className="text-sm">{(user || authUser)?.name || (user || authUser)?.username || 'Guest User'}</span>
-            {onLogout && (
-              <button
-                onClick={onLogout}
-                className="p-1 hover:bg-gray-800 rounded transition-colors"
-                title="Logout"
-              >
-                <User className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      <Header 
+        user={user} 
+        authUser={authUser} 
+        onLogout={onLogout} 
+        onViewChange={onViewChange} 
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Language Selection */}
-        <div className="w-16 bg-gray-900 flex flex-col items-center py-4 space-y-4">
-          {Object.entries(languageConfig).map(([langKey, config]) => (
-            <button
-              key={langKey}
-              onClick={() => toggleLanguage(langKey)}
-              className={`w-10 h-10 rounded flex items-center justify-center text-sm font-bold transition-colors ${
-                selectedLanguage === langKey
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-              title={config.label}
-            >
-              {config.icon}
-            </button>
-          ))}
-          
-          {/* Navigation Icons */}
-          <div className="flex flex-col space-y-4 pt-6 border-t border-gray-700">
-            <button className="p-2 text-gray-400 hover:text-white">
-              <Settings className="w-5 h-5" />
-            </button>
-            <button className="p-2 text-gray-400 hover:text-white">
-              <User className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+        <SideNav 
+          selectedLanguage={selectedLanguage}
+          languageConfig={languageConfig}
+          isCategoryPanelVisible={isCategoryPanelVisible}
+          onLanguageToggle={toggleLanguage}
+          onCategoryPanelToggle={toggleCategoryPanel}
+        />
 
         {/* Categories Panel */}
-        <div className="w-80 bg-gray-800 text-white flex flex-col flex-shrink-0">
-          {/* Language Section Header */}
-          <div className="p-4 bg-yellow-400 text-gray-900">
-            <h3 className="text-lg font-semibold">
-              {languageConfig[selectedLanguage as keyof typeof languageConfig].label} ({languageConfig[selectedLanguage as keyof typeof languageConfig].count})
-            </h3>
-          </div>
-
-          {/* Filter Tabs */}
-          <div className="flex border-b border-gray-700 bg-gray-700">
-            <button className="flex-1 p-3 text-sm font-medium border-b-2 border-yellow-400 text-yellow-400">
-              CATEGORIES
-            </button>
-            <button className="flex-1 p-3 text-sm font-medium text-gray-400 hover:text-gray-200">
-              AUTHORS
-            </button>
-            <button className="flex-1 p-3 text-sm font-medium text-gray-400 hover:text-gray-200">
-              TITLE
-            </button>
-          </div>
-
-          {/* Search Bar */}
-          <div className="p-4 bg-gray-700">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search the catalog"
-                className="w-full bg-gray-600 text-white placeholder-gray-400 border border-gray-500 rounded px-4 py-2 pr-10 focus:outline-none focus:border-yellow-400"
-              />
-              <Search className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="flex-1 overflow-y-auto">
-            {loadingBooks ? (
-              <div className="p-4 text-center">
-                <div className="text-gray-400">Loading...</div>
-              </div>
-            ) : (
-              categories.map((category) => (
-                <div key={category.name} className="border-b border-gray-700">
-                  <button
-                    onClick={() => toggleCategoryExpanded(category.name)}
-                    className="w-full p-4 text-left hover:bg-gray-700 flex items-center justify-between group transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Plus className={`w-4 h-4 text-gray-400 transition-transform ${
-                        expandedCategories[category.name] ? 'transform rotate-45' : ''
-                      }`} />
-                      <span className="font-medium text-gray-200">{category.name}</span>
-                    </div>
-                  </button>
-                  
-                  {expandedCategories[category.name] && (
-                    <div className="bg-gray-750">
-                      {category.books.map((book) => (
-                        <button
-                          key={book.id}
-                          onClick={() => handleBookSelection(book)}
-                          className={`w-full p-3 pl-12 text-left hover:bg-gray-600 transition-colors ${
-                            bookId === book.id
-                              ? 'bg-gray-600 text-yellow-400'
-                              : 'text-gray-300'
-                          }`}
-                        >
-                          <div className="text-sm font-medium">{book.title}</div>
-                          {book.author && (
-                            <div className="text-xs text-gray-500 mt-1">{book.author}</div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Footer Controls */}
-          <div className="p-4 border-t border-gray-700 flex justify-between">
-            <button 
-              onClick={foldAllCategories}
-              className="text-sm text-gray-400 hover:text-gray-200"
-            >
-              Fold all
-            </button>
-            <button 
-              onClick={unfoldAllCategories}
-              className="text-sm text-gray-400 hover:text-gray-200"
-            >
-              Unfold all
-            </button>
-          </div>
-        </div>
+        {isCategoryPanelVisible && (
+          <CategoryPanel
+            selectedLanguage={selectedLanguage}
+            languageConfig={languageConfig}
+            loadingBooks={loadingBooks}
+            categories={categories}
+            expandedCategories={expandedCategories}
+            bookId={bookId}
+            onCategoryToggle={toggleCategoryExpanded}
+            onBookSelection={handleBookSelection}
+            onFoldAll={foldAllCategories}
+            onUnfoldAll={unfoldAllCategories}
+          />
+        )}
 
         {/* Main Content Area */}
         <div className="flex-1 bg-white flex flex-col">
@@ -1010,7 +1364,9 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
             </div>
           )}
           
-          {bookId && content ? (
+          {bookId && isLoading ? (
+            <LoadingContent />
+          ) : bookId && content ? (
             <div className="flex flex-col flex-1 overflow-hidden">
               {/* Search Results Display */}
               {isSearchMode && searchResults.length > 0 && (
@@ -1034,11 +1390,17 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                       </div>
                       <p className="text-sm text-amber-700">
                         Found {searchResults.length} matches for "{searchQuery}"
+                        {searchResults.length > 0 && (
+                          <span className="text-xs text-amber-600 ml-2">
+                            (Pages: {[...new Set(searchResults.map(r => r.pageIndex + 1))].sort((a, b) => a - b).slice(0, 20).join(', ')}
+                            {[...new Set(searchResults.map(r => r.pageIndex + 1))].length > 20 ? '...' : ''})
+                          </span>
+                        )}
                       </p>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto p-2">
-                      {searchResults.slice(0, Math.min(searchResults.length, 50)).map((result, index) => (
+                      {searchResults.slice(0, 100).map((result, index) => (
                         <div
                           key={index}
                           className={`p-3 mb-2 rounded-lg cursor-pointer border transition-colors ${
@@ -1268,16 +1630,18 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
               </div>
 
               {/* Footer Controls */}
-              <div className="bg-gray-800 border-t border-gray-700 p-4 flex-shrink-0">
-                <div className="flex items-center justify-center">
-                  <button className="flex items-center space-x-2 text-gray-300 hover:text-white">
-                    <BookOpen className="w-4 h-4" />
-                    <span className="text-sm">About the book</span>
-                  </button>
-                </div>
-              </div>
+              <FooterControls onAboutBook={() => console.log('About book clicked')} />
                 </div>
               )}
+            </div>
+          ) : bookId && !content && !isLoading ? (
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                <h2 className="text-xl font-semibold text-gray-700 mb-2">Book Not Found</h2>
+                <p className="text-gray-500 mb-2">The selected book could not be loaded</p>
+                <p className="text-gray-500">Please try selecting another book</p>
+              </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center bg-gray-50">

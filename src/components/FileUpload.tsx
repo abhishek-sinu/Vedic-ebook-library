@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, FileText, AlertCircle, User, Tag, BookOpen, FileCheck } from 'lucide-react';
-import { uploadBook, formatFileSize } from '../lib/bookStorage';
+import { Upload, FileText, AlertCircle, User, Tag, BookOpen, FileCheck, FolderOpen } from 'lucide-react';
+import { uploadBook } from '../lib/bookStorage';
 
 interface FileUploadProps {
   onUploadSuccess?: () => void;
@@ -18,15 +18,33 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
   const [metadata, setMetadata] = useState({
     title: '',
     author: '',
+    category: '',
     description: '',
-    tags: ''
+    tags: '',
+    language: 'english'
   });
+
+  // Define the same categories as in EBookReader
+  const bookCategories = [
+    'Srila Prabhupada',
+    'Acaryas',
+    'Great Vaishnavas',
+    'Vaishnavas of ISKCON',
+    'Contemporary vaishnavas',
+    'Vedic Sages',
+    'Other authors',
+    'Sastras',
+    'Other'
+  ];
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.docx')) {
-      setError('कृपया केवल .docx फाइल अपलोड करें / Please upload only .docx files');
+    const allowedTypes = ['.pdf', '.docx', '.epub'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    if (!allowedTypes.includes(fileExtension)) {
+      setError('कृपया केवल PDF, DOCX, या EPUB फाइल अपलोड करें / Please upload only PDF, DOCX, or EPUB files');
       return;
     }
 
@@ -37,10 +55,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
 
     setCurrentFile(file);
     setMetadata({
-      title: file.name.replace('.docx', ''),
+      title: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
       author: '',
+      category: '',
       description: '',
-      tags: ''
+      tags: '',
+      language: 'english' // Default to lowercase to match backend
     });
     setShowMetadataForm(true);
   };
@@ -54,11 +74,27 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
     setError('');
 
     try {
+      // Validate required fields for backend
+      if (!metadata.title.trim()) {
+        throw new Error('Title is required');
+      }
+      if (!metadata.author.trim()) {
+        throw new Error('Author is required');
+      }
+      if (!metadata.category) {
+        throw new Error('Category is required');
+      }
+      if (!metadata.language) {
+        throw new Error('Language is required');
+      }
+      
       await uploadBook(currentFile, {
-        title: metadata.title || currentFile.name.replace('.docx', ''),
-        author: metadata.author || undefined,
-        description: metadata.description || undefined,
-        tags: metadata.tags ? metadata.tags.split(',').map(tag => tag.trim()) : undefined
+        title: metadata.title.trim(),
+        author: metadata.author.trim(),
+        category: metadata.category,
+        language: metadata.language.toLowerCase(),
+        description: metadata.description.trim() || undefined,
+        tags: metadata.tags ? metadata.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : undefined
       });
 
       // Call both callbacks if they exist
@@ -67,7 +103,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
       
       setShowMetadataForm(false);
       setCurrentFile(null);
-      setMetadata({ title: '', author: '', description: '', tags: '' });
+      setMetadata({ title: '', author: '', category: '', description: '', tags: '', language: 'english' });
     } catch (err: any) {
       setError(err.message || 'Failed to upload file');
     } finally {
@@ -131,15 +167,36 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
             <div>
               <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
                 <User className="inline w-4 h-4 mr-2" />
-                Author (Optional)
+                Author *
               </label>
               <input
                 type="text"
                 value={metadata.author}
                 onChange={(e) => setMetadata(prev => ({ ...prev, author: e.target.value }))}
                 className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                placeholder="e.g., Vyasa, Valmiki, Unknown"
+                placeholder="e.g., Vyasa, Valmiki, Srila Prabhupada"
+                required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
+                <FolderOpen className="inline w-4 h-4 mr-2" />
+                Category *
+              </label>
+              <select
+                value={metadata.category}
+                onChange={(e) => setMetadata(prev => ({ ...prev, category: e.target.value }))}
+                className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                required
+              >
+                <option value="">Select a category...</option>
+                {bookCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -166,6 +223,23 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
                 className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                 placeholder="e.g., Vedas, Puranas, Philosophy, Yoga (separate with commas)"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
+                Language *
+              </label>
+              <select
+                value={metadata.language}
+                onChange={(e) => setMetadata(prev => ({ ...prev, language: e.target.value }))}
+                className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                required
+              >
+                <option value="">Select a language...</option>
+                <option value="english">English</option>
+                <option value="telugu">Telugu</option>
+                <option value="sanskrit">Sanskrit</option>
+              </select>
             </div>
 
             <div className="flex space-x-4">

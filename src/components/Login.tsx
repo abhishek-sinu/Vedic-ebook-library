@@ -8,7 +8,7 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,8 +17,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   // Auto-fill demo credentials on component mount
   useEffect(() => {
-    setUsername('Admin');
-    setPassword('Hari@108');
+    setEmail('admin@vedicebooks.com');
+    setPassword('SecureAdminPass123!');
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -27,12 +27,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       // Check if response is actually JSON
@@ -51,11 +51,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
       // Store token based on remember me preference
       const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem('vedic_auth_token', data.token);
-      storage.setItem('vedic_user', JSON.stringify(data.user));
+      storage.setItem('vedic_auth_token', data.data.tokens.accessToken);
+      storage.setItem('vedic_user', JSON.stringify(data.data.user));
 
       // Call the success callback
-      onLoginSuccess(data.user, data.token);
+      onLoginSuccess(data.data.user, data.data.tokens.accessToken);
 
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
@@ -66,11 +66,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   const quickLogin = (userType: 'admin' | 'user') => {
     if (userType === 'admin') {
-      setUsername('Admin');
-      setPassword('Hari@108');
+      setEmail('admin@vedicebooks.com');
+      setPassword('SecureAdminPass123!');
     } else {
-      setUsername('Devotee');
-      setPassword('Radhe@123');
+      setEmail('user1@example.com');
+      setPassword('TestPass123!');
     }
   };
 
@@ -117,21 +117,21 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               </button>
             </div>
 
-            {/* Username */}
+            {/* Email */}
             <div>
               <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
-                उपयोगकर्ता नाम / Username
+                ईमेल / Email
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-                  placeholder="Enter username"
+                  placeholder="Enter email address"
                   required
-                  autoComplete="username"
+                  autoComplete="email"
                 />
               </div>
             </div>
