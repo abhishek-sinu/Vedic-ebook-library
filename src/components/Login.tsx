@@ -15,12 +15,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Auto-fill demo credentials on component mount
-  useEffect(() => {
-    setEmail('admin@vedicebooks.com');
-    setPassword('SecureAdminPass123!');
-  }, []);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -64,63 +58,41 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const quickLogin = (userType: 'admin' | 'user') => {
-    if (userType === 'admin') {
-      setEmail('admin@vedicebooks.com');
-      setPassword('SecureAdminPass123!');
-    } else {
-      setEmail('user1@example.com');
-      setPassword('TestPass123!');
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{background: 'linear-gradient(135deg, var(--deep-blue) 0%, var(--navy) 100%)'}}>
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
+        {/* Decorative Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-yellow-400 bg-opacity-5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-yellow-400 bg-opacity-3 rounded-full blur-3xl"></div>
+        </div>
+
         {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-3 sm:mb-4" style={{background: 'var(--saffron)'}}>
-            <BookOpen className="w-6 h-6 sm:w-8 sm:h-8" style={{color: 'var(--deep-blue)'}} />
+        <div className="text-center mb-8 relative z-10">
+          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center mb-6 shadow-2xl shadow-yellow-400/20">
+            <BookOpen className="w-8 h-8 text-gray-900" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">वेदिक ग्रंथालय</h1>
-          <h2 className="text-lg sm:text-xl text-orange-600 mb-2">Vedic E-Books Library</h2>
-          <p className="text-black-100 text-xs sm:text-sm">Gaudiya Vaisnava Literature</p>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-yellow-400 tracking-wide">GAURAMRITA</h1>
+            <p className="text-yellow-400/80 text-sm font-medium">Vedic E-Books Library</p>
+            <p className="text-gray-400 text-xs">Gaudiya Vaisnava Literature</p>
+          </div>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8" style={{background: 'var(--cream)'}}>
+        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700 relative z-10">
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="text-center mb-6">
-              <h3 className="text-2xl font-semibold" style={{color: 'var(--deep-blue)'}}>
-                प्रवेश / Login
+              <h3 className="text-2xl font-semibold text-gray-100 mb-2">
+                Sign In
               </h3>
-              <p className="text-gray-600 text-sm mt-1">Enter your credentials to access the library</p>
-            </div>
-
-            {/* Quick Login Buttons */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => quickLogin('admin')}
-                className="py-2 px-4 rounded-lg text-sm border border-orange-300 hover:bg-orange-50 transition-colors"
-                style={{color: 'var(--deep-blue)'}}
-              >
-                👑 Admin Demo
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('user')}
-                className="py-2 px-4 rounded-lg text-sm border border-orange-300 hover:bg-orange-50 transition-colors"
-                style={{color: 'var(--deep-blue)'}}
-              >
-                🙏 Devotee Demo
-              </button>
+              <p className="text-gray-400 text-sm">Enter your credentials to access the sacred library</p>
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
-                ईमेल / Email
+              <label className="block text-sm font-medium mb-3 text-gray-200">
+                Email
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -128,8 +100,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-                  placeholder="Enter email address"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-gray-100 placeholder-gray-400 transition-all duration-300"
+                  placeholder="Enter your email address"
                   required
                   autoComplete="email"
                 />
@@ -138,8 +110,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
-                कूटशब्द / Password
+              <label className="block text-sm font-medium mb-3 text-gray-200">
+                Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -147,20 +119,20 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-                  placeholder="Enter password"
+                  className="w-full pl-10 pr-12 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-gray-100 placeholder-gray-400 transition-all duration-300"
+                  placeholder="Enter your password"
                   required
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-yellow-400 transition-colors"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-5 h-5 text-gray-400" />
+                    <EyeOff className="w-5 h-5" />
                   ) : (
-                    <Eye className="w-5 h-5 text-gray-400" />
+                    <Eye className="w-5 h-5" />
                   )}
                 </button>
               </div>
@@ -173,18 +145,17 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 id="remember"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 focus:ring-orange-400"
-                style={{accentColor: 'var(--saffron)'}}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-700 focus:ring-yellow-400 focus:ring-2 text-yellow-400"
               />
-              <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
-                याद रखें / Remember me
+              <label htmlFor="remember" className="ml-3 text-sm text-gray-300">
+                Remember me
               </label>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="p-4 rounded-lg bg-red-900/20 border border-red-500/50">
+                <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
@@ -192,30 +163,31 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3 px-4 rounded-lg text-white font-medium transition-colors ${
-                isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+              className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 transform ${
+                isLoading 
+                  ? 'opacity-50 cursor-not-allowed bg-gray-600' 
+                  : 'bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 hover:shadow-lg hover:shadow-yellow-400/25 hover:-translate-y-0.5'
               }`}
-              style={{background: 'var(--saffron)', color: 'var(--deep-blue)'}}
             >
-              {isLoading ? 'प्रवेश हो रहा है... / Signing in...' : 'प्रवेश करें / Sign In'}
+              {isLoading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                'Sign In'
+              )}
             </button>
           </form>
 
-          {/* Demo Credentials Info */}
-          <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-            <h4 className="font-medium text-yellow-800 mb-2">📝 Demo Credentials</h4>
-            <div className="text-sm text-yellow-700 space-y-1">
-              <p><strong>Admin:</strong> Admin / Hari@108</p>
-              <p><strong>Devotee:</strong> Devotee / Radhe@123</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <div className="text-black text-sm font-bold max-w-lg mx-auto px-4">
-            <div className="mb-1 whitespace-nowrap">🪷 Dedicated to the service of Śrīla Prabhupāda Founder Ācārya of ISKCON 🪷</div>
-            <div className="whitespace-nowrap">🪷 & Śrī Śrīmad Gaura Govinda Svāmī Mahārāja 🪷</div>
+          {/* Footer */}
+          <div className="mt-8 pt-6 border-t border-gray-700 text-center">
+            <p className="text-gray-400 text-xs">
+              Accessing the treasury of Vedic wisdom
+            </p>
+            <p className="text-gray-500 text-xs mt-1">
+              🙏 Hare Krishna 🙏
+            </p>
           </div>
         </div>
       </div>

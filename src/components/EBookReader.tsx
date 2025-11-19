@@ -695,8 +695,19 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
 
     console.log('Book changed to:', bookId, 'Resetting bookmark flag');
     
-    // Reset bookmark loaded flag for new book
+    // Reset states for new book
     bookmarkLoadedRef.current = false;
+    lastLoadedPageRef.current = 0; // Reset last loaded page to force content reload
+    setContent(''); // Clear content immediately
+    setError(''); // Clear any errors
+    setBookTitle(''); // Reset book title
+    setIsLoading(true); // Show loading state
+    setPaginationInfo(null); // Reset pagination info
+    
+    // Reset page to 1 first
+    let finalPage = 1;
+    setCurrentPage(1);
+    setPageInputValue('1');
     
     // Load bookmark immediately for new book (before content loads)
     if ((user || authUser) && !bookmarkLoadedRef.current) {
@@ -704,43 +715,24 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
       console.log('Initial bookmark loading for user:', (user || authUser)?.username, 'book:', bookId, 'page:', bookmarkedPage);
       if (bookmarkedPage > 1) {
         console.log('Setting initial page to bookmarked page:', bookmarkedPage);
+        finalPage = bookmarkedPage;
         setCurrentPage(bookmarkedPage);
+        setPageInputValue(bookmarkedPage.toString());
       }
       setIsBookmarked(!!localStorage.getItem(getBookmarkKey()!));
       bookmarkLoadedRef.current = true;
       console.log('Bookmark loading completed, flag set to true');
     }
     
-    // Load content directly for initial book load
-    const initialLoad = async () => {
-      console.log('Initial content loading for book:', bookId, 'page:', currentPage);
-      setIsLoading(true);
-      setError('');
-      try {
-        const result = await fetchBookContent(bookId, currentPage, 'html');
-        console.log('Initial fetchBookContent result:', result);
-        
-        if (result) {
-          setContent(result.content);
-          if (result.pagination) {
-            setPaginationInfo(result.pagination);
-            setIsContentHtml(result.pagination.format === 'html');
-          }
-          if (result.metadata) {
-            setBookTitle(result.metadata.title || `Book ${bookId}`);
-          }
-          lastLoadedPageRef.current = currentPage;
-          console.log(`Initial load completed for page ${currentPage}`);
-        }
-      } catch (err) {
-        console.error('Initial loading error:', err);
-        setError('Error loading book content');
-      } finally {
-        setIsLoading(false);
+    // Force content reload for the new book
+    setTimeout(() => {
+      console.log('Forcing content reload for new book:', bookId, 'page:', finalPage);
+      if (bookId) {
+        lastLoadedPageRef.current = 0; // Ensure reload
       }
-    };
+    }, 0);
     
-    initialLoad();
+    // Content will be loaded by the loadContent effect when currentPage is properly set
   }, [bookId]); // Removed loadContent dependency to prevent loops
 
   // Remove the problematic bookmark loading useEffect that depends on content
