@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Upload, User } from 'lucide-react';
+import { BookOpen, Upload } from 'lucide-react';
 
 interface HeaderProps {
   user?: { role: string; username: string; name?: string } | null;
@@ -18,6 +18,9 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange 
           <h1 className="text-xl font-bold text-yellow-400">GAURAMRITA</h1>
         </div>
         <div className="flex items-center space-x-4">
+          {user?.name && (
+            <span className="font-semibold text-yellow-300 mr-2">{user.name}</span>
+          )}
           {user?.role === 'admin' && (
             <>
               <button
@@ -29,18 +32,20 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange 
               </button>
             </>
           )}
-          <span className="text-sm">{(user || authUser)?.name || (user || authUser)?.username || 'Guest User'}</span>
+          {/* Profile icon removed, handled in SideNav */}
           {onLogout && (
             <button
               onClick={onLogout}
-              className="p-1 hover:bg-gray-800 rounded transition-colors"
+              className="px-4 py-2 rounded-lg font-medium transition-colors"
+              style={{ background: 'var(--saffron)', color: 'var(--deep-blue)' }}
               title="Logout"
             >
-              <User className="w-5 h-5" />
+              Logout
             </button>
           )}
         </div>
       </div>
+      {/* Profile modal removed, handled in SideNav */}
     </div>
   );
 };

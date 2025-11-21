@@ -2,6 +2,23 @@ import { body } from 'express-validator';
 
 // User registration validation
 export const validateRegister = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Name is required')
+    .isLength({ max: 100 })
+    .withMessage('Name cannot exceed 100 characters'),
+  body('dob')
+    .notEmpty()
+    .withMessage('Date of birth is required')
+    .isISO8601()
+    .withMessage('Date of birth must be a valid date'),
+  body('contactNo')
+    .trim()
+    .notEmpty()
+    .withMessage('Contact number is required')
+    .isLength({ max: 20 })
+    .withMessage('Contact number cannot exceed 20 characters'),
   body('username')
     .trim()
     .isLength({ min: 3, max: 30 })
@@ -38,9 +55,8 @@ export const validateRegister = [
 export const validateLogin = [
   body('email')
     .trim()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email address'),
+    .notEmpty()
+    .withMessage('Please provide your email or username'),
     
   body('password')
     .notEmpty()
@@ -67,6 +83,8 @@ export const validateChangePassword = [
     
   body('confirmPassword')
     .custom((value, { req }) => {
+      // Debug log for backend console
+      console.log('DEBUG: newPassword =', req.body.newPassword, 'confirmPassword =', value);
       if (value !== req.body.newPassword) {
         throw new Error('Password confirmation does not match new password');
       }
@@ -106,6 +124,15 @@ export const validateResetPassword = [
 
 // Update profile validation
 export const validateUpdateProfile = [
+  body('dob')
+    .optional()
+    .isISO8601()
+    .withMessage('Date of birth must be a valid date'),
+  body('contactNo')
+    .optional()
+    .trim()
+    .isLength({ max: 20 })
+    .withMessage('Contact number cannot exceed 20 characters'),
   body('profile.firstName')
     .optional()
     .trim()

@@ -17,7 +17,7 @@ export const register = catchAsync(async (req, res, next) => {
     return next(validationError(errors.array()));
   }
 
-  const { username, email, password, firstName, lastName } = req.body;
+  const { username, email, password, name, dob, contactNo, firstName, lastName } = req.body;
 
   // Check if user already exists
   const existingUser = await User.findOne({
@@ -34,6 +34,9 @@ export const register = catchAsync(async (req, res, next) => {
     username,
     email,
     password,
+    name,
+    dob,
+    contactNo,
     profile: {
       firstName,
       lastName
@@ -68,13 +71,15 @@ export const login = catchAsync(async (req, res, next) => {
     return next(validationError(errors.array()));
   }
 
+
   const { email, password } = req.body;
-
-  // Find user with password field included
-  const user = await User.findOne({ email }).select('+password +refreshTokens');
-
+  // Support login by email or username
+  let user = await User.findOne({ email }).select('+password +refreshTokens');
+  if (!user) {
+    user = await User.findOne({ username: email }).select('+password +refreshTokens');
+  }
   if (!user || !(await user.comparePassword(password))) {
-    return next(new AppError('Invalid email or password', 401));
+    return next(new AppError('Invalid email or username or password', 401));
   }
 
   if (!user.isActive) {
@@ -206,20 +211,37 @@ export const updateProfile = catchAsync(async (req, res, next) => {
     return next(validationError(errors.array()));
   }
 
+  // Debug: log incoming request body
+  console.log('updateProfile request body:', req.body);
+
+  // Only allow specific fields to be updated
   const allowedFields = [
     'profile.firstName',
     'profile.lastName',
     'profile.preferences.defaultLanguage',
     'profile.preferences.theme',
-    'profile.preferences.booksPerPage'
+    'profile.preferences.booksPerPage',
+    'dob',
+    'contactNo'
   ];
 
   const updates = {};
+    // Always allow dob/contactNo if present
+    if (typeof req.body.dob !== 'undefined') {
+      updates.dob = req.body.dob;
+    }
+    if (typeof req.body.contactNo !== 'undefined') {
+      updates.contactNo = req.body.contactNo;
+    }
+  // Also allow other allowed fields
   Object.keys(req.body).forEach(key => {
-    if (allowedFields.includes(key)) {
+    if (allowedFields.includes(key) && typeof updates[key] === 'undefined') {
       updates[key] = req.body[key];
     }
   });
+
+  // Debug: log what will be updated
+  console.log('updateProfile updates object:', updates);
 
   const user = await User.findByIdAndUpdate(
     req.user.id,

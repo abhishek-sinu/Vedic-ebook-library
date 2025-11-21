@@ -13,6 +13,7 @@ interface User {
     preferences: {
       defaultLanguage: string;
       theme: string;
+      fontSize?: string;
     };
   };
   isActive: boolean;

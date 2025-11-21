@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Serif_Devanagari, Lora } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "../contexts/AuthContext";
 
 const notoDevanagari = Noto_Serif_Devanagari({
   variable: "--font-devanagari",
@@ -40,7 +41,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${notoDevanagari.variable} ${lora.variable}`}>
       <body className="antialiased">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

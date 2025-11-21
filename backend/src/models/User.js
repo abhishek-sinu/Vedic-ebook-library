@@ -13,6 +13,22 @@ const userSchema = new mongoose.Schema({
     match: [/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores']
   },
   
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true,
+    maxlength: [100, 'Name cannot exceed 100 characters']
+  },
+  dob: {
+    type: Date,
+    required: [true, 'Date of birth is required']
+  },
+  contactNo: {
+    type: String,
+    required: [true, 'Contact number is required'],
+    trim: true,
+    maxlength: [20, 'Contact number cannot exceed 20 characters']
+  },
   email: {
     type: String,
     required: [true, 'Email is required'],
@@ -60,8 +76,13 @@ const userSchema = new mongoose.Schema({
       },
       theme: {
         type: String,
-        enum: ['light', 'dark', 'auto'],
+        enum: ['light', 'dark', 'auto', 'premium1', 'premium2'],
         default: 'light'
+      },
+      fontSize: {
+        type: String,
+        enum: ['small', 'medium', 'large'],
+        default: 'medium'
       },
       booksPerPage: {
         type: Number,
