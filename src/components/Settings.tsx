@@ -48,7 +48,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
       <div className="bg-gray-900 rounded-xl p-8 w-full max-w-md border border-yellow-400 relative">
         <button onClick={onClose} className="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200">✕</button>
         <h2 className="text-2xl font-bold text-yellow-400 mb-4 text-center">Settings</h2>

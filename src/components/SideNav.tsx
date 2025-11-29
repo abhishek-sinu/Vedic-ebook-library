@@ -1,6 +1,7 @@
 'use client';
 
-import { Settings, User, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
+import { User, PanelLeftOpen, PanelLeftClose, Settings as SettingsIcon } from 'lucide-react';
+import Settings from './Settings';
 import { useState } from 'react';
 import UserProfile from './UserProfile';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,6 +31,7 @@ const SideNav: React.FC<SideNavProps> = ({
 }) => {
   const { user: authUser } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const router = useRouter();
 
   // Change password handler
@@ -87,10 +89,15 @@ const SideNav: React.FC<SideNavProps> = ({
         <button
           className="p-2 text-gray-400 hover:text-white"
           title="Settings"
-          onClick={() => router.push('/settings')}
+          onClick={() => setShowSettings(true)}
         >
-          <Settings className="w-5 h-5" />
+          <SettingsIcon className="w-5 h-5" />
         </button>
+                {showSettings && (
+                  <Settings
+                    onClose={() => setShowSettings(false)}
+                  />
+                )}
         <button
           className="p-2 text-gray-400 hover:text-white"
           title="Profile"
