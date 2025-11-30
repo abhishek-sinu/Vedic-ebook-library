@@ -7,9 +7,10 @@ import { uploadBook } from '../lib/bookStorage';
 interface FileUploadProps {
   onUploadSuccess?: () => void;
   onUploadComplete?: () => void;
+  onClose?: () => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComplete }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComplete, onClose }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string>('');
@@ -136,8 +137,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
 
   if (showMetadataForm) {
     return (
-      <div className="w-full max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-8 border-l-4 border-orange-400">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+        <div className="bg-white rounded-lg shadow-lg p-8 border-l-4 border-orange-400 w-full max-w-2xl relative">
+          {onClose && (
+            <button onClick={onClose} className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-gray-700">&times;</button>
+          )}
           <div className="flex items-center space-x-3 mb-6">
             <FileCheck className="w-8 h-8" style={{color: 'var(--saffron)'}} />
             <div>
@@ -265,75 +269,75 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div
-        className={`
-          upload-area rounded-lg p-12 text-center cursor-pointer transition-all duration-300
-          ${isDragOver ? 'border-solid scale-105' : 'border-dashed'}
-          ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
-        `}
-        onDrop={handleDrop}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragOver(true);
-        }}
-        onDragLeave={() => setIsDragOver(false)}
-        onClick={handleClick}
-      >
-        <input
-          type="file"
-          accept=".docx"
-          onChange={handleFileInputChange}
-          ref={fileInputRef}
-          className="hidden"
-          disabled={isProcessing}
-        />
-        
-        <div className="flex flex-col items-center space-y-4">
-          {isProcessing ? (
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-200 border-t-orange-500"></div>
-          ) : (
-            <FileText className="w-16 h-16" style={{color: 'var(--saffron)'}} />
-          )}
-          
-          <div className="space-y-2">
-            <h3 className="text-xl font-semibold" style={{color: 'var(--deep-blue)'}}>
-              {isProcessing ? 'प्रसंस्करण / Processing...' : 'पुस्तक अपलोड करें / Upload Book'}
-            </h3>
-            <p className="text-sm opacity-75">
-              {isProcessing 
-                ? 'आपकी पुस्तक को पुस्तकालय के लिए तैयार किया जा रहा है...'
-                : 'Word document (.docx) को यहाँ खींचें या क्लिक करें'
-              }
-            </p>
-          </div>
-          
-          {!isProcessing && (
-            <div className="flex items-center space-x-2 px-6 py-3 rounded-lg border border-orange-300 hover:border-orange-400 transition-colors">
-              <Upload className="w-4 h-4" />
-              <span className="text-sm font-medium">Choose File</span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-8 relative">
+        {onClose && (
+          <button onClick={onClose} className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-gray-700">&times;</button>
+        )}
+        <div
+          className={`
+            upload-area rounded-lg p-12 text-center cursor-pointer transition-all duration-300
+            ${isDragOver ? 'border-solid scale-105' : 'border-dashed'}
+            ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
+          `}
+          onDrop={handleDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onClick={handleClick}
+        >
+          <input
+            type="file"
+            accept=".docx"
+            onChange={handleFileInputChange}
+            ref={fileInputRef}
+            className="hidden"
+            disabled={isProcessing}
+          />
+          <div className="flex flex-col items-center space-y-4">
+            {isProcessing ? (
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-200 border-t-orange-500"></div>
+            ) : (
+              <FileText className="w-16 h-16" style={{color: 'var(--saffron)'}} />
+            )}
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold" style={{color: 'var(--deep-blue)'}}>
+                {isProcessing ? 'प्रसंस्करण / Processing...' : 'पुस्तक अपलोड करें / Upload Book'}
+              </h3>
+              <p className="text-sm opacity-75">
+                {isProcessing 
+                  ? 'आपकी पुस्तक को पुस्तकालय के लिए तैयार किया जा रहा है...'
+                  : 'Word document (.docx) को यहाँ खींचें या क्लिक करें'
+                }
+              </p>
             </div>
-          )}
+            {!isProcessing && (
+              <div className="flex items-center space-x-2 px-6 py-3 rounded-lg border border-orange-300 hover:border-orange-400 transition-colors">
+                <Upload className="w-4 h-4" />
+                <span className="text-sm font-medium">Choose File</span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-
-      {error && (
-        <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200 flex items-start space-x-3">
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-          <p className="text-red-700 text-sm">{error}</p>
+        {error && (
+          <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200 flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+        <div className="mt-8 p-6 rounded-lg" style={{background: 'var(--cream)'}}>
+          <h4 className="font-semibold mb-3" style={{color: 'var(--deep-blue)'}}>
+            समर्थित प्रारूप / Supported Formats:
+          </h4>
+          <ul className="space-y-2 text-sm opacity-80">
+            <li>• Microsoft Word (.docx) documents</li>
+            <li>• Vedic scriptures and spiritual texts</li>
+            <li>• Sanskrit texts with or without translations</li>
+            <li>• Religious and philosophical literature</li>
+          </ul>
         </div>
-      )}
-
-      <div className="mt-8 p-6 rounded-lg" style={{background: 'var(--cream)'}}>
-        <h4 className="font-semibold mb-3" style={{color: 'var(--deep-blue)'}}>
-          समर्थित प्रारूप / Supported Formats:
-        </h4>
-        <ul className="space-y-2 text-sm opacity-80">
-          <li>• Microsoft Word (.docx) documents</li>
-          <li>• Vedic scriptures and spiritual texts</li>
-          <li>• Sanskrit texts with or without translations</li>
-          <li>• Religious and philosophical literature</li>
-        </ul>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import Login from '../components/Login';
 import EBookReader from '../components/EBookReader';
-import FileUpload from '../components/FileUpload';
+// import FileUpload from '../components/FileUpload';
 import BookDebugInfo from '../components/BookDebugInfo';
 import { Book } from '../lib/bookStorage';
 
@@ -50,7 +50,7 @@ const AppContent = () => {
       <main>
         {currentView === 'reading' && (
           <EBookReader 
-            bookId={selectedBook?.id || ''} 
+            bookId={selectedBook?._id || ''} 
             title={selectedBook?.title}
             user={user}
             onLogout={handleLogout}
@@ -59,19 +59,7 @@ const AppContent = () => {
           />
         )}
         
-        {currentView === 'upload' && user?.role === 'admin' && (
-          <div className="max-w-4xl mx-auto px-4 py-8">
-            <div className="mb-6">
-              <button
-                onClick={() => setCurrentView('reading')}
-                className="flex items-center space-x-2 px-4 py-2 bg-amber-800 text-amber-100 rounded-lg hover:bg-amber-900 transition-colors"
-              >
-                <span>← Back to Reading</span>
-              </button>
-            </div>
-            <FileUpload onUploadComplete={() => setCurrentView('reading')} />
-          </div>
-        )}
+        {/* Upload modal is now handled in Header, not here */}
         
         {currentView === 'debug' && user?.role === 'admin' && (
           <div className="max-w-6xl mx-auto px-4 py-8">

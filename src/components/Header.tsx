@@ -3,6 +3,7 @@
 import { BookOpen, Upload, List as ListIcon } from 'lucide-react';
 import React, { useState } from 'react';
 import BookListModal from './BookListModal';
+import FileUpload from './FileUpload';
 import { fetchBooks } from '../lib/bookStorage';
 
 interface HeaderProps {
@@ -15,6 +16,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange }) => {
   const [showBooksModal, setShowBooksModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [books, setBooks] = useState<any[]>([]);
   const [loadingBooks, setLoadingBooks] = useState(false);
 
@@ -46,7 +48,7 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange 
             {user?.role === 'admin' && (
               <>
                 <button
-                  onClick={() => onViewChange?.('upload')}
+                  onClick={() => setShowUploadModal(true)}
                   className="p-2 hover:bg-gray-800 rounded transition-colors"
                   title="Upload Books"
                 >
@@ -81,6 +83,12 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange 
         onClose={() => setShowBooksModal(false)}
         books={books}
       />
+      {showUploadModal && (
+        <FileUpload
+          onUploadComplete={() => setShowUploadModal(false)}
+          onClose={() => setShowUploadModal(false)}
+        />
+      )}
       {showBooksModal && loadingBooks && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
           <div className="bg-white rounded-lg shadow-lg px-8 py-6 flex flex-col items-center">
