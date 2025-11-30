@@ -4,7 +4,6 @@ import path from 'path';
 import fs from 'fs';
 import Book from '../models/Book.js';
 import ReadingProgress from '../models/ReadingProgress.js';
-import { getGridfsBucket } from '../config/database.js';
 import { AppError, catchAsync, validationError } from '../middleware/errorHandler.js';
 import { extractTextContent, getPaginatedContent, extractHtmlContent } from '../utils/textExtractor.js';
 import optimizedCache from '../../utils/optimizedContentCache.js';
@@ -32,28 +31,14 @@ export const uploadBook = catchAsync(async (req, res, next) => {
   } = req.body;
 
   try {
-    // Upload file to GridFS manually
-    const gridfsBucket = getGridfsBucket();
-    
+    // Save file to uploads/books directory
     const filename = `${Date.now()}_${req.file.originalname}`;
-    const uploadStream = gridfsBucket.openUploadStream(filename, {
-      metadata: {
-        originalName: req.file.originalname,
-        uploadedBy: req.user.id,
-        uploadDate: new Date()
-      }
-    });
-
-    // Upload the file buffer
-    uploadStream.end(req.file.buffer);
-
-    // Wait for upload to complete
-    const gridfsId = await new Promise((resolve, reject) => {
-      uploadStream.on('finish', () => {
-        resolve(uploadStream.id);
-      });
-      uploadStream.on('error', reject);
-    });
+    const uploadDir = path.join(process.cwd(), 'uploads', 'books');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const filePath = path.join(uploadDir, filename);
+    fs.writeFileSync(filePath, req.file.buffer);
 
     // Create book document
     const book = await Book.create({
@@ -64,7 +49,6 @@ export const uploadBook = catchAsync(async (req, res, next) => {
       category,
       tags: Array.isArray(tags) ? tags : tags.split(',').map(tag => tag.trim()),
       fileInfo: {
-        gridfsId,
         originalName: req.file.originalname,
         filename,
         mimeType: req.file.mimetype,
@@ -138,7 +122,7 @@ export const getAllBooks = catchAsync(async (req, res, next) => {
     .sort(sort)
     .skip(skip)
     .limit(parseInt(limit))
-    .select('-fileInfo.gridfsId'); // Don't expose internal file IDs
+    // .select('-fileInfo.gridfsId');
 
   const total = await Book.countDocuments(filter);
 
@@ -164,7 +148,7 @@ export const getBookById = catchAsync(async (req, res, next) => {
     isActive: true 
   })
     .populate('uploadInfo.uploadedBy', 'username profile.firstName profile.lastName')
-    .select('-fileInfo.gridfsId');
+    // .select('-fileInfo.gridfsId');
 
   if (!book) {
     return next(new AppError('Book not found', 404));
@@ -415,7 +399,7 @@ export const deleteBook = catchAsync(async (req, res, next) => {
   await optimizedCache.clearBookCache(req.params.id);
   console.log(`🗑️ Cache cleared for deleted book: ${book.title}`);
 
-  // Note: In a real application, you might want to also delete the GridFS file
+  // Note: GridFS file deletion is no longer needed
   // and clean up associated reading progress records
 
   res.json({
@@ -509,7 +493,7 @@ export const getBooksByLanguage = catchAsync(async (req, res, next) => {
     .sort(sort)
     .skip(skip)
     .limit(parseInt(limit))
-    .select('-fileInfo.gridfsId');
+    // .select('-fileInfo.gridfsId');
 
   const total = await Book.countDocuments(filter);
 
@@ -553,7 +537,7 @@ export const getBooksByCategory = catchAsync(async (req, res, next) => {
     .sort(sort)
     .skip(skip)
     .limit(parseInt(limit))
-    .select('-fileInfo.gridfsId');
+    // .select('-fileInfo.gridfsId');
 
   const total = await Book.countDocuments(filter);
 
@@ -600,7 +584,7 @@ export const getBooksByAuthor = catchAsync(async (req, res, next) => {
     .sort(sort)
     .skip(skip)
     .limit(parseInt(limit))
-    .select('-fileInfo.gridfsId');
+    // .select('-fileInfo.gridfsId');
 
   const total = await Book.countDocuments(filter);
 

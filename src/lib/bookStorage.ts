@@ -1,3 +1,4 @@
+import { BACKEND_API_URL } from './config';
 export interface Book {
   _id: string;
   title: string;
@@ -54,7 +55,7 @@ export const fetchBooks = async (language?: string, page = 1, limit = 20): Promi
       params.append('language', language);
     }
     
-    const response = await fetch(`http://localhost:5000/api/books?${params}`);
+    const response = await fetch(`${BACKEND_API_URL}/api/books?${params}`);
     const data = await response.json();
     
     if (data.success) {
@@ -72,7 +73,7 @@ export const fetchBooks = async (language?: string, page = 1, limit = 20): Promi
 export const getBookDetails = async (bookId: string): Promise<Book | null> => {
   try {
     console.log('Fetching book details for:', bookId);
-    const response = await fetch(`http://localhost:5000/api/books/${bookId}`);
+    const response = await fetch(`${BACKEND_API_URL}/api/books/${bookId}`);
     
     console.log('Book details response status:', response.status);
     
@@ -112,7 +113,7 @@ export const fetchBookContent = async (bookId: string, page: number = 1, format:
       format: format // 'html' for formatted content, 'text' for plain text
     });
     
-    const url = `http://localhost:5000/api/books/${bookId}/text?${params}`;
+    const url = `${BACKEND_API_URL}/api/books/${bookId}/text?${params}`;
     console.log('Fetching book text from:', url);
     
     const headers: Record<string, string> = {};
@@ -183,7 +184,7 @@ export const uploadBook = async (file: File, metadata: { title: string; author: 
       formData.append('tags', metadata.tags.join(','));
     }
 
-    const response = await fetch('http://localhost:5000/api/books', {
+    const response = await fetch(`${BACKEND_API_URL}/api/books`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -213,7 +214,7 @@ export const deleteBookFile = async (bookId: string): Promise<boolean> => {
       return false;
     }
     
-    const response = await fetch(`http://localhost:5000/api/books/delete/${bookId}`, {
+    const response = await fetch(`${BACKEND_API_URL}/api/books/delete/${bookId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`

@@ -54,11 +54,6 @@ const bookSchema = new mongoose.Schema({
   }],
   
   fileInfo: {
-    gridfsId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      ref: 'fs.files'
-    },
     originalName: {
       type: String,
       required: true
