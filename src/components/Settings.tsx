@@ -37,6 +37,11 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
       const updated = await res.json();
       if (res.ok && updated && updated.data && updated.data.user) {
         login(updated.data.user, token || "");
+        // Apply theme and font size immediately
+        if (typeof window !== 'undefined') {
+          document.body.setAttribute('data-theme', theme);
+          document.body.style.fontSize = fontSize === 'small' ? '14px' : fontSize === 'large' ? '18px' : '16px';
+        }
         setSuccess('Preferences saved!');
       } else {
         setError(updated.message || 'Failed to save preferences');

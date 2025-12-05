@@ -39,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange 
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <BookOpen className="w-6 h-6 text-yellow-400" />
-            <h1 className="text-xl font-bold text-yellow-400">GAURAMRITA</h1>
+              <h1 className="text-xl font-bold text-yellow-400">Vaisnava-Manjusha</h1>
           </div>
           <div className="flex items-center space-x-4">
             {user?.name && (

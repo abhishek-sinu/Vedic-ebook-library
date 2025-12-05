@@ -140,7 +140,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             <BookOpen className="w-8 h-8 text-gray-900" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-yellow-400 tracking-wide">GAURAMRITA</h1>
+              <h1 className="text-3xl font-bold text-yellow-400 tracking-wide">Vaisnava-Manjusha</h1>
             <p className="text-yellow-400/80 text-sm font-medium">Vedic E-Books Library</p>
             <p className="text-gray-400 text-xs">Gaudiya Vaisnava Literature</p>
           </div>

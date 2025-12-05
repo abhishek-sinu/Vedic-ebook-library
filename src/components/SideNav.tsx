@@ -52,32 +52,42 @@ const SideNav: React.FC<SideNavProps> = ({
   };
 
   return (
-    <div className="w-16 bg-gray-900 flex flex-col items-center py-4 space-y-4">
+    <div className="w-16 flex flex-col items-center py-4 space-y-4" style={{ background: 'var(--card)', color: 'var(--text)' }}>
       {/* Panel Toggle Button */}
       <button 
         onClick={onCategoryPanelToggle}
-        className="p-2 text-gray-400 hover:text-white transition-colors"
+        className="p-2 transition-colors"
+        style={{ color: 'var(--text)' }}
         title={isCategoryPanelVisible ? 'Hide Categories Panel' : 'Show Categories Panel'}
       >
         {isCategoryPanelVisible ? (
-          <PanelLeftClose className="w-5 h-5" />
+          <PanelLeftClose className="w-5 h-5" style={{ color: 'var(--text)' }} />
         ) : (
-          <PanelLeftOpen className="w-5 h-5" />
+          <PanelLeftOpen className="w-5 h-5" style={{ color: 'var(--text)' }} />
         )}
       </button>
 
       {/* Separator */}
-      <div className="w-8 border-t border-gray-700"></div>
+      <div className="w-8 border-t" style={{ borderColor: 'var(--border)' }}></div>
       
       {Object.entries(languageConfig).map(([langKey, config]) => (
         <button
           key={langKey}
           onClick={() => onLanguageToggle(langKey)}
-          className={`w-10 h-10 rounded flex items-center justify-center text-sm font-bold transition-colors ${
+          className="w-10 h-10 rounded flex items-center justify-center text-sm font-bold transition-colors"
+          style={
             selectedLanguage === langKey
-              ? 'bg-orange-500 text-white'
-              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-          }`}
+              ? {
+                  background: 'var(--accent)',
+                  color: 'var(--text)',
+                  border: '2px solid var(--text)'
+                }
+              : {
+                  background: 'var(--card)',
+                  color: 'var(--text)',
+                  opacity: 0.7
+                }
+          }
           title={config.label}
         >
           {config.icon}
@@ -85,19 +95,20 @@ const SideNav: React.FC<SideNavProps> = ({
       ))}
       
       {/* Navigation Icons */}
-      <div className="flex flex-col space-y-4 pt-6 border-t border-gray-700">
+      <div className="flex flex-col space-y-4 pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
         <button
-          className="p-2 text-gray-400 hover:text-white"
+          className="p-2"
+          style={{ color: 'var(--text)' }}
           title="Settings"
           onClick={() => setShowSettings(true)}
         >
-          <SettingsIcon className="w-5 h-5" />
+          <SettingsIcon className="w-5 h-5" style={{ color: 'var(--text)' }} />
         </button>
-                {showSettings && (
-                  <Settings
-                    onClose={() => setShowSettings(false)}
-                  />
-                )}
+        {showSettings && (
+          <Settings
+            onClose={() => setShowSettings(false)}
+          />
+        )}
         <button
           className="p-2 text-gray-400 hover:text-white"
           title="Profile"

@@ -214,7 +214,7 @@ export const deleteBookFile = async (bookId: string): Promise<boolean> => {
       return false;
     }
     
-    const response = await fetch(`${BACKEND_API_URL}/api/books/delete/${bookId}`, {
+    const response = await fetch(`${BACKEND_API_URL}/api/books/${bookId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`

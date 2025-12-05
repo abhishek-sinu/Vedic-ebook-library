@@ -1303,19 +1303,20 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 bg-white flex flex-col">
+        <div className="flex-1 flex flex-col" style={{ background: 'var(--bg)' }}>
           {/* Search Bar */}
           {bookId && content && (
-            <div className="p-4 border-b border-amber-300" style={{ backgroundColor: '#f4e6d1' }}>
+            <div className="p-4 border-b border-amber-300" style={{ background: 'var(--search-bar-bg)' }}>
               <div className="relative flex items-center space-x-2">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-amber-700" size={20} />
-                  <input
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2" size={20} style={{ color: 'var(--icon)' }} />
+                    <input
                     type="text"
                     value={searchQuery}
                     onChange={handleSearchChange}
                     placeholder={`Search in "${title}"...`}
-                    className="w-full pl-10 pr-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white"
+                    className="w-full pl-10 pr-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent search-input"
+                    style={{ background: 'var(--search-bar-bg)', color: 'var(--book-content-text)' }}
                   />
                 </div>
                 
@@ -1430,8 +1431,8 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                     <div className="border-b border-gray-200 p-4 flex-shrink-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <BookOpen className="w-5 h-5 text-amber-600" />
-                          <span className="font-bold text-gray-800 text-lg">Reading: {title}</span>
+                          <BookOpen className="w-5 h-5" style={{ color: 'var(--icon)' }} />
+                          <span className="font-bold text-lg" style={{ color: 'var(--book-content-text-light)' }}>Reading: {title}</span>
                           <span className="text-sm text-amber-600 bg-amber-100 px-2 py-1 rounded">
                             Result {currentSearchIndex + 1} of {searchResults.length}
                           </span>
@@ -1446,7 +1447,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                             <ZoomOut className="w-4 h-4" />
                           </button>
                           
-                          <span className="text-sm px-2 text-gray-600 font-semibold">{fontSize}px</span>
+                          <span className="text-sm px-2 font-semibold" style={{ color: 'var(--book-content-text-light)' }}>{fontSize}px</span>
                           
                           <button
                             onClick={increaseFontSize}
@@ -1505,7 +1506,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                     </div>
 
                     {/* Book Content */}
-                    <div ref={contentRef} className="flex-1 overflow-y-auto p-6" style={{ backgroundColor: '#da9d5b' }}>
+                    <div ref={contentRef} className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--book-content-bg)', color: 'var(--book-content-text)' }}>
                       <div 
                         className="prose max-w-none text-gray-800 leading-relaxed"
                         style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight }}
@@ -1525,8 +1526,8 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                   <div className="border-b border-gray-200 p-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <BookOpen className="w-5 h-5 text-amber-600" />
-                    <span className="font-bold text-gray-800 text-lg">Reading: {title}</span>
+                    <BookOpen className="w-5 h-5" style={{ color: 'var(--icon)' }} />
+                    <span className="font-bold text-lg" style={{ color: 'var(--book-content-text-light)' }}>Reading: {title}</span>
                   </div>
                   
                   <div className="flex items-center space-x-2">
@@ -1538,7 +1539,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                       <ZoomOut className="w-4 h-4" />
                     </button>
                     
-                    <span className="text-sm px-2 text-gray-600 font-semibold">{fontSize}px</span>
+                    <span className="text-sm px-2 font-semibold" style={{ color: 'var(--book-content-text-light)' }}>{fontSize}px</span>
                     
                     <button
                       onClick={increaseFontSize}
@@ -1590,7 +1591,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                           max={totalPages}
                           className="w-12 text-sm text-center border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                         />
-                        <span className="text-sm text-gray-600">/ {totalPages}</span>
+                        <span className="text-sm" style={{ color: 'var(--book-content-text-light)' }}>/ {totalPages}</span>
                       </div>
                       
                       <button
@@ -1611,10 +1612,10 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
               </div>
 
               {/* Book Content */}
-              <div ref={contentRef} className="flex-1 overflow-y-auto p-6" style={{ backgroundColor: '#eccaa7ff' }}>
+              <div ref={contentRef} className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--book-content-bg)', color: 'var(--book-content-text)' }}>
                 <div 
-                  className="prose max-w-none text-gray-800 leading-relaxed"
-                  style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight }}
+                  className="prose max-w-none leading-relaxed"
+                  style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight, color: 'var(--book-content-text)' }}
                   dangerouslySetInnerHTML={{ 
                     __html: highlightedContent
                   }}

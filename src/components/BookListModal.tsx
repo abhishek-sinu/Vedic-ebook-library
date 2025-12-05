@@ -102,24 +102,28 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 relative">
+      <div
+        className="rounded-lg shadow-lg w-full max-w-6xl p-8 relative"
+        style={{ background: 'var(--modal-bg)', color: 'var(--modal-text)' }}
+      >
         <button
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+          className="absolute top-4 right-4"
+          style={{ color: 'var(--modal-text)' }}
           onClick={onClose}
         >
           &times;
         </button>
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">All Books</h2>
+        <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--modal-text)' }}>All Books</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
-            <thead className="bg-gradient-to-r from-yellow-100 to-yellow-200 border-b-2 border-gray-300">
+          <table className="modal-table min-w-[1100px] border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
+            <thead>
               <tr>
-                <th className="px-4 py-3 text-left text-gray-800 font-semibold border-r border-gray-200">Title</th>
-                <th className="px-4 py-3 text-left text-gray-800 font-semibold border-r border-gray-200">Author</th>
-                <th className="px-4 py-3 text-left text-gray-800 font-semibold border-r border-gray-200">Language</th>
-                <th className="px-4 py-3 text-left text-gray-800 font-semibold border-r border-gray-200">Category</th>
-                <th className="px-4 py-3 text-left text-gray-800 font-semibold border-r border-gray-200">Description</th>
-                <th className="px-4 py-3 text-left text-gray-800 font-semibold">Action</th>
+                <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Title</th>
+                <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Author</th>
+                <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Language</th>
+                <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Category</th>
+                <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Description</th>
+                <th className="px-4 py-3 text-left font-semibold">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -127,8 +131,7 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
                 <tr
                   key={book._id}
                   className={
-                    `transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-yellow-50` +
-                    ' border-b border-gray-200 last:border-b-0'
+                    `transition-colors border-b border-gray-200 last:border-b-0`
                   }
                 >
                   {editIdx === book._id ? (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { Upload, FileText, AlertCircle, User, Tag, BookOpen, FileCheck, FolderOpen } from 'lucide-react';
 import { uploadBook } from '../lib/bookStorage';
 
@@ -11,6 +12,8 @@ interface FileUploadProps {
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComplete, onClose }) => {
+  const { user } = useAuth();
+  const theme = user?.profile?.preferences?.theme || 'light';
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string>('');
@@ -137,15 +140,25 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
 
   if (showMetadataForm) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-        <div className="bg-white rounded-lg shadow-lg p-8 border-l-4 border-orange-400 w-full max-w-2xl relative">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+          style={{ background: theme === 'dark' ? 'rgba(20,20,20,0.85)' : 'rgba(0,0,0,0.12)' }}
+        >
+          <div
+            className="rounded-lg shadow-lg p-8 border-l-4 w-full max-w-2xl relative"
+            style={{
+              background: 'var(--card)',
+              borderColor: 'var(--accent)',
+              color: 'var(--text)'
+            }}
+          >
           {onClose && (
             <button onClick={onClose} className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-gray-700">&times;</button>
           )}
           <div className="flex items-center space-x-3 mb-6">
-            <FileCheck className="w-8 h-8" style={{color: 'var(--saffron)'}} />
+            <FileCheck className="w-8 h-8" style={{color: 'var(--icon)'}} />
             <div>
-              <h3 className="text-xl font-bold" style={{color: 'var(--deep-blue)'}}>
+              <h3 className="text-xl font-bold" style={{color: 'var(--text)'}}>
                 Document Processed Successfully!
               </h3>
               <p className="text-sm opacity-75">Add book details to your library</p>
@@ -154,44 +167,59 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
 
           <form onSubmit={handleMetadataSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
-                <BookOpen className="inline w-4 h-4 mr-2" />
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
+                <BookOpen className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
                 Book Title *
               </label>
               <input
                 type="text"
                 value={metadata.title}
                 onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--input)',
+                  color: 'var(--text)',
+                  borderColor: 'var(--border)'
+                }}
                 placeholder="Enter the book title"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
-                <User className="inline w-4 h-4 mr-2" />
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
+                <User className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
                 Author *
               </label>
               <input
                 type="text"
                 value={metadata.author}
                 onChange={(e) => setMetadata(prev => ({ ...prev, author: e.target.value }))}
-                className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--input)',
+                  color: 'var(--text)',
+                  borderColor: 'var(--border)'
+                }}
                 placeholder="e.g., Vyasa, Valmiki, Srila Prabhupada"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
-                <FolderOpen className="inline w-4 h-4 mr-2" />
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
+                <FolderOpen className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
                 Category *
               </label>
               <select
                 value={metadata.category}
                 onChange={(e) => setMetadata(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--input)',
+                  color: 'var(--text)',
+                  borderColor: 'var(--border)'
+                }}
                 required
               >
                 <option value="">Select a category...</option>
@@ -204,39 +232,54 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                 Description (Optional)
               </label>
               <textarea
                 value={metadata.description}
                 onChange={(e) => setMetadata(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-20"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 h-20"
+                style={{
+                  background: 'var(--input)',
+                  color: 'var(--text)',
+                  borderColor: 'var(--border)'
+                }}
                 placeholder="Brief description of the text..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
-                <Tag className="inline w-4 h-4 mr-2" />
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
+                <Tag className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
                 Categories/Tags (Optional)
               </label>
               <input
                 type="text"
                 value={metadata.tags}
                 onChange={(e) => setMetadata(prev => ({ ...prev, tags: e.target.value }))}
-                className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--input)',
+                  color: 'var(--text)',
+                  borderColor: 'var(--border)'
+                }}
                 placeholder="e.g., Vedas, Puranas, Philosophy, Yoga (separate with commas)"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{color: 'var(--deep-blue)'}}>
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                 Language *
               </label>
               <select
                 value={metadata.language}
                 onChange={(e) => setMetadata(prev => ({ ...prev, language: e.target.value }))}
-                className="w-full px-4 py-3 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--input)',
+                  color: 'var(--text)',
+                  borderColor: 'var(--border)'
+                }}
                 required
               >
                 <option value="">Select a language...</option>
@@ -249,15 +292,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
             <div className="flex space-x-4">
               <button
                 type="submit"
-                className="flex-1 py-3 px-6 rounded-lg text-white font-medium transition-colors"
-                style={{background: 'var(--saffron)'}}
+                className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors"
+                style={{background: 'var(--accent)', color: 'var(--text)'}}
               >
                 Save to Library & Start Reading
               </button>
               <button
                 type="button"
                 onClick={() => setShowMetadataForm(false)}
-                className="px-6 py-3 border border-orange-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                className="px-6 py-3 border rounded-lg transition-colors"
+                style={{background: 'var(--input)', color: 'var(--text)', borderColor: 'var(--border)'}}
               >
                 Cancel
               </button>
@@ -269,17 +313,19 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-8 relative">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      style={{ background: theme === 'dark' ? 'rgba(20,20,20,0.85)' : 'rgba(0,0,0,0.12)' }}
+    >
+      <div
+        className="rounded-lg shadow-lg w-full max-w-2xl p-8 relative"
+        style={{ background: 'var(--card)', color: 'var(--text)' }}
+      >
         {onClose && (
           <button onClick={onClose} className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-gray-700">&times;</button>
         )}
         <div
-          className={`
-            upload-area rounded-lg p-12 text-center cursor-pointer transition-all duration-300
-            ${isDragOver ? 'border-solid scale-105' : 'border-dashed'}
-            ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
-          `}
+          className={`upload-area rounded-lg p-12 text-center cursor-pointer transition-all duration-300 ${isDragOver ? 'border-solid scale-105' : 'border-dashed'} ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
           onDrop={handleDrop}
           onDragOver={(e) => {
             e.preventDefault();
@@ -287,6 +333,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
           }}
           onDragLeave={() => setIsDragOver(false)}
           onClick={handleClick}
+          style={{
+            background: 'var(--input)',
+            color: 'var(--text)',
+            borderColor: 'var(--border)'
+          }}
         >
           <input
             type="file"
@@ -300,10 +351,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
             {isProcessing ? (
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-200 border-t-orange-500"></div>
             ) : (
-              <FileText className="w-16 h-16" style={{color: 'var(--saffron)'}} />
+              <FileText className="w-16 h-16" style={{color: 'var(--icon)'}} />
             )}
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold" style={{color: 'var(--deep-blue)'}}>
+              <h3 className="text-xl font-semibold" style={{color: 'var(--text)'}}>
                 {isProcessing ? 'प्रसंस्करण / Processing...' : 'पुस्तक अपलोड करें / Upload Book'}
               </h3>
               <p className="text-sm opacity-75">
@@ -314,21 +365,21 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
               </p>
             </div>
             {!isProcessing && (
-              <div className="flex items-center space-x-2 px-6 py-3 rounded-lg border border-orange-300 hover:border-orange-400 transition-colors">
-                <Upload className="w-4 h-4" />
+              <div className="flex items-center space-x-2 px-6 py-3 rounded-lg border transition-colors" style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
+                <Upload className="w-4 h-4" style={{ color: 'var(--icon)' }} />
                 <span className="text-sm font-medium">Choose File</span>
               </div>
             )}
           </div>
         </div>
         {error && (
-          <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200 flex items-start space-x-3">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div className="mt-4 p-4 rounded-lg" style={{ background: 'var(--error-bg)', borderColor: 'var(--error-border)', color: 'var(--error-text)' }}>
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--icon)' }} />
             <p className="text-red-700 text-sm">{error}</p>
           </div>
         )}
-        <div className="mt-8 p-6 rounded-lg" style={{background: 'var(--cream)'}}>
-          <h4 className="font-semibold mb-3" style={{color: 'var(--deep-blue)'}}>
+        <div className="mt-8 p-6 rounded-lg" style={{background: 'var(--input)', color: 'var(--text)'}}>
+          <h4 className="font-semibold mb-3">
             समर्थित प्रारूप / Supported Formats:
           </h4>
           <ul className="space-y-2 text-sm opacity-80">

@@ -1,7 +1,9 @@
+import React from "react";
 import type { Metadata } from "next";
 import { Noto_Serif_Devanagari, Lora } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
+import { ThemeProvider } from "../contexts/ThemeProvider";
 
 const notoDevanagari = Noto_Serif_Devanagari({
   variable: "--font-devanagari",
@@ -39,11 +41,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${notoDevanagari.variable} ${lora.variable}`}>
+    <html lang="en" className={`${notoDevanagari.variable} ${lora.variable}`}> 
       <body className="antialiased">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

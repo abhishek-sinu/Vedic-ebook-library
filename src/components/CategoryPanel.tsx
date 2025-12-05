@@ -278,58 +278,109 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
       </>
     );
   };
+
   return (
-    <div className="w-80 bg-gray-800 text-white flex flex-col flex-shrink-0">
+    <div
+      className="w-80 flex flex-col flex-shrink-0"
+      style={{
+        background: 'var(--card)',
+        color: 'var(--text)'
+      }}
+    >
       {/* Language Section Header */}
-      <div className="p-4 bg-yellow-400 text-gray-900">
+      <div
+        className="p-4"
+        style={{
+          background: 'var(--accent)',
+          color: 'var(--text)'
+        }}
+      >
         <h3 className="text-lg font-semibold">
           {languageConfig[selectedLanguage as keyof typeof languageConfig].label} ({languageConfig[selectedLanguage as keyof typeof languageConfig].count})
         </h3>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex border-b border-gray-700 bg-gray-700">
-        <button 
+      <div
+        className="flex border-b"
+        style={{
+          background: 'var(--accent)',
+          borderColor: 'var(--border)'
+        }}
+      >
+        <button
           onClick={() => setActiveTab('categories')}
-          className={`flex-1 p-3 text-sm font-medium ${
-            activeTab === 'categories' 
-              ? 'border-b-2 border-yellow-400 text-yellow-400'
-              : 'text-gray-400 hover:text-gray-200'
-          }`}
+          className="flex-1 p-3 text-sm font-medium"
+          style={
+            activeTab === 'categories'
+              ? {
+                  borderBottom: '2px solid var(--text)',
+                  color: 'var(--text)',
+                  background: 'var(--accent)',
+                }
+              : {
+                  color: 'var(--text)',
+                  opacity: 0.7,
+                  background: 'var(--accent)',
+                }
+          }
         >
           CATEGORIES
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('authors')}
-          className={`flex-1 p-3 text-sm font-medium ${
-            activeTab === 'authors' 
-              ? 'border-b-2 border-yellow-400 text-yellow-400'
-              : 'text-gray-400 hover:text-gray-200'
-          }`}
+          className="flex-1 p-3 text-sm font-medium"
+          style={
+            activeTab === 'authors'
+              ? {
+                  borderBottom: '2px solid var(--text)',
+                  color: 'var(--text)',
+                  background: 'var(--accent)',
+                }
+              : {
+                  color: 'var(--text)',
+                  opacity: 0.7,
+                  background: 'var(--accent)',
+                }
+          }
         >
           AUTHORS
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('title')}
-          className={`flex-1 p-3 text-sm font-medium ${
-            activeTab === 'title' 
-              ? 'border-b-2 border-yellow-400 text-yellow-400'
-              : 'text-gray-400 hover:text-gray-200'
-          }`}
+          className="flex-1 p-3 text-sm font-medium"
+          style={
+            activeTab === 'title'
+              ? {
+                  borderBottom: '2px solid var(--text)',
+                  color: 'var(--text)',
+                  background: 'var(--accent)',
+                }
+              : {
+                  color: 'var(--text)',
+                  opacity: 0.7,
+                  background: 'var(--accent)',
+                }
+          }
         >
           TITLE
         </button>
       </div>
 
       {/* Search Bar */}
-      <div className="p-4 bg-gray-700">
+      <div className="p-4" style={{ background: 'var(--card)' }}>
         <div className="relative">
           <input
             type="text"
             placeholder="Search the catalog"
-            className="w-full bg-gray-600 text-white placeholder-gray-400 border border-gray-500 rounded px-4 py-2 pr-10 focus:outline-none focus:border-yellow-400"
+            className="w-full border rounded px-4 py-2 pr-10 focus:outline-none"
+            style={{
+              background: 'var(--bg)',
+              color: 'var(--text)',
+              borderColor: 'var(--border)',
+            }}
           />
-          <Search className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
+          <Search className="absolute right-3 top-2.5 w-4 h-4" style={{ color: 'var(--text)', opacity: 0.5 }} />
         </div>
       </div>
 

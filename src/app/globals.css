@@ -1,31 +1,59 @@
+/* Search input placeholder color for dark/light theme */
+.search-input::placeholder {
+  color: var(--book-content-text-light);
+}
 @import "tailwindcss";
 
 /* Vedic/Sanskrit themed color palette */
+
 :root {
-  --background: #fef7e0; /* Soft cream background */
-  --foreground: #2d1b0e; /* Deep brown text */
-  --saffron: #ff9933; /* Traditional saffron */
-  --gold: #ffd700; /* Sacred gold */
-  --deep-blue: #003366; /* Sacred blue */
-  --earth-brown: #8b4513; /* Earth brown */
-  --soft-orange: #ffcc99; /* Soft orange */
-  --cream: #fff8e7; /* Light cream */
+    --search-bar-bg: #f5ecd6;
+    --book-content-bg: #f8e5c2;
+    --book-content-text: #23263a;
+  --bg: #f8f9fa;
+  --card: #eebd89;
+  --text: #23263a;
+  --accent: #eebd89;
+  --border: #e2e8f0;
+  --modal-bg: #23263a;
+  --modal-text: #eaeae7;
+  --icon: #23263a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1a1410; /* Dark brown background */
-    --foreground: #f5f1e8; /* Cream text */
-    --saffron: #ff9933;
-    --gold: #ffd700;
-    --deep-blue: #4a90e2;
-    --earth-brown: #8b4513;
-  }
+[data-theme='dark'] {
+    --search-bar-bg: #2c3142;
+    --book-content-bg: #dcd8d8;
+    --book-content-text: #0b0b0a;
+    --book-content-text-light: #e3e3de;
+  --bg: #181c2a;
+  --card: #23263a;
+  --text: #eaeae7;
+  --accent: #181c2a;
+  --border: #33374d;
+  --modal-bg: #23263a;
+  --modal-text: #eaeae7;
+  --icon: #fff;
+}
+/* Modal styling for BookListModal */
+.modal-table {
+  background: var(--modal-bg);
+  color: var(--modal-text);
+}
+.modal-table th {
+  background: var(--accent);
+  color: var(--text);
+}
+.modal-table td {
+  color: var(--modal-text);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--text);
+}
+
+
+body {
   font-family: "Times New Roman", Georgia, serif;
   line-height: 1.7;
   font-size: 16px;

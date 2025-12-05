@@ -382,25 +382,49 @@ export const updateBook = catchAsync(async (req, res, next) => {
 
 // Delete book (admin only)
 export const deleteBook = catchAsync(async (req, res, next) => {
+    console.log(`[DELETE] Book request received for ID: ${req.params.id}`);
   const book = await Book.findById(req.params.id);
+    if (book) {
+      console.log(`[DELETE] Book found: ${book.title} (${book._id})`);
+    } else {
+      console.log(`[DELETE] Book not found for ID: ${req.params.id}`);
+    }
   
   if (!book) {
     return next(new AppError('Book not found', 404));
+    console.log(`[DELETE] Marking book as inactive and moving file...`);
   }
 
-  // Soft delete - just mark as inactive
+  // Soft delete - mark as inactive
   book.isActive = false;
   book.uploadInfo.lastModified = new Date();
   book.uploadInfo.modifiedBy = req.user.id;
-  
+
+  // Move file from uploads/books to deleted/books
+  const uploadsDir = path.join(process.cwd(), 'uploads', 'books');
+  const deletedDir = path.join(process.cwd(), 'deleted', 'books');
+  if (!fs.existsSync(deletedDir)) {
+    fs.mkdirSync(deletedDir, { recursive: true });
+  }
+  const srcFile = path.join(uploadsDir, book.fileInfo.filename);
+  const destFile = path.join(deletedDir, book.fileInfo.filename);
+  console.log(`[DELETE] Moving file from ${srcFile} to ${destFile}`);
+  if (fs.existsSync(srcFile)) {
+        console.log(`[DELETE] File moved successfully.`);
+    try {
+      fs.renameSync(srcFile, destFile);
+    } catch (err) {
+      console.error('Error moving deleted book file:', err);
+      console.log(`[DELETE] Source file not found: ${srcFile}`);
+    }
+  }
+
   await book.save();
 
   // Clear cache for deleted book
   await optimizedCache.clearBookCache(req.params.id);
   console.log(`🗑️ Cache cleared for deleted book: ${book.title}`);
-
-  // Note: GridFS file deletion is no longer needed
-  // and clean up associated reading progress records
+    console.log(`[DELETE] Book deletion process completed for ID: ${req.params.id}`);
 
   res.json({
     success: true,
