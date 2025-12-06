@@ -214,9 +214,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
               <select
                 value={metadata.category}
                 onChange={(e) => setMetadata(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 category-dropdown"
                 style={{
-                  background: 'var(--input)',
+                  background: 'var(--card)',
                   color: 'var(--text)',
                   borderColor: 'var(--border)'
                 }}

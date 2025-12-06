@@ -172,6 +172,11 @@ export const validateRefreshToken = [
 
 // Book upload validation
 export const validateBookUpload = [
+  body('tags').customSanitizer(value => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') return [value];
+    return [];
+  }),
   body('title')
     .trim()
     .isLength({ min: 1, max: 200 })

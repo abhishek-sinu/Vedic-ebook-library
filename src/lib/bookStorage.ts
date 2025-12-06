@@ -180,8 +180,8 @@ export const uploadBook = async (file: File, metadata: { title: string; author: 
       formData.append('description', metadata.description);
     }
     
-    if (metadata.tags) {
-      formData.append('tags', metadata.tags.join(','));
+    if (metadata.tags && Array.isArray(metadata.tags)) {
+      metadata.tags.forEach(tag => formData.append('tags', tag));
     }
 
     const response = await fetch(`${BACKEND_API_URL}/api/books`, {

@@ -1,3 +1,20 @@
+/* Category dropdown theming */
+.category-dropdown, .category-dropdown option {
+  background: var(--card) !important;
+  color: var(--text) !important;
+}
+
+[data-theme='dark'] .category-dropdown, [data-theme='dark'] .category-dropdown option {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--color-vb-input-border) !important;
+}
+
+.theme-light .category-dropdown, .theme-light .category-dropdown option {
+  background: var(--color-vb-input, #fff) !important;
+  color: var(--color-vb-normal-text, #000) !important;
+  border-color: var(--color-vb-input-border, #162715) !important;
+}
 /* Selected book background for light theme */
 .theme-light .category-panel-book-btn.selected {
   background: #fff !important;

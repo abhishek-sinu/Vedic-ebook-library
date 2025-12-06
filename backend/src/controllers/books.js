@@ -46,8 +46,8 @@ export const uploadBook = catchAsync(async (req, res, next) => {
       author,
       description,
       language: language.toLowerCase(),
-      category,
-      tags: Array.isArray(tags) ? tags : tags.split(',').map(tag => tag.trim()),
+      category, // Do not lowercase, preserve exact value
+      tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
       fileInfo: {
         originalName: req.file.originalname,
         filename,

@@ -164,22 +164,14 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   const organizeBooks = (booksList: Book[]) => {
     // Filter books by selected language first
     const filteredBooks = booksList.filter(book => {
-      // You can add language detection logic here based on your book metadata
-      // For now, we'll assume all books are English unless specified otherwise
-      // This is where you'd implement language filtering based on book metadata
-      
       if (selectedLanguage === 'english') {
-        // For English, show books that don't have a specific language tag or are tagged as English
         return !book.tags?.some(tag => tag.toLowerCase().includes('telugu') || tag.toLowerCase().includes('sanskrit'));
       } else if (selectedLanguage === 'telugu') {
-        // For Telugu, show books tagged with Telugu
         return book.tags?.some(tag => tag.toLowerCase().includes('telugu'));
       } else if (selectedLanguage === 'sanskrit') {
-        // For Sanskrit, show books tagged with Sanskrit
         return book.tags?.some(tag => tag.toLowerCase().includes('sanskrit'));
       }
-      
-      return true; // Default: show all books
+      return true;
     });
 
     // Define the predefined categories in order
@@ -195,67 +187,22 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
       'Other'
     ];
 
+    // Group books strictly by their category field
     const categoryMap = new Map<string, Book[]>();
-    
-    // Initialize all predefined categories
     predefinedCategories.forEach(category => {
       categoryMap.set(category, []);
     });
 
     filteredBooks.forEach(book => {
-      let category = 'Other'; // Default category
-      
-      // First, always check author for specific categorization
-      const authorCategory = getCategoryByAuthor(book.author);
-      
-      // If we have a specific author-based category, use it
-      if (authorCategory !== 'Acaryas' || !book.tags || book.tags.length === 0) {
-        category = authorCategory;
-      } else {
-        // Only use tag-based categorization for books without specific author categorization
-        // and if the first tag matches our predefined categories
-        const bookCategory = book.tags[0];
-        if (predefinedCategories.includes(bookCategory)) {
-          category = bookCategory;
-        } else if (bookCategory.toLowerCase().includes('scripture') || bookCategory.toLowerCase().includes('sastra')) {
-          // Only categorize as Sastras if author is not specifically categorized
-          category = 'Sastras';
-        } else {
-          category = 'Acaryas'; // Default for spiritual books
-        }
-      }
-
+      const category = predefinedCategories.includes(book.category) ? book.category : 'Other';
       categoryMap.get(category)!.push(book);
     });
-
-    // Helper function for author-based categorization
-    function getCategoryByAuthor(author?: string): string {
-      if (!author) return 'Acaryas';
-      
-      const authorLower = author.toLowerCase();
-      
-      if (authorLower.includes('prabhupada') || authorLower.includes('a.c. bhaktivedanta')) {
-        return 'Srila Prabhupada';
-      } else if (authorLower.includes('vrindavana dasa thakura') || 
-                 authorLower.includes('krishnadasa kaviraja') || 
-                 authorLower.includes('narottama dasa thakura') ||
-                 authorLower.includes('srila rupa gosvami') ||
-                 authorLower.includes('srila sanatana gosvami') ||
-                 authorLower.includes('jiva gosvami') ||
-                 authorLower.includes('raghunatha dasa gosvami')) {
-        return 'Acaryas';
-      } else if (authorLower.includes('thakura') || authorLower.includes('gosvami') || authorLower.includes('goswami')) {
-        return 'Great Vaishnavas';
-      } else {
-        return 'Other authors'; // For unknown authors
-      }
-    }
 
     // Create organized categories, filtering out empty ones
     const organizedCategories = predefinedCategories.map(name => ({
       name,
       books: categoryMap.get(name) || [],
-      expanded: false // Start with categories collapsed
+      expanded: false
     })).filter(category => category.books.length > 0);
 
     setCategories(organizedCategories);
