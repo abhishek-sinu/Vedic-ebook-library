@@ -7,6 +7,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       let theme = 'dark';
       let fontSize = '16px';
       if (typeof window !== 'undefined') {
+        // Always set zoom to 100% on load
+        document.body.style.zoom = '100%';
         const storedUser = localStorage.getItem('vedic_user') || sessionStorage.getItem('vedic_user');
         if (storedUser) {
           try {

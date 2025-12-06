@@ -52,23 +52,30 @@ const SideNav: React.FC<SideNavProps> = ({
   };
 
   return (
-    <div className="w-16 flex flex-col items-center py-4 space-y-4" style={{ background: 'var(--card)', color: 'var(--text)' }}>
+    <div
+      className="w-16 flex flex-col items-center py-4 space-y-4"
+      style={{
+        background: 'var(--card)',
+        color: 'var(--text)',
+        borderRight: '1px solid var(--color-vb-header-bottom, var(--border))',
+      }}
+    >
       {/* Panel Toggle Button */}
-      <button 
+      <button
         onClick={onCategoryPanelToggle}
         className="p-2 transition-colors"
-        style={{ color: 'var(--text)' }}
+        style={{ color: 'var(--color-vb-action-bg, var(--icon))' }}
         title={isCategoryPanelVisible ? 'Hide Categories Panel' : 'Show Categories Panel'}
       >
         {isCategoryPanelVisible ? (
-          <PanelLeftClose className="w-5 h-5" style={{ color: 'var(--text)' }} />
+          <PanelLeftClose className="w-5 h-5" style={{ color: 'var(--color-vb-action-bg, var(--icon))' }} />
         ) : (
-          <PanelLeftOpen className="w-5 h-5" style={{ color: 'var(--text)' }} />
+          <PanelLeftOpen className="w-5 h-5" style={{ color: 'var(--color-vb-action-bg, var(--icon))' }} />
         )}
       </button>
 
       {/* Separator */}
-      <div className="w-8 border-t" style={{ borderColor: 'var(--border)' }}></div>
+      <div className="w-8 border-t" style={{ borderColor: 'var(--color-vb-header-bottom, var(--border))' }}></div>
       
       {Object.entries(languageConfig).map(([langKey, config]) => (
         <button
@@ -77,16 +84,28 @@ const SideNav: React.FC<SideNavProps> = ({
           className="w-10 h-10 rounded flex items-center justify-center text-sm font-bold transition-colors"
           style={
             selectedLanguage === langKey
-              ? {
-                  background: 'var(--accent)',
-                  color: 'var(--text)',
-                  border: '2px solid var(--text)'
-                }
-              : {
-                  background: 'var(--card)',
-                  color: 'var(--text)',
-                  opacity: 0.7
-                }
+              ? (typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
+                  ? {
+                      background: 'var(--button-orange-bg)',
+                      color: 'var(--button-orange-text)',
+                      border: '2px solid var(--button-orange-bg)'
+                    }
+                  : {
+                      background: 'var(--color-vb-header-bottom, var(--accent))',
+                      color: 'var(--color-vb-header-bottom-text, var(--icon))',
+                      border: '2px solid var(--color-vb-header-bottom-text, var(--icon))'
+                    })
+              : (typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
+                  ? {
+                      background: 'var(--card)',
+                      color: '#eaeae7',
+                      opacity: 0.7
+                    }
+                  : {
+                      background: 'var(--card)',
+                      color: 'var(--color-vb-header-bottom-text, var(--icon))',
+                      opacity: 0.7
+                    })
           }
           title={config.label}
         >
@@ -95,14 +114,14 @@ const SideNav: React.FC<SideNavProps> = ({
       ))}
       
       {/* Navigation Icons */}
-      <div className="flex flex-col space-y-4 pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
+      <div className="flex flex-col space-y-4 pt-6 border-t" style={{ borderColor: 'var(--color-vb-header-bottom, var(--border))' }}>
         <button
           className="p-2"
-          style={{ color: 'var(--text)' }}
+          style={{ color: 'var(--color-vb-action-bg, var(--icon))' }}
           title="Settings"
           onClick={() => setShowSettings(true)}
         >
-          <SettingsIcon className="w-5 h-5" style={{ color: 'var(--text)' }} />
+          <SettingsIcon className="w-5 h-5" style={{ color: 'var(--color-vb-action-bg, var(--icon))' }} />
         </button>
         {showSettings && (
           <Settings
@@ -110,11 +129,12 @@ const SideNav: React.FC<SideNavProps> = ({
           />
         )}
         <button
-          className="p-2 text-gray-400 hover:text-white"
+          className="p-2"
+          style={{ color: 'var(--color-vb-action-bg, var(--icon))' }}
           title="Profile"
           onClick={() => setShowProfile(true)}
         >
-          <User className="w-5 h-5" />
+          <User className="w-5 h-5" style={{ color: 'var(--color-vb-action-bg, var(--icon))' }} />
         </button>
         {showProfile && authUser && (
           <UserProfile

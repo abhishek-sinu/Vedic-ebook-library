@@ -54,36 +54,71 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-      <div className="bg-gray-900 rounded-xl p-8 w-full max-w-md border border-yellow-400 relative">
-        <button onClick={onClose} className="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200">✕</button>
-        <h2 className="text-2xl font-bold text-yellow-400 mb-4 text-center">Settings</h2>
-        <div className="mb-4">
-        <label className="block font-semibold mb-1 text-gray-100">Theme</label>
-        <select
-          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 w-full text-gray-100 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          value={theme}
-          onChange={e => setTheme(e.target.value)}
-        >
-          <option value="light">Light (Default)</option>
-          <option value="dark">Dark</option>
-        </select>
-      </div>
-        <div className="mb-4">
-        <label className="block font-semibold mb-1 text-gray-100">Font Size</label>
-        <select
-          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 w-full text-gray-100 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          value={fontSize}
-          onChange={e => setFontSize(e.target.value)}
-        >
-          <option value="small">Small</option>
-          <option value="medium">Medium (Default)</option>
-          <option value="large">Large</option>
-        </select>
-      </div>
-        {success && <div className="text-green-400 mb-2">{success}</div>}
-        {error && <div className="text-red-400 mb-2">{error}</div>}
+      <div
+        className="rounded-xl p-8 w-full max-w-md relative"
+        style={{
+          background: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'light' ? 'var(--bg)' : 'var(--modal-bg)',
+          color: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'light' ? 'var(--color-vb-normal-text)' : 'var(--modal-text)',
+          border: '1px solid var(--color-vb-input-border)',
+        }}
+      >
         <button
-          className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded w-full"
+          onClick={onClose}
+          className="absolute top-3 right-3"
+          style={{
+            color:
+              typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
+                ? 'var(--button-orange-bg)'
+                : 'var(--color-vb-input-border)'
+          }}
+        >
+          ✕
+        </button>
+        <h2 className="text-2xl font-bold mb-4 text-center" style={{ color: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'light' ? 'var(--color-vb-normal-text)' : 'var(--color-vb-header-bottom, #eebd89)' }}>Settings</h2>
+        <div className="mb-4">
+          <label className="block font-semibold mb-1" style={{ color: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'light' ? 'var(--color-vb-normal-text)' : 'var(--modal-label)' }}>Theme</label>
+          <select
+            className="rounded px-2 py-1 w-full focus:outline-none focus:ring-2"
+            style={{
+              background: 'var(--modal-input-bg)',
+              border: '1px solid var(--color-vb-input-border) !important',
+              color: 'var(--modal-input-text)',
+              boxShadow: '0 0 0 2px var(--modal-input-ring, transparent)',
+            }}
+            value={theme}
+            onChange={e => setTheme(e.target.value)}
+          >
+            <option value="light">Light (Default)</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+        <div className="mb-4">
+          <label className="block font-semibold mb-1" style={{ color: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'light' ? 'var(--color-vb-normal-text)' : 'var(--modal-label)' }}>Font Size</label>
+          <select
+            className="rounded px-2 py-1 w-full focus:outline-none focus:ring-2"
+            style={{
+              background: 'var(--modal-input-bg)',
+              border: '1px solid var(--color-vb-input-border) !important',
+              color: 'var(--modal-input-text)',
+              boxShadow: '0 0 0 2px var(--modal-input-ring, transparent)',
+            }}
+            value={fontSize}
+            onChange={e => setFontSize(e.target.value)}
+          >
+            <option value="small">Small</option>
+            <option value="medium">Medium (Default)</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+        {success && <div style={{ color: 'var(--modal-success)' }} className="mb-2">{success}</div>}
+        {error && <div style={{ color: 'var(--modal-error)' }} className="mb-2">{error}</div>}
+        <button
+          className="font-bold py-2 px-4 rounded w-full"
+          style={{
+            background: 'var(--color-vb-action-bg)',
+            color: 'var(--color-vb-action-text)',
+            transition: 'background 0.2s, color 0.2s',
+          }}
           onClick={handleSave}
           disabled={loading}
         >

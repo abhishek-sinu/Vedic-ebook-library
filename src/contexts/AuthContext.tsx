@@ -92,6 +92,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     setToken(userToken);
     setIsAuthenticated(true);
+    // Set theme and font size per user
+    if (typeof window !== 'undefined') {
+      const theme = userData?.profile?.preferences?.theme || 'dark';
+      const fontSizePref = userData?.profile?.preferences?.fontSize;
+      const fontSize = fontSizePref === 'small' ? '14px' : fontSizePref === 'large' ? '18px' : '16px';
+      document.body.setAttribute('data-theme', theme);
+      document.body.style.fontSize = fontSize;
+    }
   };
 
   const logout = () => {
@@ -100,6 +108,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('vedic_user');
     sessionStorage.removeItem('vedic_auth_token');
     sessionStorage.removeItem('vedic_user');
+
+    // Optionally reset theme/font size to default
+    if (typeof window !== 'undefined') {
+      document.body.setAttribute('data-theme', 'dark');
+      document.body.style.fontSize = '16px';
+    }
 
     // Reset state
     setUser(null);

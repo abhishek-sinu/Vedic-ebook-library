@@ -58,10 +58,28 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onClose, onChangePasswo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-      <div className="bg-gray-900 rounded-xl p-8 w-full max-w-md border border-yellow-400 relative">
-        <button onClick={onClose} className="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200">✕</button>
-        <h2 className="text-2xl font-bold text-yellow-400 mb-4 text-center">User Profile</h2>
-        <div className="space-y-2 text-gray-200 mb-6">
+      <div
+        className="rounded-xl p-8 w-full max-w-md relative"
+        style={{
+          background: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'light' ? 'var(--bg)' : 'var(--modal-bg)',
+          color: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'light' ? 'var(--color-vb-normal-text)' : 'var(--modal-text)',
+          border: '1px solid var(--color-vb-input-border)',
+        }}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3"
+          style={{
+            color:
+              typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
+                ? 'var(--button-orange-bg)'
+                : 'var(--color-vb-input-border)'
+          }}
+        >
+          ✕
+        </button>
+        <h2 className="text-2xl font-bold mb-4 text-center" style={{ color: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'light' ? 'var(--color-vb-normal-text)' : 'var(--color-vb-header-bottom, #eebd89)' }}>User Profile</h2>
+        <div className="space-y-2 mb-6" style={{ color: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'light' ? 'var(--color-vb-normal-text)' : 'var(--modal-text)' }}>
           <div><span className="font-semibold">Name:</span> {user.name || '-'}</div>
           <div><span className="font-semibold">Username:</span> {user.username}</div>
           <div><span className="font-semibold">Email:</span> {user.email || '-'}</div>
@@ -70,7 +88,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onClose, onChangePasswo
             {editMode ? (
               <input
                 type="date"
-                className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-100"
+                className="rounded px-2 py-1"
+                style={{
+                  background: 'var(--modal-input-bg)',
+                  border: '1px solid var(--color-vb-input-border) !important',
+                  color: 'var(--modal-input-text)',
+                  boxShadow: '0 0 0 2px var(--modal-input-ring, transparent)',
+                }}
                 value={dob}
                 onChange={e => setDob(e.target.value)}
                 max={new Date().toISOString().slice(0, 10)}
@@ -84,7 +108,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onClose, onChangePasswo
             {editMode ? (
               <input
                 type="text"
-                className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-100"
+                className="rounded px-2 py-1"
+                style={{
+                  background: 'var(--modal-input-bg)',
+                  border: '1px solid var(--color-vb-input-border) !important',
+                  color: 'var(--modal-input-text)',
+                  boxShadow: '0 0 0 2px var(--modal-input-ring, transparent)',
+                }}
                 value={contactNo}
                 onChange={e => setContactNo(e.target.value)}
                 maxLength={20}
@@ -97,7 +127,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onClose, onChangePasswo
         </div>
         {!editMode && (
           <button
-            className="w-full py-2 px-4 rounded-lg font-medium bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 hover:from-yellow-500 hover:to-yellow-600 transition-all mb-2"
+            className="w-full py-2 px-4 rounded-lg font-medium mb-2"
+            style={{
+              background: 'var(--color-vb-action-bg)',
+              color: 'var(--color-vb-action-text)',
+              transition: 'background 0.2s, color 0.2s',
+            }}
             onClick={() => setEditMode(true)}
           >
             Edit Profile

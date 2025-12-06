@@ -33,30 +33,59 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange 
     }
   };
 
+  // Dynamically set header background and text for light/dark theme
+  let headerBg = 'var(--bg)';
+  let headerTopText = 'var(--text)';
+  let headerUserText = 'var(--text)';
+  let headerButtonBg = 'var(--accent)';
+  let headerButtonText = 'var(--deep-blue)';
+  if (typeof window !== 'undefined') {
+    const theme = document.body.getAttribute('data-theme');
+    if (!theme || theme === 'light') {
+      headerBg = 'var(--color-vb-header-top)';
+      headerTopText = 'var(--color-vb-header-top-text)';
+      headerUserText = 'var(--color-vb-normal-text)';
+      headerButtonBg = 'var(--color-vb-action-bg)';
+      headerButtonText = 'var(--color-vb-action-text)';
+    } else if (theme === 'dark') {
+      headerButtonBg = 'var(--button-orange-bg)';
+      headerButtonText = 'var(--button-orange-text)';
+    }
+  }
+
   return (
     <>
-      <div className="bg-gray-900 text-gray-100 px-4 py-3 flex-shrink-0">
+      <div
+        className="px-4 py-3 flex-shrink-0"
+        style={{
+          background: headerBg,
+          color: headerTopText,
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <BookOpen className="w-6 h-6 text-yellow-400" />
-              <h1 className="text-xl font-bold text-yellow-400">Vaisnava-Manjusha</h1>
+            <BookOpen className="w-6 h-6" style={{ color: headerTopText }} />
+            <h1 className="text-xl font-bold" style={{ color: headerTopText }}>Vaisnava-Manjusha</h1>
           </div>
           <div className="flex items-center space-x-4">
             {user?.name && (
-              <span className="font-semibold text-yellow-300 mr-2">{user.name}</span>
+              <span className="font-semibold" style={{ color: headerUserText }}>{user.name}</span>
             )}
             {user?.role === 'admin' && (
               <>
                 <button
                   onClick={() => setShowUploadModal(true)}
-                  className="p-2 hover:bg-gray-800 rounded transition-colors"
+                  className="p-2 rounded transition-colors"
+                  style={{ color: 'var(--icon)', background: 'transparent' }}
                   title="Upload Books"
                 >
                   <Upload className="w-5 h-5" />
                 </button>
                 <button
                   onClick={handleShowBooks}
-                  className="p-2 hover:bg-gray-800 rounded transition-colors"
+                  className="p-2 rounded transition-colors"
+                  style={{ color: 'var(--icon)', background: 'transparent' }}
                   title="Show All Books"
                 >
                   <ListIcon className="w-5 h-5" />
@@ -67,8 +96,8 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange 
             {onLogout && (
               <button
                 onClick={onLogout}
-                className="px-4 py-2 rounded-lg font-medium transition-colors"
-                style={{ background: 'var(--saffron)', color: 'var(--deep-blue)' }}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors${typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark' ? ' bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 hover:from-yellow-500 hover:to-yellow-600' : ''}`}
+                style={{ background: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark' ? undefined : headerButtonBg, color: typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark' ? undefined : headerButtonText }}
                 title="Logout"
               >
                 Logout

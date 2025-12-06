@@ -1303,10 +1303,10 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col" style={{ background: 'var(--bg)' }}>
+        <div className="flex-1 flex flex-col ebook-reader-content" style={{ background: 'var(--bg)' }}>
           {/* Search Bar */}
           {bookId && content && (
-            <div className="p-4 border-b border-amber-300" style={{ background: 'var(--search-bar-bg)' }}>
+            <div className="p-4 border-b border-amber-300 ebook-reader-searchbar" style={{ background: 'var(--search-bar-bg)' }}>
               <div className="relative flex items-center space-x-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2" size={20} style={{ color: 'var(--icon)' }} />
@@ -1506,7 +1506,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                     </div>
 
                     {/* Book Content */}
-                    <div ref={contentRef} className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--book-content-bg)', color: 'var(--book-content-text)' }}>
+                    <div ref={contentRef} className="flex-1 overflow-y-auto p-6 ebook-reader-book-content" style={{ background: 'var(--book-content-bg)', color: 'var(--book-content-text)' }}>
                       <div 
                         className="prose max-w-none text-gray-800 leading-relaxed"
                         style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight }}
@@ -1612,7 +1612,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
               </div>
 
               {/* Book Content */}
-              <div ref={contentRef} className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--book-content-bg)', color: 'var(--book-content-text)' }}>
+              <div ref={contentRef} className="flex-1 overflow-y-auto p-6 ebook-reader-book-content" style={{ background: 'var(--book-content-bg)', color: 'var(--book-content-text)' }}>
                 <div 
                   className="prose max-w-none leading-relaxed"
                   style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight, color: 'var(--book-content-text)' }}

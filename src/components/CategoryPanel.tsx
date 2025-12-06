@@ -174,9 +174,15 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
               className="w-full p-4 text-left hover:bg-gray-700 flex items-center justify-between group transition-colors"
             >
               <div className="flex items-center space-x-3">
-                <Plus className={`w-4 h-4 text-gray-400 transition-transform ${
-                  expandedLetters[letter] ? 'transform rotate-45' : ''
-                }`} />
+                <Plus
+                  className={`w-4 h-4 transition-transform ${expandedLetters[letter] ? 'transform rotate-45' : ''}`}
+                  style={{
+                    color:
+                      typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
+                        ? 'var(--text) !important'
+                        : 'var(--color-vb-input-border) !important'
+                  }}
+                />
                 <span className="font-medium text-gray-200 text-lg">{letter}</span>
               </div>
             </button>
@@ -190,9 +196,15 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
                       className="w-full p-3 pl-8 text-left hover:bg-gray-700 flex items-center justify-between group transition-colors"
                     >
                       <div className="flex items-center space-x-3">
-                        <Plus className={`w-3 h-3 text-gray-400 transition-transform ${
-                          expandedAuthors[author] ? 'transform rotate-45' : ''
-                        }`} />
+                        <Plus
+                          className={`w-3 h-3 transition-transform ${expandedAuthors[author] ? 'transform rotate-45' : ''}`}
+                          style={{
+                            color:
+                              typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
+                                ? 'var(--text) !important'
+                                : 'var(--color-vb-input-border) !important'
+                          }}
+                        />
                         <span className="font-medium text-gray-300">{author}</span>
                       </div>
                     </button>
@@ -244,9 +256,15 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
               className="w-full p-4 text-left hover:bg-gray-700 flex items-center justify-between group transition-colors"
             >
               <div className="flex items-center space-x-3">
-                <Plus className={`w-4 h-4 text-gray-400 transition-transform ${
-                  expandedTitleLetters[letter] ? 'transform rotate-45' : ''
-                }`} />
+                <Plus
+                  className={`w-4 h-4 transition-transform ${expandedTitleLetters[letter] ? 'transform rotate-45' : ''}`}
+                  style={{
+                    color:
+                      typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
+                        ? 'var(--text) !important'
+                        : 'var(--color-vb-input-border) !important'
+                  }}
+                />
                 <span className="font-medium text-gray-200 text-lg">{letter}</span>
               </div>
             </button>
@@ -279,23 +297,22 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
     );
   };
 
+  // Dynamically set text color for light theme
   return (
     <div
-      className="w-80 flex flex-col flex-shrink-0"
+      className="w-80 flex flex-col flex-shrink-0 category-panel-root"
       style={{
-        background: 'var(--card)',
-        color: 'var(--text)'
+        background: 'var(--card)'
       }}
     >
       {/* Language Section Header */}
       <div
-        className="p-4"
+        className="p-4 category-panel-header"
         style={{
-          background: 'var(--accent)',
-          color: 'var(--text)'
+          background: 'var(--accent)'
         }}
       >
-        <h3 className="text-lg font-semibold">
+        <h3 className="text-lg font-semibold category-panel-header-text">
           {languageConfig[selectedLanguage as keyof typeof languageConfig].label} ({languageConfig[selectedLanguage as keyof typeof languageConfig].count})
         </h3>
       </div>
@@ -305,7 +322,7 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
         className="flex border-b"
         style={{
           background: 'var(--accent)',
-          borderColor: 'var(--border)'
+          borderColor: 'var(--color-vb-header-bottom, var(--border))',
         }}
       >
         <button
@@ -377,7 +394,7 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
             style={{
               background: 'var(--bg)',
               color: 'var(--text)',
-              borderColor: 'var(--border)',
+              borderColor: 'var(--color-vb-input-border) !important',
             }}
           />
           <Search className="absolute right-3 top-2.5 w-4 h-4" style={{ color: 'var(--text)', opacity: 0.5 }} />
@@ -394,34 +411,57 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
               </div>
             ) : (
               categories.map((category) => (
-                <div key={category.name} className="border-b border-gray-700">
+                <div key={category.name} className="border-b" style={{ borderColor: 'var(--color-vb-header-bottom, var(--border))' }}>
                   <button
                     onClick={() => onCategoryToggle(category.name)}
-                    className="w-full p-4 text-left hover:bg-gray-700 flex items-center justify-between group transition-colors"
+                    className="w-full p-4 text-left flex items-center justify-between group transition-colors category-panel-category-btn"
                   >
                     <div className="flex items-center space-x-3">
                       <Plus className={`w-4 h-4 text-gray-400 transition-transform ${
                         expandedCategories[category.name] ? 'transform rotate-45' : ''
-                      }`} />
-                      <span className="font-medium text-gray-200">{category.name}</span>
+                      }`}
+                      style={{
+                        color:
+                          typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
+                            ? 'var(--text) !important'
+                            : 'var(--color-vb-input-border) !important'
+                      }}
+                    />
+                      <span className="font-medium category-panel-category-text">{category.name}</span>
                     </div>
                   </button>
                   
                   {expandedCategories[category.name] && (
-                    <div className="bg-gray-750">
+                    <div>
                       {category.books.map((book) => (
                         <button
                           key={book._id}
                           onClick={() => onBookSelection(book)}
-                          className={`w-full p-3 pl-12 text-left hover:bg-gray-600 transition-colors ${
-                            bookId === book._id
-                              ? 'bg-gray-600 text-yellow-400'
-                              : 'text-gray-300'
-                          }`}
+                          className={`w-full p-3 pl-12 text-left transition-colors category-panel-book-btn${bookId === book._id ? ' selected' : ''}`}
+                          onMouseEnter={e => {
+                            const theme = typeof window !== 'undefined' ? document.body.getAttribute('data-theme') : null;
+                            if ((!theme || theme === 'light')) {
+                              if (bookId === book._id) {
+                                e.currentTarget.style.background = '';
+                              } else {
+                                e.currentTarget.style.background = 'var(--color-vb-hover-bg, #f8f9fa)';
+                              }
+                            }
+                          }}
+                          onMouseLeave={e => {
+                            const theme = typeof window !== 'undefined' ? document.body.getAttribute('data-theme') : null;
+                            if ((!theme || theme === 'light')) {
+                              if (bookId === book._id) {
+                                e.currentTarget.style.background = '';
+                              } else {
+                                e.currentTarget.style.background = '';
+                              }
+                            }
+                          }}
                         >
-                          <div className="text-sm font-medium">{book.title}</div>
+                          <div className="text-sm font-medium category-panel-book-title">{book.title}</div>
                           {book.author && (
-                            <div className="text-xs text-gray-500 mt-1">{book.author}</div>
+                            <div className="text-xs category-panel-book-author" style={{ opacity: 0.7 }}>{book.author}</div>
                           )}
                         </button>
                       ))}
@@ -439,16 +479,16 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
       </div>
 
       {/* Footer Controls */}
-      <div className="p-4 border-t border-gray-700 flex justify-between">
+      <div className="p-4 border-t flex justify-between items-center gap-2 category-panel-footer" style={{ borderColor: 'var(--color-vb-header-bottom, var(--border))' }}>
         <button 
           onClick={onFoldAll}
-          className="text-sm text-gray-400 hover:text-gray-200"
+          className="text-sm px-3 py-1 rounded category-panel-footer-btn"
         >
           Fold all
         </button>
         <button 
           onClick={onUnfoldAll}
-          className="text-sm text-gray-400 hover:text-gray-200"
+          className="text-sm px-3 py-1 rounded category-panel-footer-btn"
         >
           Unfold all
         </button>
