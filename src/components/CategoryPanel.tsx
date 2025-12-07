@@ -22,9 +22,10 @@ interface CategoryPanelProps {
   onBookSelection: (book: Book) => void;
   onFoldAll: () => void;
   onUnfoldAll: () => void;
+  onChapterSelect?: (chapterIdx: number) => void;
 }
 
-const CategoryPanel: React.FC<CategoryPanelProps> = ({
+const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: string; wordIndex: number }[] }> = ({
   selectedLanguage,
   languageConfig,
   loadingBooks,
@@ -34,7 +35,9 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
   onCategoryToggle,
   onBookSelection,
   onFoldAll,
-  onUnfoldAll
+  onUnfoldAll,
+  bookChapters = [],
+  onChapterSelect
 }) => {
   const [activeTab, setActiveTab] = useState<'categories' | 'authors' | 'title'>('categories');
   const [expandedLetters, setExpandedLetters] = useState<{[key: string]: boolean}>({});
@@ -462,6 +465,23 @@ const CategoryPanel: React.FC<CategoryPanelProps> = ({
                           <div className="text-sm font-medium category-panel-book-title">{book.title}</div>
                           {book.author && (
                             <div className="text-xs category-panel-book-author" style={{ opacity: 0.7 }}>{book.author}</div>
+                          )}
+                          {bookId === book._id && (
+                            <div className="pl-4 pt-2">
+                              {bookChapters.length > 0 ? (
+                                bookChapters.map((chapter, idx) => (
+                                  <div key={idx} className="text-xs py-1 cursor-pointer hover:text-yellow-400" 
+                                    style={{ color: 'var(--text)' }}
+                                    onClick={() => onChapterSelect && onChapterSelect(idx)}>
+                                    {chapter.text}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="text-xs" style={{ color: 'red' }}>
+                                  No chapters found for this book.
+                                </div>
+                              )}
+                            </div>
                           )}
                         </button>
                       ))}

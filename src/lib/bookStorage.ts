@@ -141,6 +141,7 @@ export const fetchBookContent = async (bookId: string, page: number = 1, format:
       return {
         content: contentData.content,
         metadata: contentData.book as Book,
+        chapters: contentData.chapters || [],
         pagination: {
           currentPage: contentData.currentPage,
           totalPages: contentData.totalPages,

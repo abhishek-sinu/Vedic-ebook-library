@@ -1,4 +1,7 @@
 import { extractTextContent, extractHtmlContent } from '../src/utils/textExtractor.js';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { extractHeadingsWithPositions } = require('./extractHeadingsWithPositions.cjs');
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -88,6 +91,7 @@ class OptimizedContentCache {
         console.log(`🔥 Hot cache hit for book: ${entry.metadata.title}`);
         return {
           content: format === 'html' ? entry.htmlContent : entry.content,
+          chapters: entry.chapters || [],
           metadata: entry.metadata,
           source: 'hot-cache'
         };
@@ -141,13 +145,19 @@ class OptimizedContentCache {
       const textContent = await extractTextContent(filePath, book.fileInfo.fileExtension);
       const htmlContent = await extractHtmlContent(filePath, book.fileInfo.fileExtension);
       const fileHash = await this.getFileHash(filePath);
-      
+      // Extract chapters/headings
+      let chapters = [];
+      try {
+        chapters = await extractHeadingsWithPositions(filePath);
+      } catch (e) {
+        chapters = [];
+      }
       const extractionTime = Date.now() - startTime;
       this.stats.extractions++;
-      
       const cacheEntry = {
         content: textContent,
         htmlContent: htmlContent,
+        chapters: chapters,
         cachedAt: Date.now(),
         accessedAt: Date.now(),
         fileHash: fileHash,
@@ -254,6 +264,7 @@ class OptimizedContentCache {
       
       return {
         content: format === 'html' ? entry.htmlContent : entry.content,
+        chapters: entry.chapters || [],
         metadata: entry.metadata,
         source: 'disk-cache'
       };
@@ -273,12 +284,16 @@ class OptimizedContentCache {
     if (!cached) return null;
 
     const content = cached.content;
-    
+    const chapters = cached.chapters || [];
+
+    let result;
     if (format === 'html') {
-      return this.paginateHtmlContent(content, page, wordsPerPage, cached.metadata, format);
+      result = this.paginateHtmlContent(content, page, wordsPerPage, cached.metadata, format);
     } else {
-      return this.paginateTextContent(content, page, wordsPerPage, cached.metadata, format);
+      result = this.paginateTextContent(content, page, wordsPerPage, cached.metadata, format);
     }
+    result.chapters = chapters;
+    return result;
   }
 
   /**

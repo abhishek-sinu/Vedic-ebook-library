@@ -92,6 +92,8 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   const [isContentHtml, setIsContentHtml] = useState(false);
   const lastLoadedPageRef = useRef<number>(1);
   const bookmarkLoadedRef = useRef<boolean>(false);
+  // Chapters state
+  const [bookChapters, setBookChapters] = useState<{ text: string; wordIndex: number }[]>([]);
 
   // Get user context for bookmark functionality
   const { user: authUser } = useAuth();
@@ -116,10 +118,8 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
         currentPage, 
         'html'
       );
-      console.log('fetchBookContent result:', result);
-      
+      console.log('fetchBookContent result@:', result);
       if (result) {
-        console.log('Setting paginated content with length:', result.content.length);
         setContent(result.content);
         if (result.pagination) {
           setPaginationInfo(result.pagination);
@@ -128,11 +128,18 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
         if (result.metadata) {
           setBookTitle(result.metadata.title || `Book ${bookId}`);
         }
-        // Track the page we just loaded
+        // Fix: chapters may be at result.chapters or result.pagination.chapters
+       console.log('result:', result);  
+      if ('chapters' in result && Array.isArray(result.chapters)) {
+         console.log('chapters:', result.chapters);    
+        setBookChapters(result.chapters);
+        } else if (result.pagination && Array.isArray(result.pagination.chapters)) {
+          setBookChapters(result.pagination.chapters);
+        } else {
+          setBookChapters([]);
+        }
         lastLoadedPageRef.current = currentPage;
-        console.log(`Successfully loaded page ${currentPage}, updated lastLoadedPageRef`);
       } else {
-        console.error('fetchBookContent returned null/undefined');
         setError('Failed to load book content');
       }
     } catch (err) {
@@ -219,6 +226,10 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     if (onBookSelect) {
       onBookSelect(book);
     }
+    // Reset chapters when a new book is selected
+    setBookChapters([]);
+    setCurrentPage(1);
+    setPageInputValue('1');
   };
 
   // Search functionality - Search entire book via backend
@@ -790,38 +801,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
       });
       
       // Call loadContent directly instead of through dependency
-      const loadContentNow = async () => {
-        if (!bookId) return;
-        
-        console.log('Direct content loading for book:', bookId, 'page:', currentPage);
-        setIsLoading(true);
-        setError('');
-        try {
-          const result = await fetchBookContent(bookId, currentPage, 'html');
-          console.log('Direct fetchBookContent result:', result);
-          
-          if (result) {
-            console.log('Direct setting content with length:', result.content.length);
-            setContent(result.content);
-            if (result.pagination) {
-              setPaginationInfo(result.pagination);
-              setIsContentHtml(result.pagination.format === 'html');
-            }
-            if (result.metadata) {
-              setBookTitle(result.metadata.title || `Book ${bookId}`);
-            }
-            lastLoadedPageRef.current = currentPage;
-            console.log(`Direct load completed for page ${currentPage}`);
-          }
-        } catch (err) {
-          console.error('Direct loading error:', err);
-          setError('Error loading book content');
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      loadContentNow();
+      loadContent();
     }
   }, [currentPage, bookId]);
 
@@ -1246,6 +1226,14 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
             onBookSelection={handleBookSelection}
             onFoldAll={foldAllCategories}
             onUnfoldAll={unfoldAllCategories}
+            bookChapters={bookChapters}
+            onChapterSelect={(chapterIdx) => {
+              if (paginationInfo && paginationInfo.totalWords && paginationInfo.wordsOnPage && bookChapters[chapterIdx]) {
+                const page = Math.floor(bookChapters[chapterIdx].wordIndex / paginationInfo.wordsOnPage) + 1;
+                setCurrentPage(page);
+                setPageInputValue(page.toString());
+              }
+            }}
           />
         )}
 
