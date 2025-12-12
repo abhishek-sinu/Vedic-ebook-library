@@ -1,7 +1,6 @@
 'use client';
 
-import { Search, Plus } from 'lucide-react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, Plus, Book as BookIcon, BookOpen, FileText } from 'lucide-react';
 import { Book } from '../lib/bookStorage';
 import { useState, useMemo } from 'react';
 
@@ -474,9 +473,9 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                             >
                               <span className="mr-2">
                                 {expandedBookChapters[book._id] ? (
-                                  <ChevronDown size={16} />
+                                  <BookOpen size={16} />
                                 ) : (
-                                  <ChevronRight size={16} />
+                                  <BookIcon size={16} />
                                 )}
                               </span>
                               <span className="text-sm font-medium category-panel-book-title">{book.title}</span>
@@ -499,6 +498,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                                           onChapterSelect(chapter.pageNumber);
                                         }
                                       }}>
+                                      <span className="mr-2"><FileText size={14} /></span>
                                       <span className="ml-2">{chapter.chapterName}</span>
                                     </div>
                                   ))
