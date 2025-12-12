@@ -1,3 +1,4 @@
+  // ...existing code...
 import { extractTextContent, extractHtmlContent } from '../src/utils/textExtractor.js';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
@@ -91,7 +92,7 @@ class OptimizedContentCache {
         console.log(`🔥 Hot cache hit for book: ${entry.metadata.title}`);
         return {
           content: format === 'html' ? entry.htmlContent : entry.content,
-          chapters: entry.chapters || [],
+          chapterswithPageNo: entry.chapterswithPageNo || [],
           metadata: entry.metadata,
           source: 'hot-cache'
         };
@@ -134,6 +135,7 @@ class OptimizedContentCache {
    * Cache content with intelligent tier placement
    */
   async cacheBookContent(book, priority = 'normal') {
+    console.log('Start First loading of cacheBookContent.');
     const bookId = book._id.toString();
     const filePath = path.join(__dirname, '../uploads/books', book.fileInfo.filename);
     
@@ -145,19 +147,46 @@ class OptimizedContentCache {
       const textContent = await extractTextContent(filePath, book.fileInfo.fileExtension);
       const htmlContent = await extractHtmlContent(filePath, book.fileInfo.fileExtension);
       const fileHash = await this.getFileHash(filePath);
-      // Extract chapters/headings
-      let chapters = [];
+      // Extract chapters/headings (move logic from extractHeadingsWithPageNumbers here)
+      let chapterswithPageNo = [];
       try {
-        chapters = await extractHeadingsWithPositions(filePath);
+        // Get total pages
+        const htmlContentForChapters = htmlContent;
+        const wordsPerPage = this.config.wordsPerPage || 500;
+        const firstPage = this.paginateHtmlContent(htmlContentForChapters, 1, wordsPerPage, {
+          bookId: bookId,
+          title: book.title,
+          author: book.author
+        }, 'html');
+        const totalPages = firstPage.totalPages;
+        const headingMap = new Map();
+        const headingRegex = /<(h[1-6])[^>]*>(.*?)<\/\1>/gi;
+        for (let page = 1; page <= totalPages; page++) {
+          const pageData = this.paginateHtmlContent(htmlContentForChapters, page, wordsPerPage, {
+            bookId: bookId,
+            title: book.title,
+            author: book.author
+          }, 'html');
+          const html = pageData.content;
+          let match;
+          while ((match = headingRegex.exec(html)) !== null) {
+            const headingText = match[2].replace(/<[^>]+>/g, '').trim();
+            if (headingText && !headingMap.has(headingText)) {
+              headingMap.set(headingText, page);
+            }
+          }
+        }
+        chapterswithPageNo = Array.from(headingMap.entries()).map(([heading, page]) => ({ chapterName: heading, pageNumber: page }));
       } catch (e) {
-        chapters = [];
+        chapterswithPageNo = [];
       }
+      console.log(`Extracted chapters/headings for ${book.title}: ${JSON.stringify(chapterswithPageNo.length)}`);
       const extractionTime = Date.now() - startTime;
       this.stats.extractions++;
       const cacheEntry = {
         content: textContent,
         htmlContent: htmlContent,
-        chapters: chapters,
+        chapterswithPageNo: chapterswithPageNo,
         cachedAt: Date.now(),
         accessedAt: Date.now(),
         fileHash: fileHash,
@@ -182,7 +211,7 @@ class OptimizedContentCache {
         this.addToWarmCache(bookId, cacheEntry.metadata);
       }
 
-      console.log(`✅ Content cached for: ${book.title} (${extractionTime}ms)`);
+      console.log(`✅ End First Content cached for: ${book.title} (${extractionTime}ms)`);
       return { textContent, htmlContent };
       
     } catch (error) {
@@ -264,7 +293,7 @@ class OptimizedContentCache {
       
       return {
         content: format === 'html' ? entry.htmlContent : entry.content,
-        chapters: entry.chapters || [],
+        chapterswithPageNo: entry.chapterswithPageNo || [],
         metadata: entry.metadata,
         source: 'disk-cache'
       };
@@ -278,13 +307,13 @@ class OptimizedContentCache {
    * Get paginated content with caching
    */
   async getPaginatedContent(bookId, page = 1, wordsPerPage = null, format = 'html') {
+    console.log('Start getPaginatedContent');
     wordsPerPage = wordsPerPage || this.config.wordsPerPage;
     
     const cached = await this.getCachedContent(bookId, format);
     if (!cached) return null;
 
     const content = cached.content;
-    const chapters = cached.chapters || [];
 
     let result;
     if (format === 'html') {
@@ -292,8 +321,48 @@ class OptimizedContentCache {
     } else {
       result = this.paginateTextContent(content, page, wordsPerPage, cached.metadata, format);
     }
-    result.chapters = chapters;
-    return result;
+    // Use cached chapterswithPageNo if available
+    let chapterswithPageNo = [];
+    if (cached.chapterswithPageNo && Array.isArray(cached.chapterswithPageNo)) {
+      chapterswithPageNo = cached.chapterswithPageNo;
+    }
+    console.log('Cached chapterswithPageNo length:', chapterswithPageNo.length);
+    console.log('End getPaginatedContent');
+    return {
+      ...result,
+      chapterswithPageNo
+    };
+    
+  }
+
+  /**
+   * Extract all headings and the page number where each heading first appears
+   * Uses paginateHtmlContent to iterate through all pages
+   * Returns: [{ heading: 'Chapter 1', page: 3 }, ...]
+   */
+  async extractHeadingsWithPageNumbers(bookId, format = 'html') {
+    const wordsPerPage = this.config.wordsPerPage || 500;
+    // Get cached content (HTML)
+    const cached = await this.getCachedContent(bookId, format);
+    if (!cached || !cached.content) return [];
+    // Get total pages
+    const firstPage = this.paginateHtmlContent(cached.content, 1, wordsPerPage, cached.metadata, format);
+    const totalPages = firstPage.totalPages;
+    const headingMap = new Map();
+    const headingRegex = /<(h[1-6])[^>]*>(.*?)<\/\1>/gi;
+    for (let page = 1; page <= totalPages; page++) {
+      const pageData = this.paginateHtmlContent(cached.content, page, wordsPerPage, cached.metadata, format);
+      const html = pageData.content;
+      let match;
+      while ((match = headingRegex.exec(html)) !== null) {
+        const headingText = match[2].replace(/<[^>]+>/g, '').trim();
+        if (headingText && !headingMap.has(headingText)) {
+          headingMap.set(headingText, page);
+        }
+      }
+    }
+    // Convert to array with chapterName and pageNumber
+    return Array.from(headingMap.entries()).map(([heading, page]) => ({ chapterName: heading, pageNumber: page }));
   }
 
   /**

@@ -109,7 +109,6 @@ export const fetchBookContent = async (bookId: string, page: number = 1, format:
     // Build the request URL with pagination and format
     const params = new URLSearchParams({
       page: page.toString(),
-      wordsPerPage: '500',
       format: format // 'html' for formatted content, 'text' for plain text
     });
     
@@ -141,7 +140,7 @@ export const fetchBookContent = async (bookId: string, page: number = 1, format:
       return {
         content: contentData.content,
         metadata: contentData.book as Book,
-        chapters: contentData.chapters || [],
+        chapterswithPageNo: contentData.chapterswithPageNo || [],
         pagination: {
           currentPage: contentData.currentPage,
           totalPages: contentData.totalPages,

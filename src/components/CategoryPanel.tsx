@@ -1,6 +1,7 @@
 'use client';
 
 import { Search, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Book } from '../lib/bookStorage';
 import { useState, useMemo } from 'react';
 
@@ -22,7 +23,7 @@ interface CategoryPanelProps {
   onBookSelection: (book: Book) => void;
   onFoldAll: () => void;
   onUnfoldAll: () => void;
-  onChapterSelect?: (chapterIdx: number) => void;
+  onChapterSelect?: (pageNumber: number) => void;
 }
 
 const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: string; wordIndex: number }[] }> = ({
@@ -43,6 +44,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   const [expandedLetters, setExpandedLetters] = useState<{[key: string]: boolean}>({});
   const [expandedAuthors, setExpandedAuthors] = useState<{[key: string]: boolean}>({});
   const [expandedTitleLetters, setExpandedTitleLetters] = useState<{[key: string]: boolean}>({});
+  const [expandedBookChapters, setExpandedBookChapters] = useState<{[bookId: string]: boolean}>({});
 
   // Organize books by author first letter
   const authorGroups = useMemo(() => {
@@ -437,53 +439,78 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                   {expandedCategories[category.name] && (
                     <div>
                       {category.books.map((book) => (
-                        <button
-                          key={book._id}
-                          onClick={() => onBookSelection(book)}
-                          className={`w-full p-3 pl-12 text-left transition-colors category-panel-book-btn${bookId === book._id ? ' selected' : ''}`}
-                          onMouseEnter={e => {
-                            const theme = typeof window !== 'undefined' ? document.body.getAttribute('data-theme') : null;
-                            if ((!theme || theme === 'light')) {
-                              if (bookId === book._id) {
-                                e.currentTarget.style.background = '';
-                              } else {
-                                e.currentTarget.style.background = 'var(--color-vb-hover-bg, #f8f9fa)';
-                              }
-                            }
-                          }}
-                          onMouseLeave={e => {
-                            const theme = typeof window !== 'undefined' ? document.body.getAttribute('data-theme') : null;
-                            if ((!theme || theme === 'light')) {
-                              if (bookId === book._id) {
-                                e.currentTarget.style.background = '';
-                              } else {
-                                e.currentTarget.style.background = '';
-                              }
-                            }
-                          }}
-                        >
-                          <div className="text-sm font-medium category-panel-book-title">{book.title}</div>
-                          {book.author && (
-                            <div className="text-xs category-panel-book-author" style={{ opacity: 0.7 }}>{book.author}</div>
-                          )}
-                          {bookId === book._id && (
-                            <div className="pl-4 pt-2">
-                              {bookChapters.length > 0 ? (
-                                bookChapters.map((chapter, idx) => (
-                                  <div key={idx} className="text-xs py-1 cursor-pointer hover:text-yellow-400" 
-                                    style={{ color: 'var(--text)' }}
-                                    onClick={() => onChapterSelect && onChapterSelect(idx)}>
-                                    {chapter.text}
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="text-xs" style={{ color: 'red' }}>
-                                  No chapters found for this book.
-                                </div>
+                        <div key={book._id}>
+                          <div className="flex items-center">
+                            <button
+                              onClick={() => {
+                                onBookSelection(book);
+                                setExpandedBookChapters(prev => ({
+                                  ...prev,
+                                  [book._id]: !prev[book._id]
+                                }));
+                              }}
+                              className={`flex items-center w-full p-3 pl-8 text-left transition-colors category-panel-book-btn${bookId === book._id ? ' selected' : ''}`}
+                              style={{ background: 'transparent', border: 'none' }}
+                              onMouseEnter={e => {
+                                const theme = typeof window !== 'undefined' ? document.body.getAttribute('data-theme') : null;
+                                if ((!theme || theme === 'light')) {
+                                  if (bookId === book._id) {
+                                    e.currentTarget.style.background = '';
+                                  } else {
+                                    e.currentTarget.style.background = 'var(--color-vb-hover-bg, #f8f9fa)';
+                                  }
+                                }
+                              }}
+                              onMouseLeave={e => {
+                                const theme = typeof window !== 'undefined' ? document.body.getAttribute('data-theme') : null;
+                                if ((!theme || theme === 'light')) {
+                                  if (bookId === book._id) {
+                                    e.currentTarget.style.background = '';
+                                  } else {
+                                    e.currentTarget.style.background = '';
+                                  }
+                                }
+                              }}
+                            >
+                              <span className="mr-2">
+                                {expandedBookChapters[book._id] ? (
+                                  <ChevronDown size={16} />
+                                ) : (
+                                  <ChevronRight size={16} />
+                                )}
+                              </span>
+                              <span className="text-sm font-medium category-panel-book-title">{book.title}</span>
+                              {book.author && (
+                                <span className="text-xs category-panel-book-author ml-2" style={{ opacity: 0.7 }}>{book.author}</span>
                               )}
-                            </div>
-                          )}
-                        </button>
+                            </button>
+                          </div>
+                          {bookId === book._id && expandedBookChapters[book._id] && (() => {
+                            return (
+                              <div className="pl-16 pt-2 border-l border-gray-700 bg-gray-900/40">
+                                {Array.isArray(book.chapterswithPageNo) && book.chapterswithPageNo.length > 0 ? (
+                                  book.chapterswithPageNo.map((chapter, idx) => (
+                                    <div key={idx} className="flex items-center text-xs py-1 cursor-pointer hover:text-yellow-400"
+                                      style={{ color: 'var(--text)' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        console.log('CategoryPanel: Navigating to chapter page', chapter.pageNumber, chapter.chapterName);
+                                        if (onChapterSelect) {
+                                          onChapterSelect(chapter.pageNumber);
+                                        }
+                                      }}>
+                                      <span className="ml-2">{chapter.chapterName}</span>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="text-xs" style={{ color: 'red' }}>
+                                    No chapters found for this book.
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
                       ))}
                     </div>
                   )}

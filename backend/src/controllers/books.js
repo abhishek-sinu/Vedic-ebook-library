@@ -275,10 +275,12 @@ export const getBookText = catchAsync(async (req, res, next) => {
   try {
     // Get query parameters for pagination
     const page = parseInt(req.query.page) || 1;
-    const wordsPerPage = parseInt(req.query.wordsPerPage) || 500;
     const format = req.query.format || 'html'; // 'text' or 'html'
 
-    console.log(`🔍 Getting book text content for: ${book.title} (page: ${page}, format: ${format})`);
+    // Always use backend default wordsPerPage
+    const wordsPerPage = optimizedCache.config.wordsPerPage || 500;
+
+    console.log(`🔍 Getting book text content for: ${book.title} (page: ${page}, format: ${format}, wordsPerPage: ${wordsPerPage})`);
 
     // Try to get cached content first
     let paginatedContent = await optimizedCache.getPaginatedContent(

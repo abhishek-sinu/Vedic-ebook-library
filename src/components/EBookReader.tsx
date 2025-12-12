@@ -128,11 +128,12 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
         if (result.metadata) {
           setBookTitle(result.metadata.title || `Book ${bookId}`);
         }
-        // Fix: chapters may be at result.chapters or result.pagination.chapters
-       console.log('result:', result);  
-      if ('chapters' in result && Array.isArray(result.chapters)) {
-         console.log('chapters:', result.chapters);    
-        setBookChapters(result.chapters);
+        // Prefer chapterswithPageNo if present
+        if ('chapterswithPageNo' in result && Array.isArray(result.chapterswithPageNo)) {
+          console.log('DEBUG: chapterswithPageNo from backend:', result.chapterswithPageNo);
+          setBookChapters(result.chapterswithPageNo);
+        } else if ('chapters' in result && Array.isArray(result.chapters)) {
+          setBookChapters(result.chapters);
         } else if (result.pagination && Array.isArray(result.pagination.chapters)) {
           setBookChapters(result.pagination.chapters);
         } else {
@@ -223,13 +224,37 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   };
 
   const handleBookSelection = (book: Book) => {
-    if (onBookSelect) {
-      onBookSelect(book);
-    }
+    console.log('DEBUG: handleBookSelection called for book:', book);
     // Reset chapters when a new book is selected
     setBookChapters([]);
     setCurrentPage(1);
     setPageInputValue('1');
+
+    // Fetch book content to get chapterswithPageNo and merge into categories
+    fetchBookContent(book._id, 1, 'html')
+      .then(result => {
+        console.log('DEBUG: fetchBookContent result in handleBookSelection:', result);
+        if (result && result.chapterswithPageNo) {
+          setCategories(prev =>
+            prev.map(cat => ({
+              ...cat,
+              books: cat.books.map(b =>
+                b._id === book._id
+                  ? { ...b, chapterswithPageNo: result.chapterswithPageNo }
+                  : b
+              )
+            }))
+          );
+        } else {
+          console.log('DEBUG: No chapterswithPageNo found in result for book', book._id, result);
+        }
+        if (onBookSelect) {
+          onBookSelect(book);
+        }
+      })
+      .catch(err => {
+        console.error('DEBUG: fetchBookContent error:', err);
+      });
   };
 
   // Search functionality - Search entire book via backend
@@ -698,12 +723,10 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
 
   // Split content into pages based on word count
   const pages = useMemo(() => {
-    console.log('Creating pages from content. Content length:', content.length);
     if (!content) {
       console.log('No content available for pagination');
       return [];
     }
-    
     const words = content.split(/\s+/);
     console.log('Total words in content:', words.length);
     const pageArray = [];
@@ -1227,12 +1250,10 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
             onFoldAll={foldAllCategories}
             onUnfoldAll={unfoldAllCategories}
             bookChapters={bookChapters}
-            onChapterSelect={(chapterIdx) => {
-              if (paginationInfo && paginationInfo.totalWords && paginationInfo.wordsOnPage && bookChapters[chapterIdx]) {
-                const page = Math.floor(bookChapters[chapterIdx].wordIndex / paginationInfo.wordsOnPage) + 1;
-                setCurrentPage(page);
-                setPageInputValue(page.toString());
-              }
+            onChapterSelect={(pageNumber) => {
+              console.log('EBookReader: Navigating to chapter page', pageNumber);
+              setCurrentPage(pageNumber);
+              setPageInputValue(pageNumber.toString());
             }}
           />
         )}
@@ -1586,5 +1607,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     </div>
   );
 };
+
+
 
 export default EBookReader;
