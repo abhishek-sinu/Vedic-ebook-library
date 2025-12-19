@@ -20,11 +20,15 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ open, onClose
       contactNo: user.contactNo,
       dob: user.dob,
       role: user.role,
-      privilegeForBooks: user.privilegeForBooks || 'normal'
+      privilegeForBooks: Array.isArray(user.privilegeForBooks)
+        ? user.privilegeForBooks
+        : user.privilegeForBooks
+        ? [user.privilegeForBooks]
+        : []
     });
   };
 
-  const handleEditChange = (field: keyof User, value: string) => {
+  const handleEditChange = (field: keyof User, value: string | string[]) => {
     setEditData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -167,15 +171,25 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ open, onClose
                           </select>
                         </td>
                         <td className="px-4 py-2 border-b">
-                          <select
-                            className="border rounded px-2 py-1 w-32 min-w-[8rem]"
-                            value={editData.privilegeForBooks || 'normal'}
-                            onChange={e => handleEditChange('privilegeForBooks', e.target.value)}
-                          >
-                            <option value="normal">Normal</option>
-                            <option value="special">Special</option>
-                            <option value="private">Private</option>
-                          </select>
+                          <div className="flex gap-2">
+                            {['normal', 'special', 'private'].map(option => (
+                              <button
+                                key={option}
+                                type="button"
+                                className={`px-2 py-1 rounded border ${editData.privilegeForBooks?.includes(option) ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'}`}
+                                onClick={() => {
+                                  const current = editData.privilegeForBooks || [];
+                                  if (current.includes(option)) {
+                                    handleEditChange('privilegeForBooks', current.filter(v => v !== option));
+                                  } else {
+                                    handleEditChange('privilegeForBooks', [...current, option]);
+                                  }
+                                }}
+                              >
+                                {option.charAt(0).toUpperCase() + option.slice(1)}
+                              </button>
+                            ))}
+                          </div>
                         </td>
                         <td className="px-4 py-2 border-b text-center">
                           <button className="text-green-600 hover:underline mr-2" onClick={() => handleEditSave(user._id)}>Save</button>
@@ -188,7 +202,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({ open, onClose
                         <td className="px-4 py-2 border-b">{user.contactNo}</td>
                         <td className="px-4 py-2 border-b">{user.dob ? new Date(user.dob).toLocaleDateString() : ''}</td>
                         <td className="px-4 py-2 border-b">{user.role}</td>
-                        <td className="px-4 py-2 border-b text-center">{user.privilegeForBooks || 'normal'}</td>
+                        <td className="px-4 py-2 border-b text-center">
+                          {Array.isArray(user.privilegeForBooks)
+                            ? user.privilegeForBooks.join(', ')
+                            : user.privilegeForBooks || 'normal'}
+                        </td>
                         <td className="px-4 py-2 border-b text-center">
                           <button className="text-blue-600 hover:underline mr-2" onClick={() => handleEdit(user)}>Edit</button>
                           <button className="text-red-600 hover:underline" disabled>Delete</button>

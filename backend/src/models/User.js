@@ -4,9 +4,15 @@ import validator from 'validator';
 
 const userSchema = new mongoose.Schema({
     privilegeForBooks: {
-      type: String,
-      enum: ['normal', 'special', 'private'],
-      default: 'normal'
+      type: [String],
+      default: ['normal'],
+      validate: {
+        validator: function(arr) {
+          const allowed = ['normal', 'special', 'private'];
+          return Array.isArray(arr) && arr.every(v => allowed.includes(v));
+        },
+        message: 'Invalid privilege value in privilegeForBooks'
+      }
     },
   username: {
     type: String,

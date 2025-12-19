@@ -21,6 +21,7 @@ export interface User {
   contactNo: string;
   email: string;
   role: string;
+  privilegeForBooks?: string[];
   profile?: {
     firstName?: string;
     lastName?: string;

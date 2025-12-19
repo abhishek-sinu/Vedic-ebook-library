@@ -35,7 +35,18 @@ router.put('/users/:id', async (req, res) => {
     const update = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
-        update[field] = req.body[field];
+        if (field === 'privilegeForBooks') {
+          // Ensure privilegeForBooks is always an array
+          if (Array.isArray(req.body[field])) {
+            update[field] = req.body[field];
+          } else if (typeof req.body[field] === 'string') {
+            update[field] = [req.body[field]];
+          } else {
+            update[field] = [];
+          }
+        } else {
+          update[field] = req.body[field];
+        }
       }
     }
     const user = await User.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true, context: 'query' });

@@ -41,11 +41,18 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
 }) => {
   // Get user privilege from localStorage/sessionStorage
   let userPrivilege = 'normal';
+  let userPrivileges: string[] = ['normal'];
   try {
     const userStr = localStorage.getItem('vedic_user') || sessionStorage.getItem('vedic_user');
     if (userStr) {
       const userObj = JSON.parse(userStr);
-      if (userObj.privilegeForBooks) userPrivilege = userObj.privilegeForBooks;
+      if (userObj.privilegeForBooks) {
+        if (Array.isArray(userObj.privilegeForBooks)) {
+          userPrivileges = userObj.privilegeForBooks;
+        } else if (typeof userObj.privilegeForBooks === 'string') {
+          userPrivileges = [userObj.privilegeForBooks];
+        }
+      }
     }
   } catch {}
 
@@ -53,8 +60,9 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   const filteredCategories = categories.map(category => ({
     ...category,
     books: category.books.filter(book => {
-      console.log('Book:', book.title, '| type:', book.type, '| userPrivilege:', userPrivilege);
-      return book.type === userPrivilege;
+      // Show book if its type is included in user's privileges
+      console.log('Book:', book.title, '| type:', book.type, '| userPrivileges:', userPrivileges);
+      return userPrivileges.includes(book.type);
     })
   }));
 
