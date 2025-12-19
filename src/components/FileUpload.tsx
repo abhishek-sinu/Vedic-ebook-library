@@ -19,13 +19,20 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
   const [error, setError] = useState<string>('');
   const [showMetadataForm, setShowMetadataForm] = useState(false);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
+  // Book type options for dropdown
+  const typeOptions = [
+    { value: 'normal', label: 'Normal' },
+    { value: 'special', label: 'Special' },
+    { value: 'private', label: 'Private' }
+  ];
   const [metadata, setMetadata] = useState({
     title: '',
     author: '',
     category: '',
     description: '',
     tags: '',
-    language: 'english'
+    language: 'english',
+    type: ''
   });
 
   // Define the same categories as in EBookReader
@@ -98,7 +105,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
         category: metadata.category,
         language: metadata.language.toLowerCase(),
         description: metadata.description.trim() || undefined,
-        tags: metadata.tags ? metadata.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : undefined
+        tags: metadata.tags ? metadata.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : undefined,
+        type: metadata.type || 'normal'
       });
 
       // Call both callbacks if they exist
@@ -107,7 +115,33 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
       
       setShowMetadataForm(false);
       setCurrentFile(null);
-      setMetadata({ title: '', author: '', category: '', description: '', tags: '', language: 'english' });
+      setMetadata({ title: '', author: '', category: '', description: '', tags: '', language: 'english', type: '' });
+      const typeOptions = [
+        { value: 'normal', label: 'Normal' },
+        { value: 'special', label: 'Special' },
+        { value: 'private', label: 'Private' }
+      ];
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
+                    Type *
+                  </label>
+                  <select
+                    value={metadata.type}
+                    onChange={e => setMetadata(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{
+                      background: 'var(--input)',
+                      color: 'var(--text)',
+                      borderColor: 'var(--border)'
+                    }}
+                    required
+                  >
+                    <option value="">Select type...</option>
+                    {typeOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
     } catch (err: any) {
       setError(err.message || 'Failed to upload file');
     } finally {
@@ -286,6 +320,28 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
                 <option value="english">English</option>
                 <option value="telugu">Telugu</option>
                 <option value="sanskrit">Sanskrit</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
+                Type *
+              </label>
+              <select
+                value={metadata.type}
+                onChange={(e) => setMetadata(prev => ({ ...prev, type: e.target.value }))}
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--card)',
+                  color: 'var(--text)',
+                  borderColor: 'var(--border)'
+                }}
+                required
+              >
+                <option value="">Select type...</option>
+                {typeOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
 

@@ -39,6 +39,28 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   bookChapters = [],
   onChapterSelect
 }) => {
+  // Get user privilege from localStorage/sessionStorage
+  let userPrivilege = 'normal';
+  try {
+    const userStr = localStorage.getItem('vedic_user') || sessionStorage.getItem('vedic_user');
+    if (userStr) {
+      const userObj = JSON.parse(userStr);
+      if (userObj.privilegeForBooks) userPrivilege = userObj.privilegeForBooks;
+    }
+  } catch {}
+
+  // Filter categories/books by user privilege
+  const filteredCategories = categories.map(category => ({
+    ...category,
+    books: category.books.filter(book => {
+      console.log('Book:', book.title, '| type:', book.type, '| userPrivilege:', userPrivilege);
+      return book.type === userPrivilege;
+    })
+  }));
+
+  console.log('Filtered Categories:', filteredCategories);
+
+  // Use filteredCategories everywhere below instead of categories
   const [activeTab, setActiveTab] = useState<'categories' | 'authors' | 'title'>('categories');
   const [expandedLetters, setExpandedLetters] = useState<{[key: string]: boolean}>({});
   const [expandedAuthors, setExpandedAuthors] = useState<{[key: string]: boolean}>({});
@@ -49,8 +71,8 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   const authorGroups = useMemo(() => {
     const groups: {[key: string]: {author: string; books: Book[]}[]} = {};
     
-    // Get all books from all categories
-    const allBooks = categories.flatMap(category => category.books);
+    // Get all books from all filtered categories
+    const allBooks = filteredCategories.flatMap(category => category.books);
     
     // Group books by author
     const authorMap = new Map<string, Book[]>();
@@ -89,14 +111,14 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
     });
     
     return groups;
-  }, [categories]);
+  }, [filteredCategories]);
 
   // Organize books by title first letter
   const titleGroups = useMemo(() => {
     const groups: {[key: string]: Book[]} = {};
     
-    // Get all books from all categories
-    const allBooks = categories.flatMap(category => category.books);
+    // Get all books from all filtered categories
+    const allBooks = filteredCategories.flatMap(category => category.books);
     
     // Function to get the first alphabetical letter from title, ignoring numbers and honorifics
     const getFirstAlphabeticalLetter = (title: string): string => {
@@ -135,7 +157,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
     });
     
     return groups;
-  }, [categories]);
+  }, [filteredCategories]);
 
   const toggleTitleLetterExpanded = (letter: string) => {
     setExpandedTitleLetters(prev => ({
@@ -414,7 +436,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                 <div className="text-gray-400">Loading...</div>
               </div>
             ) : (
-              categories.map((category) => (
+              filteredCategories.map((category) => (
                 <div key={category.name} className="border-b" style={{ borderColor: 'var(--color-vb-header-bottom, var(--border))' }}>
                   <button
                     onClick={() => onCategoryToggle(category.name)}
@@ -431,14 +453,14 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                             : 'var(--color-vb-input-border) !important'
                       }}
                     />
-                      <span className="font-medium category-panel-category-text">{category.name}</span>
+                      <span className="text-xl font-bold category-panel-category-text" style={{lineHeight: '1.3'}}>{category.name}</span>
                     </div>
                   </button>
                   
                   {expandedCategories[category.name] && (
                     <div>
                       {category.books.map((book) => (
-                        <div key={book._id}>
+                        <div key={book._id} className="border-b border-gray-600 last:border-b-0">
                           <div className="flex items-center">
                             <button
                               onClick={() => {
@@ -478,7 +500,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                                   <BookIcon size={16} />
                                 )}
                               </span>
-                              <span className="text-sm font-medium category-panel-book-title">{book.title}</span>
+                              <span className="text-lg font-bold category-panel-book-title" style={{lineHeight: '1.3'}}>{book.title}</span>
                               {book.author && (
                                 <span className="text-xs category-panel-book-author ml-2" style={{ opacity: 0.7 }}>{book.author}</span>
                               )}
@@ -486,20 +508,20 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                           </div>
                           {bookId === book._id && expandedBookChapters[book._id] && (() => {
                             return (
-                              <div className="pl-16 pt-2 border-l border-gray-700 bg-gray-900/40">
+                              <div className="pl-16 pt-2 border-l border-gray-700">
                                 {Array.isArray(book.chapterswithPageNo) && book.chapterswithPageNo.length > 0 ? (
                                   book.chapterswithPageNo.map((chapter, idx) => (
-                                    <div key={idx} className="flex items-center text-xs py-1 cursor-pointer hover:text-yellow-400"
+                                    <div
+                                      key={idx}
+                                      className="flex items-center text-base py-3 cursor-pointer hover:text-yellow-400 border-b border-gray-700 last:border-b-0 transition-all"
                                       style={{ color: 'var(--text)' }}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        console.log('CategoryPanel: Navigating to chapter page', chapter.pageNumber, chapter.chapterName);
-                                        if (onChapterSelect) {
-                                          onChapterSelect(chapter.pageNumber);
-                                        }
-                                      }}>
-                                      <span className="mr-2"><FileText size={14} /></span>
-                                      <span className="ml-2">{chapter.chapterName}</span>
+                                        if (onChapterSelect) onChapterSelect(chapter.pageNumber);
+                                      }}
+                                    >
+                                      <span className="mr-2"><FileText size={16} /></span>
+                                      <span className="ml-2 font-semibold">{chapter.chapterName}</span>
                                     </div>
                                   ))
                                 ) : (

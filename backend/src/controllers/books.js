@@ -27,6 +27,7 @@ export const uploadBook = catchAsync(async (req, res, next) => {
     language,
     category,
     tags = [],
+    type = 'normal',
     metadata = {}
   } = req.body;
 
@@ -42,6 +43,7 @@ export const uploadBook = catchAsync(async (req, res, next) => {
 
     // Create book document
     const book = await Book.create({
+      type,
       title,
       author,
       description,
@@ -349,7 +351,7 @@ export const updateBook = catchAsync(async (req, res, next) => {
 
   const allowedFields = [
     'title', 'author', 'description', 'language', 'category', 'tags',
-    'metadata', 'accessControl'
+    'metadata', 'accessControl', 'type'
   ];
 
   const updates = {};

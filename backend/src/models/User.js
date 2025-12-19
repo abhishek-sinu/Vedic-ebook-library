@@ -3,6 +3,11 @@ import bcryptjs from 'bcryptjs';
 import validator from 'validator';
 
 const userSchema = new mongoose.Schema({
+    privilegeForBooks: {
+      type: String,
+      enum: ['normal', 'special', 'private'],
+      default: 'normal'
+    },
   username: {
     type: String,
     required: [true, 'Username is required'],

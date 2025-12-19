@@ -68,9 +68,9 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   // Initialize responsive font size based on screen width
   const getDefaultFontSize = () => {
     if (typeof window !== 'undefined') {
-      return 18; // 18px for both mobile and desktop for better readability
+      return 22; // 22px for both mobile and desktop for better readability
     }
-    return 18; // Default for SSR
+    return 22; // Default for SSR
   };
   
   const [fontSize, setFontSize] = useState(getDefaultFontSize());
@@ -928,7 +928,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   // Handle responsive font size on window resize
   useEffect(() => {
     const handleResize = () => {
-      const newDefaultSize = 20;
+      const newDefaultSize = 22;
       if (Math.abs(fontSize - getDefaultFontSize()) <= 2) {
         setFontSize(newDefaultSize);
       }

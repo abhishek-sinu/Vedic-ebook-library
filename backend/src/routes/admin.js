@@ -8,20 +8,44 @@ router.use(authenticate);
 router.use(requireAdmin);
 
 // Get all users (admin only)
+import User from '../models/User.js';
+
+// Get all users (admin only)
 router.get('/users', async (req, res) => {
-  res.json({
-    success: true,
-    message: 'Admin users endpoint - to be implemented',
-    data: []
-  });
+  try {
+    const users = await User.find({}, '-password'); // Exclude password field
+    res.json({
+      success: true,
+      data: users
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch users',
+      error: error.message
+    });
+  }
 });
 
-// Update user role (admin only)
-router.put('/users/:id/role', async (req, res) => {
-  res.json({
-    success: true,
-    message: 'Update user role endpoint - to be implemented'
-  });
+
+// Update user fields (except name, username, password)
+router.put('/users/:id', async (req, res) => {
+  try {
+    const allowedFields = ['email', 'contactNo', 'dob', 'role', 'privilegeForBooks'];
+    const update = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        update[field] = req.body[field];
+      }
+    }
+    const user = await User.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true, context: 'query' });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to update user', error: error.message });
+  }
 });
 
 // Deactivate user (admin only)

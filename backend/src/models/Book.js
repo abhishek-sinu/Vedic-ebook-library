@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 
 const bookSchema = new mongoose.Schema({
+    type: {
+      type: String,
+      enum: ['normal', 'special', 'private'],
+      default: 'normal',
+      required: true
+    },
   title: {
     type: String,
     required: [true, 'Book title is required'],

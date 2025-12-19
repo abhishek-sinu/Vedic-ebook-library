@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import BookListModal from './BookListModal';
 import FileUpload from './FileUpload';
 import { fetchBooks } from '../lib/bookStorage';
+import UserManagementModal from './UserManagementModal';
 
 interface HeaderProps {
   user?: { role: string; username: string; name?: string } | null;
@@ -19,6 +20,7 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [books, setBooks] = useState<any[]>([]);
   const [loadingBooks, setLoadingBooks] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
 
   const handleShowBooks = async () => {
     setShowBooksModal(true);
@@ -90,6 +92,14 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange 
                 >
                   <ListIcon className="w-5 h-5" />
                 </button>
+                  <button
+                    onClick={() => setShowUserModal(true)}
+                    className="p-2 rounded transition-colors"
+                    style={{ color: 'var(--icon)', background: 'transparent' }}
+                    title="Manage Users"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-7a4 4 0 11-8 0 4 4 0 018 0zm6 4a4 4 0 10-8 0 4 4 0 008 0z" /></svg>
+                  </button>
               </>
             )}
             {/* Profile icon removed, handled in SideNav */}
@@ -126,6 +136,7 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange 
           </div>
         </div>
       )}
+      <UserManagementModal open={showUserModal} onClose={() => setShowUserModal(false)} />
     </>
   );
 };

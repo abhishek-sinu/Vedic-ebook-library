@@ -26,7 +26,12 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
   const [editValues, setEditValues] = useState<Partial<Book>>({});
 
 
-  // Category and language options (sync with FileUpload)
+  // Category, language, and type options (sync with FileUpload)
+    const typeOptions = [
+      { value: 'normal', label: 'Normal' },
+      { value: 'special', label: 'Special' },
+      { value: 'private', label: 'Private' }
+    ];
   const bookCategories = [
     'Srila Prabhupada',
     'Acaryas',
@@ -103,56 +108,80 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
       <div
-        className="rounded-lg shadow-lg w-full max-w-6xl p-8 relative"
-        style={{ background: 'var(--modal-bg)', color: 'var(--modal-text)' }}
+        className="rounded-lg shadow-lg w-full max-w-6xl p-8 relative border"
+        style={{
+          background: 'var(--color-vb-modal-bg, #fff)',
+          borderColor: 'var(--color-vb-header-bottom, #eebd89)',
+          color: 'var(--color-vb-normal-text, #222)'
+        }}
       >
         <button
-          className="absolute top-4 right-4"
-          style={{ color: 'var(--modal-text)' }}
+          className="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-2xl"
+          style={{ color: 'var(--color-vb-normal-text, #222)' }}
           onClick={onClose}
+          title="Close"
         >
           &times;
         </button>
-        <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--modal-text)' }}>All Books</h2>
+        <h2
+          className="text-2xl font-bold mb-4 text-center"
+          style={{ color: 'var(--color-vb-header-top-text, #b97b2c)' }}
+        >
+          All Books
+        </h2>
         <div className="overflow-x-auto">
-          <table className="modal-table min-w-[1100px] border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
+          <table
+            className="min-w-full border rounded-lg"
+            style={{
+              background: 'var(--color-vb-modal-bg, #fff)',
+              color: 'var(--color-vb-normal-text, #222)'
+            }}
+          >
             <thead>
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Title</th>
-                <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Author</th>
-                <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Language</th>
-                <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Category</th>
-                <th className="px-4 py-3 text-left font-semibold border-r border-gray-200">Description</th>
-                <th className="px-4 py-3 text-left font-semibold">Action</th>
+              <tr
+                style={{
+                  background: 'var(--color-vb-header-bottom, #fdf6e3)',
+                  color: 'var(--color-vb-header-top-text, #b97b2c)'
+                }}
+              >
+                <th className="px-4 py-2 border-b">Title</th>
+                <th className="px-4 py-2 border-b">Author</th>
+                <th className="px-4 py-2 border-b">Language</th>
+                <th className="px-4 py-2 border-b">Category</th>
+                <th className="px-4 py-2 border-b">Description</th>
+                <th className="px-4 py-2 border-b">Type</th>
+                <th className="px-4 py-2 border-b">Action</th>
               </tr>
             </thead>
             <tbody>
               {editBooks.map((book, idx) => (
                 <tr
                   key={book._id}
-                  className={
-                    `transition-colors border-b border-gray-200 last:border-b-0`
-                  }
+                  className="transition"
+                  style={{
+                    background: 'var(--color-vb-modal-bg, #fff)',
+                    color: 'var(--color-vb-normal-text, #222)'
+                  }}
                 >
                   {editIdx === book._id ? (
                     <>
-                      <td className="px-4 py-2 border-r border-gray-200">
+                      <td className="px-4 py-2 border-b font-semibold">
                         <input
                           className="w-full px-2 py-1 border rounded"
                           value={editValues.title || ''}
                           onChange={e => handleEditChange('title', e.target.value)}
                         />
                       </td>
-                      <td className="px-4 py-2 border-r border-gray-200">
+                      <td className="px-4 py-2 border-b">
                         <input
                           className="w-full px-2 py-1 border rounded"
                           value={editValues.author || ''}
                           onChange={e => handleEditChange('author', e.target.value)}
                         />
                       </td>
-                      <td className="px-4 py-2 border-r border-gray-200">
+                      <td className="px-4 py-2 border-b">
                         <select
-                          className="w-full px-2 py-1 border rounded"
+                          className="w-full px-2 py-1 border rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                           value={editValues.language || ''}
                           onChange={e => handleEditChange('language', e.target.value)}
                         >
@@ -162,9 +191,9 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
                           ))}
                         </select>
                       </td>
-                      <td className="px-4 py-2 border-r border-gray-200">
+                      <td className="px-4 py-2 border-b">
                         <select
-                          className="w-full px-2 py-1 border rounded"
+                          className="w-full px-2 py-1 border rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                           value={editValues.category || ''}
                           onChange={e => handleEditChange('category', e.target.value)}
                         >
@@ -174,14 +203,26 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
                           ))}
                         </select>
                       </td>
-                      <td className="px-4 py-2 max-w-xs">
+                      <td className="px-4 py-2 border-b max-w-xs">
                         <input
                           className="w-full px-2 py-1 border rounded"
                           value={editValues.description || ''}
                           onChange={e => handleEditChange('description', e.target.value)}
                         />
                       </td>
-                      <td className="px-4 py-2 flex gap-2">
+                      <td className="px-4 py-2 border-b">
+                        <select
+                          className="w-full px-2 py-1 border rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={editValues.type || ''}
+                          onChange={e => handleEditChange('type', e.target.value)}
+                        >
+                          <option value="">Select type...</option>
+                          {typeOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-2 border-b flex gap-2 text-center">
                         <button
                           className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
                           onClick={() => handleEditSave(book._id)}
@@ -194,12 +235,13 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
                     </>
                   ) : (
                     <>
-                      <td className="px-4 py-2 border-r border-gray-200">{book.title}</td>
-                      <td className="px-4 py-2 border-r border-gray-200">{book.author || '-'}</td>
-                      <td className="px-4 py-2 border-r border-gray-200">{book.language || '-'}</td>
-                      <td className="px-4 py-2 border-r border-gray-200">{book.category || '-'}</td>
-                      <td className="px-4 py-2 max-w-xs truncate" title={book.description}>{book.description || '-'}</td>
-                      <td className="px-4 py-2 flex gap-2">
+                      <td className="px-4 py-2 border-b font-semibold">{book.title}</td>
+                      <td className="px-4 py-2 border-b">{book.author || '-'}</td>
+                      <td className="px-4 py-2 border-b">{book.language || '-'}</td>
+                      <td className="px-4 py-2 border-b">{book.category || '-'}</td>
+                      <td className="px-4 py-2 border-b max-w-xs truncate" title={book.description}>{book.description || '-'}</td>
+                      <td className="px-4 py-2 border-b">{book.type || '-'}</td>
+                      <td className="px-4 py-2 border-b flex gap-2 text-center">
                         <button
                           className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
                           onClick={() => handleEdit(book._id)}

@@ -37,6 +37,7 @@ export interface Book {
     lastAccessed?: string;
   };
   isActive: boolean;
+  type: 'normal' | 'special' | 'private';
 }
 
 export interface BookMetadata {
@@ -161,7 +162,7 @@ export const fetchBookContent = async (bookId: string, page: number = 1, format:
   }
 };
 
-export const uploadBook = async (file: File, metadata: { title: string; author: string; category: string; language: string; description?: string; tags?: string[] }): Promise<Book | null> => {
+export const uploadBook = async (file: File, metadata: { title: string; author: string; category: string; language: string; description?: string; tags?: string[]; type?: string }): Promise<Book | null> => {
   try {
     const token = localStorage.getItem('vedic_auth_token') || sessionStorage.getItem('vedic_auth_token');
     
@@ -179,7 +180,9 @@ export const uploadBook = async (file: File, metadata: { title: string; author: 
     if (metadata.description) {
       formData.append('description', metadata.description);
     }
-    
+    if (metadata.type) {
+      formData.append('type', metadata.type);
+    }
     if (metadata.tags && Array.isArray(metadata.tags)) {
       metadata.tags.forEach(tag => formData.append('tags', tag));
     }
