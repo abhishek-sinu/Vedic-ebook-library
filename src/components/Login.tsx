@@ -1,5 +1,7 @@
 'use client';
-
+import ForgotPasswordModal from './ForgotPasswordModal';
+import VerifyOtpModal from './VerifyOtpModal';
+import ResetPasswordModal from './ResetPasswordModal';
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, User, Lock, BookOpen } from 'lucide-react';
 
@@ -9,6 +11,7 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +25,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupDob, setSignupDob] = useState('');
   const [signupContact, setSignupContact] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [showVerifyOtpModal, setShowVerifyOtpModal] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [resetFlowEmail, setResetFlowEmail] = useState('');
+  const [resetFlowOtp, setResetFlowOtp] = useState('');
   // Handle sign up
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -336,6 +345,41 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               <div className="text-center mt-4">
                 <span className="text-gray-400 text-sm">Don't have an account?</span>
                 <button type="button" className="ml-2 text-yellow-400 hover:underline text-sm" onClick={() => setIsSignUp(true)}>Sign Up</button>
+                <div className="mt-2">
+                  <button type="button" className="text-blue-400 hover:underline text-xs" onClick={() => setShowForgotPasswordModal(true)}>
+                    Forgot your Password?
+                  </button>
+                      <ForgotPasswordModal
+                        open={showForgotPasswordModal}
+                        onClose={() => setShowForgotPasswordModal(false)}
+                        onSuccess={(email) => {
+                          setShowForgotPasswordModal(false);
+                          setResetFlowEmail(email);
+                          setShowVerifyOtpModal(true);
+                        }}
+                      />
+                      <VerifyOtpModal
+                        open={showVerifyOtpModal}
+                        email={resetFlowEmail}
+                        onClose={() => setShowVerifyOtpModal(false)}
+                        onSuccess={(otp) => {
+                          setResetFlowOtp(otp);
+                          setShowVerifyOtpModal(false);
+                          setShowResetPasswordModal(true);
+                        }}
+                      />
+                      <ResetPasswordModal
+                        open={showResetPasswordModal}
+                        email={resetFlowEmail}
+                        otp={resetFlowOtp}
+                        onClose={() => setShowResetPasswordModal(false)}
+                        onSuccess={() => {
+                          setShowResetPasswordModal(false);
+                          setResetFlowEmail('');
+                          setResetFlowOtp('');
+                        }}
+                      />
+                </div>
               </div>
             </form>
           )}

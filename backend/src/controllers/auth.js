@@ -8,6 +8,7 @@ import {
   verifySpecialToken
 } from '../utils/jwt.js';
 import { AppError, catchAsync, validationError } from '../middleware/errorHandler.js';
+import { sendOtpEmail } from '../utils/email.js';
 
 // Register a new user
 export const register = catchAsync(async (req, res, next) => {
@@ -311,35 +312,52 @@ export const verifyTokenEndpoint = catchAsync(async (req, res, next) => {
 
 // Request password reset
 export const forgotPassword = catchAsync(async (req, res, next) => {
+  console.log('--- forgotPassword START ---');
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('forgotPassword: validation error', errors.array());
     return next(validationError(errors.array()));
   }
 
   const { email } = req.body;
+  console.log('forgotPassword: received email:', email);
 
   const user = await User.findOne({ email });
-
+  console.log('forgotPassword: user found:', !!user);
   if (!user) {
     // Don't reveal if user exists or not
+    console.log('--- forgotPassword END (user not found) ---');
     return res.json({
       success: true,
       message: 'If an account with that email exists, a password reset link has been sent.'
     });
   }
 
-  // Generate password reset token
-  const resetToken = createPasswordResetToken(user._id);
+  // Generate a 6-digit numeric OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  // Set expiry to 10 minutes from now
+  const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+  console.log('forgotPassword: generated OTP:', otp, 'expires at:', otpExpires);
 
-  // In a real application, you would send this via email
-  // For now, we'll just log it
-  console.log(`Password reset token for ${email}: ${resetToken}`);
+  user.otp = otp;
+  user.otpExpires = otpExpires;
+  await user.save();
+  console.log('forgotPassword: OTP and expiry saved to user');
 
+  // Send OTP via email
+  try {
+    await sendOtpEmail(user.email, otp);
+    console.log('forgotPassword: OTP email sent to', user.email);
+  } catch (err) {
+    console.log('--- forgotPassword END (email send failed) ---', err);
+    return next(new AppError('Failed to send OTP email', 500));
+  }
+
+  console.log('--- forgotPassword END (success) ---');
   res.json({
     success: true,
-    message: 'If an account with that email exists, a password reset link has been sent.',
-    // In development, return the token for testing
-    ...(process.env.NODE_ENV === 'development' && { resetToken })
+    message: 'If an account with that email exists, a password reset code has been sent.',
+    ...(process.env.NODE_ENV === 'development' && { otp })
   });
 });
 
@@ -375,6 +393,84 @@ export const resetPassword = catchAsync(async (req, res, next) => {
   
   await user.save();
 
+  res.json({
+    success: true,
+    message: 'Password reset successful. Please login with your new password.'
+  });
+});
+
+// Verify OTP
+export const verifyOtp = catchAsync(async (req, res, next) => {
+  console.log('--- verifyOtp START ---');
+  console.log('verifyOtp request body:', req.body);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(validationError(errors.array()));
+  }
+
+  const { email, otp } = req.body;
+  const user = await User.findOne({ email });
+  console.log('verifyOtp fetched user:', user);
+  if (user) {
+    console.log('verifyOtp stored OTP:', user.otp);
+    console.log('verifyOtp stored OTP expiry:', user.otpExpires);
+  }
+
+  if (!user || !user.otp || !user.otpExpires) {
+    console.log('--- verifyOtp END (invalid/expired) ---');
+    return next(new AppError('Invalid or expired OTP', 400));
+  }
+
+  if (user.otp !== otp) {
+    console.log('--- verifyOtp END (incorrect) ---');
+    console.log('verifyOtp sent OTP:', otp);
+    return next(new AppError('Incorrect OTP', 400));
+  }
+
+  if (user.otpExpires < new Date()) {
+    console.log('--- verifyOtp END (expired) ---');
+    console.log('verifyOtp expiry check:', user.otpExpires, '<', new Date());
+    return next(new AppError('OTP has expired', 400));
+  }
+
+  // OTP is valid, clear it
+  user.otp = null;
+  user.otpExpires = null;
+  await user.save();
+
+  console.log('--- verifyOtp END (success) ---');
+  res.json({
+    success: true,
+    message: 'OTP verified successfully. You may now reset your password.'
+  });
+});
+
+// Reset password using OTP
+export const resetPasswordWithOtp = catchAsync(async (req, res, next) => {
+  console.log('--- resetPasswordWithOtp START ---');
+  console.log('resetPasswordWithOtp request body:', req.body);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(validationError(errors.array()));
+  }
+
+  const { email, newPassword } = req.body;
+  const user = await User.findOne({ email });
+  console.log('resetPasswordWithOtp fetched user:', user);
+
+  if (!user) {
+    console.log('--- resetPasswordWithOtp END (user not found) ---');
+    return next(new AppError('User not found', 404));
+  }
+
+  // Directly reset password and clear OTP fields
+  user.password = newPassword;
+  user.otp = null;
+  user.otpExpires = null;
+  user.refreshTokens = [];
+  await user.save();
+
+  console.log('--- resetPasswordWithOtp END (success) ---');
   res.json({
     success: true,
     message: 'Password reset successful. Please login with your new password.'

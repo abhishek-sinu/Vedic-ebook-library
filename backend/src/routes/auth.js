@@ -9,7 +9,9 @@ import {
   changePassword,
   verifyTokenEndpoint,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  verifyOtp,
+  resetPasswordWithOtp
 } from '../controllers/auth.js';
 
 import { authenticate } from '../middleware/auth.js';
@@ -20,7 +22,9 @@ import {
   validateForgotPassword,
   validateResetPassword,
   validateUpdateProfile,
-  validateRefreshToken
+  validateRefreshToken,
+  validateVerifyOtp,
+  validateResetPasswordWithOtp
 } from '../middleware/validation.js';
 
 const router = express.Router();
@@ -95,6 +99,8 @@ router.post('/login', validateLogin, login);
 router.post('/refresh-token', validateRefreshToken, refreshToken);
 router.post('/forgot-password', validateForgotPassword, forgotPassword);
 router.post('/reset-password', validateResetPassword, resetPassword);
+router.post('/verify-otp', validateVerifyOtp, verifyOtp);
+router.post('/reset-password-otp', validateResetPasswordWithOtp, resetPasswordWithOtp);
 
 // Protected routes (authentication required)
 router.use(authenticate); // Apply authentication middleware to all routes below

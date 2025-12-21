@@ -113,7 +113,17 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  
+
+  // OTP for password reset and its expiry
+  otp: {
+    type: String,
+    default: null
+  },
+  otpExpires: {
+    type: Date,
+    default: null
+  },
+
   lastLogin: {
     type: Date,
     default: null

@@ -29,7 +29,6 @@ export const validateRegister = [
   body('email')
     .trim()
     .isEmail()
-    .normalizeEmail()
     .withMessage('Please provide a valid email address'),
     
   body('password')
@@ -97,7 +96,6 @@ export const validateForgotPassword = [
   body('email')
     .trim()
     .isEmail()
-    .normalizeEmail()
     .withMessage('Please provide a valid email address')
 ];
 
@@ -120,6 +118,23 @@ export const validateResetPassword = [
       }
       return true;
     })
+];
+
+// Reset password with OTP validation
+export const validateResetPasswordWithOtp = [
+  body('email')
+    .trim()
+    .isEmail()
+    .withMessage('Please provide a valid email address'),
+  body('otp')
+    .trim()
+    .isLength({ min: 6, max: 6 })
+    .withMessage('OTP must be 6 digits'),
+  body('newPassword')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
 ];
 
 // Update profile validation
@@ -361,4 +376,16 @@ export const validateRating = [
     .optional()
     .isBoolean()
     .withMessage('isPublic must be a boolean value')
+];
+
+// OTP verification validation
+export const validateVerifyOtp = [
+  body('email')
+    .trim()
+    .isEmail()
+    .withMessage('Please provide a valid email address'),
+  body('otp')
+    .trim()
+    .isLength({ min: 6, max: 6 })
+    .withMessage('OTP must be 6 digits')
 ];
