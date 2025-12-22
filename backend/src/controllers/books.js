@@ -749,14 +749,14 @@ export const searchInBook = catchAsync(async (req, res, next) => {
     console.log(`🔍 Searching in book: ${book.title} for: "${searchQuery}"`);
     
     // Get full book content from optimized cache
-    console.log('📖 Attempting to get full book content...');
-    const fullContent = await optimizedCache.getFullBookContent(book._id.toString());
-    console.log('📄 Full content result:', fullContent ? `${fullContent.length} characters` : 'null/undefined');
+    // console.log('📖 Attempting to get full book content...');
+    // const fullContent = await optimizedCache.getFullBookContent(book._id.toString());
+    // console.log('📄 Full content result:', fullContent ? `${fullContent.length} characters` : 'null/undefined');
     
-    if (!fullContent) {
-      console.log('❌ Book content not available for search');
-      return next(new AppError('Book content not available for search', 404));
-    }
+    // if (!fullContent) {
+    //   console.log('❌ Book content not available for search');
+    //   return next(new AppError('Book content not available for search', 404));
+    // }
 
     // Perform search across full content
     const results = [];
@@ -792,14 +792,16 @@ export const searchInBook = catchAsync(async (req, res, next) => {
         const foundIndex = pageContentLower.indexOf(searchTerm, searchIndex);
         if (foundIndex === -1) break;
         
-        // Extract context around the match
-        const contextStart = Math.max(0, foundIndex - 150);
-        const contextEnd = Math.min(pageContent.length, foundIndex + searchTerm.length + 150);
-        
+
+        // Extract more context around the match (increase window from 150 to 350 chars)
+        const CONTEXT_WINDOW = 350;
+        const contextStart = Math.max(0, foundIndex - CONTEXT_WINDOW);
+        const contextEnd = Math.min(pageContent.length, foundIndex + searchTerm.length + CONTEXT_WINDOW);
+
         const beforeContext = pageContent.substring(contextStart, foundIndex);
         const matchText = pageContent.substring(foundIndex, foundIndex + searchTerm.length);
         const afterContext = pageContent.substring(foundIndex + searchTerm.length, contextEnd);
-        
+
         const fullContext = pageContent.substring(contextStart, contextEnd);
         
         // Helper function to clean HTML tags for display

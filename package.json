@@ -2,12 +2,14 @@
   "name": "vedic-ebooks-app",
   "version": "0.1.0",
   "private": true,
+  "main": "main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint",
-    "production": "npm run build && npm start"
+    "production": "npm run build && npm start",
+    "electron": "electron ."
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -32,6 +34,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "electron": "^39.2.7",
     "eslint": "^9",
     "eslint-config-next": "16.0.2",
     "tailwindcss": "^4",

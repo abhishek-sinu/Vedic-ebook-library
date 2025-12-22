@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -645,9 +646,9 @@ class OptimizedContentCache {
 
       // Check disk cache
       const diskPath = path.join(this.diskCacheDir, `${bookId}.json`);
-      if (fs.existsSync(diskPath)) {
+      if (fsSync.existsSync(diskPath)) {
         console.log(`💾 Loading full content from disk cache: ${bookId}`);
-        const diskEntry = JSON.parse(fs.readFileSync(diskPath, 'utf8'));
+        const diskEntry = JSON.parse(fsSync.readFileSync(diskPath, 'utf8'));
         console.log('🔍 Disk cache entry properties:', Object.keys(diskEntry));
         
         if (diskEntry) {
@@ -682,7 +683,7 @@ class OptimizedContentCache {
 
       const filePath = path.join(process.cwd(), book.filePath);
       
-      if (!fs.existsSync(filePath)) {
+      if (!fsSync.existsSync(filePath)) {
         throw new Error('Book file not found');
       }
 

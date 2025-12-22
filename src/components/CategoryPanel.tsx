@@ -61,12 +61,10 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
     ...category,
     books: category.books.filter(book => {
       // Show book if its type is included in user's privileges
-      console.log('Book:', book.title, '| type:', book.type, '| userPrivileges:', userPrivileges);
       return userPrivileges.includes(book.type);
     })
   }));
 
-  console.log('Filtered Categories:', filteredCategories);
 
   // Use filteredCategories everywhere below instead of categories
   const [activeTab, setActiveTab] = useState<'categories' | 'authors' | 'title'>('categories');

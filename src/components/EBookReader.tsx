@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
@@ -95,6 +96,26 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   // Chapters state
   const [bookChapters, setBookChapters] = useState<{ text: string; wordIndex: number }[]>([]);
 
+  const [lastSearchWord, setLastSearchWord] = useState<string>('');
+
+    // Utility to highlight search word in context (HTML safe)
+  // Enhanced: Optionally add unique IDs to matches for main reading area
+  function highlightSearchWord(context: string, search: string, opts?: { addIds?: boolean, page?: number }) {
+    if (!search) return context;
+    // Escape regex special chars in search
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+    let matchIndex = 0;
+    return context.replace(regex, (match) => {
+      if (opts && opts.addIds && typeof opts.page === 'number') {
+        const id = `search-match-${opts.page}-${matchIndex++}`;
+        return `<span id="${id}" style="background: #ffe066; color: #b45309; font-weight: bold; border-radius: 0.25em; padding: 0 2px;">${match}</span>`;
+      } else {
+        return `<span style="background: #ffe066; color: #b45309; font-weight: bold; border-radius: 0.25em; padding: 0 2px;">${match}</span>`;
+      }
+    });
+  }
+
   // Get user context for bookmark functionality
   const { user: authUser } = useAuth();
 
@@ -150,6 +171,29 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
       setIsLoading(false);
     }
   }, [bookId, currentPage, isLoading]);
+
+  // After navigation from search result card, scroll to and highlight the first match
+  useEffect(() => {
+    if (lastSearchWord && highlightedContent && !isSearchMode) {
+      console.log('[Highlight Scroll useEffect] Triggered:', { lastSearchWord, currentPage });
+      setTimeout(() => {
+        const matchId = `search-match-${currentPage}-0`;
+        const matchElement = document.getElementById(matchId);
+        console.log('[Highlight Scroll useEffect] Looking for:', matchId, 'Found:', !!matchElement);
+        if (matchElement && contentRef.current) {
+          matchElement.style.backgroundColor = '#f59e0b';
+          matchElement.style.boxShadow = '0 0 0 3px #f59e0b, 0 0 10px rgba(245, 158, 11, 0.5)';
+          matchElement.style.transform = 'scale(1.05)';
+          matchElement.style.transition = 'all 0.3s ease';
+          matchElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          console.log('[Highlight Scroll useEffect] Successfully scrolled and styled:', matchId);
+        } else {
+          console.warn('[Highlight Scroll useEffect] Match element not found:', matchId);
+        }
+      }, 200);
+    }
+  }, [lastSearchWord, highlightedContent, currentPage, isSearchMode]);
+
 
   // Load books on component mount
   useEffect(() => {
@@ -761,46 +805,11 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   // Update highlighted content when page content changes or search query changes
   useEffect(() => {
     let highlighted = currentPageContent;
-    
     // Apply search highlighting if there's a search query
     if (searchQuery && searchQuery.trim() && highlighted) {
-      const normalizedSearchTerm = normalizeIAST(searchQuery.toLowerCase());
-      const normalizedContent = normalizeIAST(highlighted.toLowerCase());
-      
-      // Find all matches in normalized content
-      const matches: { start: number; end: number }[] = [];
-      let searchIndex = 0;
-      
-      while (true) {
-        const foundIndex = normalizedContent.indexOf(normalizedSearchTerm, searchIndex);
-        if (foundIndex === -1) break;
-        
-        matches.push({
-          start: foundIndex,
-          end: foundIndex + normalizedSearchTerm.length
-        });
-        
-        searchIndex = foundIndex + 1;
-      }
-      
-      // Apply highlighting from right to left to preserve indices
-      for (let i = matches.length - 1; i >= 0; i--) {
-        const match = matches[i];
-        const originalText = highlighted.substring(match.start, match.end);
-        const beforeText = highlighted.substring(0, match.start);
-        const afterText = highlighted.substring(match.end);
-        
-        // Create unique ID for each match
-        const matchId = `search-match-${currentPage}-${i}`;
-        
-        highlighted = beforeText + 
-          `<span id="${matchId}" style="background-color: #fbbf24; color: #000; font-weight: bold; display: inline-block; padding: 2px 4px; border-radius: 3px;">` + 
-          originalText + 
-          '</span>' + 
-          afterText;
-      }
+      // Only add IDs in main reading area (not in search results panel)
+      highlighted = highlightSearchWord(highlighted, searchQuery, { addIds: true, page: currentPage });
     }
-    
     setHighlightedContent(highlighted);
   }, [currentPageContent, searchQuery, currentPage]);
 
@@ -965,6 +974,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
         bookmarkLoadedRef.current = true;
       }
     }
+    setLastSearchWord('');
   };
 
   const goToPreviousPage = () => {
@@ -988,6 +998,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
       console.log('Cannot go to previous page, already at page 1');
     }
     console.log('=== goToPreviousPage END ===');
+    setLastSearchWord('');
   };
 
   const goToFirstPage = () => {
@@ -1319,24 +1330,10 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
             <div className="flex flex-col flex-1 overflow-hidden">
               {/* Search Results Display */}
               {isSearchMode && searchResults.length > 0 && (
-                <div className="flex-1 overflow-hidden flex">
-                  {/* Search Results Sidebar */}
-                  <div className="w-96 bg-amber-50 border-r border-amber-200 flex flex-col">
-                    <div className="p-4 bg-amber-100 border-b border-amber-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-amber-800">Search Results</h3>
-                        <button
-                          onClick={() => {
-                            setIsSearchMode(false);
-                            setSearchQuery('');
-                            setSearchResults([]);
-                          }}
-                          className="text-amber-600 hover:text-amber-800 p-1"
-                          title="Close search"
-                        >
-                          ✕
-                        </button>
-                      </div>
+                <div className="flex-1 overflow-auto flex flex-col bg-amber-50" style={{borderRadius: '0.75rem', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.04)', border: '1.5px solid #ffe066', margin: '1.5rem', minHeight: 0}}>
+                  <div className="p-4 bg-amber-100 border-b border-amber-200 flex items-center justify-between sticky top-0 z-40">
+                    <div>
+                      <h3 className="font-semibold text-amber-800 text-lg">Search Results</h3>
                       <p className="text-sm text-amber-700">
                         Found {searchResults.length} matches for "{searchQuery}"
                         {searchResults.length > 0 && (
@@ -1347,130 +1344,40 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                         )}
                       </p>
                     </div>
-                    
-                    <div className="flex-1 overflow-y-auto p-2">
-                      {searchResults.slice(0, 100).map((result, index) => (
-                        <div
-                          key={index}
-                          className={`p-3 mb-2 rounded-lg cursor-pointer border transition-colors ${
-                            index === currentSearchIndex
-                              ? 'bg-amber-200 border-amber-400'
-                              : 'bg-white border-amber-200 hover:bg-amber-100'
-                          }`}
-                          onClick={() => goToSearchResult(index)}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-amber-600">
-                              Page {result.pageIndex + 1}
-                            </span>
-                            <span className="text-xs text-amber-500">
-                              Match {index + 1}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 leading-relaxed">
-                            {result.fullContext}
-                          </p>
-                        </div>
-                      ))}
-                      
-                      {searchResults.length > 50 && (
-                        <div className="p-3 text-center text-sm text-amber-600">
-                          Showing first 50 of {searchResults.length} results
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      onClick={() => {
+                        setIsSearchMode(false);
+                        setSearchQuery('');
+                        setSearchResults([]);
+                      }}
+                      className="text-amber-600 hover:text-amber-800 p-2 text-xl font-bold rounded-full border border-amber-300 bg-white shadow"
+                      title="Close search"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  
-                  {/* Main Content with Current Result */}
-                  <div className="flex-1 flex flex-col">
-                    {/* Reading Controls */}
-                    <div className="border-b border-gray-200 p-4 flex-shrink-0">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <BookOpen className="w-5 h-5" style={{ color: 'var(--icon)' }} />
-                          <span className="font-bold text-lg" style={{ color: 'var(--book-content-text-light)' }}>Reading: {title}</span>
-                          <span className="text-sm text-amber-600 bg-amber-100 px-2 py-1 rounded">
-                            Result {currentSearchIndex + 1} of {searchResults.length}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={decreaseFontSize}
-                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-                            title="Decrease font size"
-                          >
-                            <ZoomOut className="w-4 h-4" />
-                          </button>
-                          
-                          <span className="text-sm px-2 font-semibold" style={{ color: 'var(--book-content-text-light)' }}>{fontSize}px</span>
-                          
-                          <button
-                            onClick={increaseFontSize}
-                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-                            title="Increase font size"
-                          >
-                            <ZoomIn className="w-4 h-4" />
-                          </button>
-                          
-                          <button
-                            onClick={toggleBookmark}
-                            className={`p-2 rounded-lg transition-colors ${
-                              isBookmarked 
-                                ? 'text-yellow-600 bg-yellow-100' 
-                                : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                            title={isBookmarked ? 'Remove bookmark' : 'Bookmark this page'}
-                          >
-                            {isBookmarked ? (
-                              <BookmarkCheck className="w-4 h-4" />
-                            ) : (
-                              <Bookmark className="w-4 h-4" />
-                            )}
-                          </button>
-                          
-                          {/* Page Navigation */}
-                          <div className="flex items-center space-x-2 border-l border-gray-300 pl-4 ml-2">
-                            <button
-                              onClick={goToPreviousSearchResult}
-                              disabled={currentSearchIndex === 0}
-                              className={`p-2 rounded-lg transition-colors ${
-                                currentSearchIndex === 0 
-                                  ? 'text-gray-400 cursor-not-allowed' 
-                                  : 'text-gray-600 hover:bg-gray-100'
-                              }`}
-                              title="Previous search result"
-                            >
-                              <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            
-                            <button
-                              onClick={goToNextSearchResult}
-                              disabled={currentSearchIndex >= searchResults.length - 1}
-                              className={`p-2 rounded-lg transition-colors ${
-                                currentSearchIndex >= searchResults.length - 1
-                                  ? 'text-gray-400 cursor-not-allowed' 
-                                  : 'text-gray-600 hover:bg-gray-100'
-                              }`}
-                              title="Next search result"
-                            >
-                              <ChevronRight className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Book Content */}
-                    <div ref={contentRef} className="flex-1 overflow-y-auto p-6 ebook-reader-book-content" style={{ background: 'var(--book-content-bg)', color: 'var(--book-content-text)' }}>
-                      <div 
-                        className="prose max-w-none text-gray-800 leading-relaxed"
-                        style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight }}
-                        dangerouslySetInnerHTML={{ 
-                          __html: highlightedContent
+                  <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                    {searchResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className={`p-10 rounded-2xl shadow-lg border-2 transition-colors cursor-pointer bg-white border-amber-200 hover:border-amber-400 hover:shadow-2xl`}
+                        onClick={() => {
+                          console.log('[Search Result Card] Clicked:', { page: result.pageIndex + 1, match: result.match, searchQuery });
+                          setCurrentPage(result.pageIndex + 1);
+                          setPageInputValue((result.pageIndex + 1).toString());
+                          setLastSearchWord(searchQuery); // Ensure this is the searched word
+                          setIsSearchMode(false);
+                          setSearchResults([]);
                         }}
-                      />
-                    </div>
+                        style={{ fontSize: '1.5rem', lineHeight: 2.1 }}
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-lg font-semibold text-amber-700">Page {result.pageIndex + 1}</span>
+                          <span className="text-lg text-amber-500">Match {index + 1}</span>
+                        </div>
+                        <p className="text-2xl text-gray-900 leading-relaxed" style={{fontWeight: 400}} dangerouslySetInnerHTML={{__html: highlightSearchWord(result.fullContext, searchQuery)}} />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

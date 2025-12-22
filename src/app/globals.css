@@ -44,6 +44,10 @@
   color: var(--color-vb-input-text, #000);
   border-color: var(--color-vb-input-border, #162715);
 }
+/* Dark theme search bar input text color */
+[data-theme='dark'] .ebook-reader-searchbar input {
+  color: #eaeae7 !important;
+}
 /* CategoryPanel theme-specific text coloring */
 .category-panel-root,
 .category-panel-header,
