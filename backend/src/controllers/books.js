@@ -253,12 +253,17 @@ export const getBookContent = catchAsync(async (req, res, next) => {
 
 // Get readable text content from book
 export const getBookText = catchAsync(async (req, res, next) => {
+  console.log('--- [getBookText] ---');
+  console.log('Request params:', req.params);
+  console.log('Request query:', req.query);
+  console.log('Request user:', req.user ? req.user._id || req.user.id : 'guest');
   const book = await Book.findOne({ 
     _id: req.params.id, 
     isActive: true 
   });
 
   if (!book) {
+    console.log('[getBookText] Book not found:', req.params.id);
     return next(new AppError('Book not found', 404));
   }
 
@@ -268,13 +273,14 @@ export const getBookText = catchAsync(async (req, res, next) => {
     const hasAccess = book.accessControl.isPublic || 
                      book.accessControl.accessLevel === 'public' ||
                      (req.user && book.accessControl.allowedRoles.includes(userRole));
-    
     if (!hasAccess) {
+      console.log('[getBookText] Access denied for user:', req.user ? req.user._id || req.user.id : 'guest');
       return next(new AppError('Access denied to this book', 403));
     }
   }
 
   try {
+    console.log('[getBookText] Passed access control checks.');
     // Get query parameters for pagination
     const page = parseInt(req.query.page) || 1;
     const format = req.query.format || 'html'; // 'text' or 'html'
@@ -282,7 +288,7 @@ export const getBookText = catchAsync(async (req, res, next) => {
     // Always use backend default wordsPerPage
     const wordsPerPage = optimizedCache.config.wordsPerPage || 500;
 
-    console.log(`🔍 Getting book text content for: ${book.title} (page: ${page}, format: ${format}, wordsPerPage: ${wordsPerPage})`);
+    console.log(`[getBookText] Getting book text content for: ${book.title} (page: ${page}, format: ${format}, wordsPerPage: ${wordsPerPage})`);
 
     // Try to get cached content first
     let paginatedContent = await optimizedCache.getPaginatedContent(
@@ -294,11 +300,9 @@ export const getBookText = catchAsync(async (req, res, next) => {
 
     if (!paginatedContent) {
       // Cache miss - extract and cache the content
-      console.log(`📥 Cache miss for book ${book.title}, extracting content...`);
-      
+      console.log(`[getBookText] Cache miss for book ${book.title}, extracting content...`);
       try {
         await optimizedCache.cacheBookContent(book, 'high');
-        
         // Now get the paginated content
         paginatedContent = await optimizedCache.getPaginatedContent(
           book._id.toString(), 
@@ -307,12 +311,13 @@ export const getBookText = catchAsync(async (req, res, next) => {
           format
         );
       } catch (error) {
-        console.error('Content extraction failed:', error);
+        console.error('[getBookText] Content extraction failed:', error);
         return next(new AppError('Failed to extract book content', 500));
       }
     }
 
     if (!paginatedContent) {
+      console.log('[getBookText] Failed to process book content for:', book.title, 'page:', page);
       return next(new AppError('Failed to process book content', 500));
     }
 
@@ -323,7 +328,8 @@ export const getBookText = catchAsync(async (req, res, next) => {
 
     // Log cache performance
     const cacheStats = optimizedCache.getCacheStats();
-    console.log(`📊 Served page ${page} for ${book.title} (Hit rate: ${cacheStats.performance.hitRate})`);
+    console.log(`[getBookText] Served page ${page} for ${book.title} (Hit rate: ${cacheStats.performance.hitRate})`);
+    console.log('[getBookText] Responding with paginatedContent:', Object.keys(paginatedContent));
 
     res.json({
       success: true,
@@ -331,7 +337,7 @@ export const getBookText = catchAsync(async (req, res, next) => {
     });
 
   } catch (error) {
-    console.error('Error extracting book text:', error);
+    console.error('[getBookText] Error extracting book text:', error);
     return next(new AppError('Error reading book content. This file format may not be supported for text extraction.', 500));
   }
 });
