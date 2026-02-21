@@ -135,7 +135,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4 py-8">
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-8"
+      style={{
+        backgroundImage: 'url(/login-bg.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <div className="max-w-md w-full">
         {/* Decorative Background Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -145,102 +153,114 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         {/* Header */}
         <div className="text-center mb-8 relative z-10">
-          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center mb-6 shadow-2xl shadow-yellow-400/20">
-            <BookOpen className="w-8 h-8 text-gray-900" />
-          </div>
-          <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-yellow-400 tracking-wide">Vaisnava-Manjusha</h1>
-            <p className="text-yellow-400/80 text-sm font-medium">Vedic E-Books Library</p>
-            <p className="text-gray-400 text-xs">Gaudiya Vaisnava Literature</p>
+          <div className="relative flex flex-col items-center justify-center">
+            <div className="absolute inset-0 mx-auto w-full h-full flex items-center justify-center">
+                    <div
+                      className="backdrop-blur-lg bg-yellow-100/50 rounded-2xl border border-yellow-300 shadow-2xl w-full max-w-md mx-auto"
+                  style={{ height: '210px', boxShadow: '0 8px 32px 0 rgba(255, 193, 7, 0.15)' }}
+              ></div>
+            </div>
+            <div className="relative z-10 mt-6">
+              <div className="flex flex-col items-center">
+                <div className="mx-auto w-16 h-16 rounded-full bg-yellow-900/80 flex items-center justify-center mb-4 shadow-2xl shadow-yellow-900/40 border-2 border-yellow-700">
+                  <BookOpen className="w-8 h-8 text-yellow-100 drop-shadow-lg" />
+                </div>
+                <div className="space-y-2 text-center">
+                  <h1 className="text-3xl font-bold text-yellow-900 tracking-wide drop-shadow-lg">Vaisnava-Manjusha</h1>
+                  <p className="text-yellow-900/90 text-sm font-medium drop-shadow-lg">Vedic E-Books Library</p>
+                  <p className="text-yellow-900/80 text-xs drop-shadow-lg">Gaudiya Vaisnava Literature</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Auth Form */}
-        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700 relative z-10">
+        <div className="bg-yellow-100/90 rounded-2xl shadow-2xl p-8 border border-yellow-300 relative z-10">
           {isSignUp ? (
             <form onSubmit={handleSignUp} className="space-y-6">
               <div className="text-center mb-6">
-                <h3 className="text-2xl font-semibold text-gray-100 mb-2">Sign Up</h3>
-                <p className="text-gray-400 text-sm">Create your account to access the sacred library</p>
+                <h3 className="text-2xl font-semibold text-yellow-900 mb-2">Sign Up</h3>
+                <p className="text-yellow-900/80 text-sm">Create your account to access the sacred library</p>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-3 text-gray-200">Name</label>
+                <label className="block text-sm font-medium mb-3 text-yellow-900">Name</label>
                 <input
                   type="text"
                   value={signupName}
                   onChange={e => setSignupName(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-gray-100 placeholder-gray-400 transition-all duration-300"
+                  className="w-full px-4 py-3 bg-yellow-50 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-900 placeholder-yellow-700 transition-all duration-300"
                   placeholder="Enter your full name"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-3 text-gray-200">Email</label>
+                <label className="block text-sm font-medium mb-3 text-yellow-900">Email</label>
                 <input
                   type="email"
                   value={signupEmail}
                   onChange={e => setSignupEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-gray-100 placeholder-gray-400 transition-all duration-300"
+                  className="w-full px-4 py-3 bg-yellow-50 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-900 placeholder-yellow-700 transition-all duration-300"
                   placeholder="Enter your email address"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-3 text-gray-200">Username</label>
+                <label className="block text-sm font-medium mb-3 text-yellow-900">Username</label>
                 <input
                   type="text"
                   value={signupUsername}
                   onChange={e => setSignupUsername(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-gray-100 placeholder-gray-400 transition-all duration-300"
+                  className="w-full px-4 py-3 bg-yellow-50 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-900 placeholder-yellow-700 transition-all duration-300"
                   placeholder="Choose a username"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-3 text-gray-200">Password</label>
+                <label className="block text-sm font-medium mb-3 text-yellow-900">Password</label>
                 <input
                   type="password"
                   value={signupPassword}
                   onChange={e => setSignupPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-gray-100 placeholder-gray-400 transition-all duration-300"
+                  className="w-full px-4 py-3 bg-yellow-50 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-900 placeholder-yellow-700 transition-all duration-300"
                   placeholder="Create a password"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-3 text-gray-200">Date of Birth</label>
+                <label className="block text-sm font-medium mb-3 text-yellow-900">Date of Birth</label>
                 <input
                   type="date"
                   value={signupDob}
                   onChange={e => setSignupDob(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-gray-100 placeholder-gray-400 transition-all duration-300"
+                  className="w-full px-4 py-3 bg-yellow-50 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-900 placeholder-yellow-700 transition-all duration-300"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-3 text-gray-200">Contact Number</label>
+                <label className="block text-sm font-medium mb-3 text-yellow-900">Contact Number</label>
                 <input
                   type="text"
                   value={signupContact}
                   onChange={e => setSignupContact(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-gray-100 placeholder-gray-400 transition-all duration-300"
+                  className="w-full px-4 py-3 bg-yellow-50 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-900 placeholder-yellow-700 transition-all duration-300"
                   placeholder="Enter your contact number"
                   required
                 />
               </div>
               {/* Error Message */}
               {error && (
-                <div className="p-4 rounded-lg bg-red-900/20 border border-red-500/50">
-                  <p className="text-red-400 text-sm">{error}</p>
+                <div className="p-4 rounded-lg bg-red-100 border border-red-400">
+                  <p className="text-red-700 text-sm">{error}</p>
                 </div>
               )}
               <button
                 type="submit"
                 disabled={isLoading}
                 className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 transform ${
-                  isLoading
-                    ? 'opacity-50 cursor-not-allowed bg-gray-600'
-                    : 'bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 hover:shadow-lg hover:shadow-yellow-400/25 hover:-translate-y-0.5'
+                  isLoading 
+                    ? 'opacity-50 cursor-not-allowed bg-gray-600' 
+                    : 'bg-yellow-900 text-yellow-100 hover:bg-yellow-800 hover:text-yellow-50 hover:shadow-lg hover:shadow-yellow-900/25 hover:-translate-y-0.5'
                 }`}
               >
                 {isLoading ? (
@@ -253,26 +273,26 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 )}
               </button>
               <div className="text-center mt-4">
-                <span className="text-gray-400 text-sm">Already have an account?</span>
-                <button type="button" className="ml-2 text-yellow-400 hover:underline text-sm" onClick={() => setIsSignUp(false)}>Sign In</button>
+                <span className="text-yellow-900/80 text-sm">Already have an account?</span>
+                <button type="button" className="ml-2 text-yellow-900 hover:underline text-sm font-bold" onClick={() => setIsSignUp(false)}>Sign In</button>
               </div>
             </form>
           ) : (
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="text-center mb-6">
-                <h3 className="text-2xl font-semibold text-gray-100 mb-2">Sign In</h3>
-                <p className="text-gray-400 text-sm">Enter your credentials to access the sacred library</p>
+                <h3 className="text-2xl font-semibold text-yellow-900 mb-2">Sign In</h3>
+                <p className="text-yellow-900/80 text-sm">Enter your credentials to access the sacred library</p>
               </div>
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium mb-3 text-gray-200">Email or Username</label>
+                <label className="block text-sm font-medium mb-3 text-yellow-900">Email or Username</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-gray-100 placeholder-gray-400 transition-all duration-300"
+                    className="w-full pl-10 pr-4 py-3 bg-yellow-50 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-900 placeholder-yellow-700 transition-all duration-300"
                     placeholder="Enter your email or username"
                     required
                     autoComplete="username"
@@ -281,14 +301,14 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               </div>
               {/* Password */}
               <div>
-                <label className="block text-sm font-medium mb-3 text-gray-200">Password</label>
+                <label className="block text-sm font-medium mb-3 text-yellow-900">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-12 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-gray-100 placeholder-gray-400 transition-all duration-300"
+                    className="w-full pl-10 pr-12 py-3 bg-yellow-50 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-yellow-900 placeholder-yellow-700 transition-all duration-300"
                     placeholder="Enter your password"
                     required
                     autoComplete="current-password"
@@ -315,12 +335,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-600 bg-gray-700 focus:ring-yellow-400 focus:ring-2 text-yellow-400"
                 />
-                <label htmlFor="remember" className="ml-3 text-sm text-gray-300">Remember me</label>
+                <label htmlFor="remember" className="ml-3 text-sm text-yellow-900">Remember me</label>
               </div>
               {/* Error Message */}
               {error && (
-                <div className="p-4 rounded-lg bg-red-900/20 border border-red-500/50">
-                  <p className="text-red-400 text-sm">{error}</p>
+                <div className="p-4 rounded-lg bg-red-100 border border-red-400">
+                  <p className="text-red-700 text-sm">{error}</p>
                 </div>
               )}
               {/* Login Button */}
@@ -343,10 +363,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 )}
               </button>
               <div className="text-center mt-4">
-                <span className="text-gray-400 text-sm">Don't have an account?</span>
-                <button type="button" className="ml-2 text-yellow-400 hover:underline text-sm" onClick={() => setIsSignUp(true)}>Sign Up</button>
+                <span className="text-yellow-900/80 text-sm">Don't have an account?</span>
+                <button type="button" className="ml-2 text-yellow-900 hover:underline text-sm font-bold" onClick={() => setIsSignUp(true)}>Sign Up</button>
                 <div className="mt-2">
-                  <button type="button" className="text-blue-400 hover:underline text-xs" onClick={() => setShowForgotPasswordModal(true)}>
+                  <button type="button" className="text-blue-700 hover:underline text-xs" onClick={() => setShowForgotPasswordModal(true)}>
                     Forgot your Password?
                   </button>
                       <ForgotPasswordModal
@@ -384,9 +404,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             </form>
           )}
           {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-gray-700 text-center">
-            <p className="text-gray-400 text-xs">Accessing the treasury of Vedic wisdom</p>
-            <p className="text-gray-500 text-xs mt-1">🙏 Hare Krishna 🙏</p>
+          <div className="mt-8 pt-6 border-t border-yellow-300 text-center">
+            <p className="text-yellow-900/80 text-xs">Accessing the treasury of Vedic wisdom</p>
+            <p className="text-yellow-900/60 text-xs mt-1">🙏 Hare Krishna 🙏</p>
           </div>
         </div>
       </div>
