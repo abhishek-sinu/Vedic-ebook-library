@@ -213,18 +213,21 @@ export const validateBookUpload = [
     .withMessage('Language must be english, telugu, or sanskrit'),
     
   body('category')
-    .isIn([
-      'Srila Prabhupada',
-      'Acaryas',
-      'Great Vaishnavas',
-      'Vaishnavas of ISKCON',
-      'Contemporary vaishnavas',
-      'Vedic Sages',
-      'Other authors',
-      'Sastras',
-      'Other'
-    ])
-    .withMessage('Invalid category'),
+    .trim()
+    .isLength({ min: 1, max: 120 })
+    .withMessage('Category is required and cannot exceed 120 characters'),
+
+  body('subcategory')
+    .optional()
+    .trim()
+    .isLength({ max: 120 })
+    .withMessage('Subcategory cannot exceed 120 characters'),
+
+  body('subSubcategory')
+    .optional()
+    .trim()
+    .isLength({ max: 180 })
+    .withMessage('Sub-subcategory cannot exceed 180 characters'),
     
   body('tags')
     .optional()
@@ -281,18 +284,9 @@ export const validateBookSearch = [
     
   body('category')
     .optional()
-    .isIn([
-      'Srila Prabhupada',
-      'Acaryas',
-      'Great Vaishnavas',
-      'Vaishnavas of ISKCON',
-      'Contemporary vaishnavas',
-      'Vedic Sages',
-      'Other authors',
-      'Sastras',
-      'Other'
-    ])
-    .withMessage('Invalid category'),
+    .trim()
+    .isLength({ max: 120 })
+    .withMessage('Category cannot exceed 120 characters'),
     
   body('limit')
     .optional()

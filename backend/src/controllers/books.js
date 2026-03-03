@@ -26,6 +26,8 @@ export const uploadBook = catchAsync(async (req, res, next) => {
     description,
     language,
     category,
+    subcategory = '',
+    subSubcategory = '',
     tags = [],
     type = 'normal',
     metadata = {}
@@ -49,6 +51,8 @@ export const uploadBook = catchAsync(async (req, res, next) => {
       description,
       language: language.toLowerCase(),
       category, // Do not lowercase, preserve exact value
+      subcategory,
+      subSubcategory,
       tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
       fileInfo: {
         originalName: req.file.originalname,
@@ -89,6 +93,8 @@ export const getAllBooks = catchAsync(async (req, res, next) => {
     limit = 12,
     language,
     category,
+    subcategory,
+    subSubcategory,
     author,
     sort = '-uploadInfo.uploadDate',
     search
@@ -99,6 +105,8 @@ export const getAllBooks = catchAsync(async (req, res, next) => {
   
   if (language) filter.language = language.toLowerCase();
   if (category) filter.category = category;
+  if (subcategory) filter.subcategory = subcategory;
+  if (subSubcategory) filter.subSubcategory = subSubcategory;
   if (author) filter.author = { $regex: author, $options: 'i' };
   
   // Add text search if search query provided
@@ -633,6 +641,99 @@ export const getBooksByAuthor = catchAsync(async (req, res, next) => {
         totalBooks: total
       }
     }
+  });
+});
+
+// Get hierarchical tree of categories -> subcategories -> sub-subcategories -> books
+export const getBooksHierarchyTree = catchAsync(async (req, res, next) => {
+  const { language } = req.query;
+
+  const matchFilter = { isActive: true };
+  if (language) {
+    matchFilter.language = language.toLowerCase();
+  }
+
+  const userRole = req.user?.role || 'guest';
+  if (userRole !== 'admin') {
+    matchFilter.$or = [
+      { 'accessControl.isPublic': true },
+      { 'accessControl.accessLevel': 'public' },
+      ...(req.user ? [{ 'accessControl.allowedRoles': userRole }] : [])
+    ];
+  }
+
+  const books = await Book.find(matchFilter)
+    .select('_id title author language category subcategory subSubcategory type uploadInfo.uploadDate')
+    .sort({ category: 1, subcategory: 1, subSubcategory: 1, title: 1 })
+    .lean();
+
+  const treeMap = new Map();
+
+  books.forEach((book) => {
+    const categoryName = (book.category || 'Uncategorized').trim();
+    const subcategoryName = (book.subcategory || 'General').trim() || 'General';
+    const subSubcategoryName = (book.subSubcategory || '').trim();
+
+    if (!treeMap.has(categoryName)) {
+      treeMap.set(categoryName, {
+        name: categoryName,
+        subcategories: new Map(),
+      });
+    }
+
+    const categoryNode = treeMap.get(categoryName);
+
+    if (!categoryNode.subcategories.has(subcategoryName)) {
+      categoryNode.subcategories.set(subcategoryName, {
+        name: subcategoryName,
+        subSubcategories: new Map(),
+        books: [],
+      });
+    }
+
+    const subcategoryNode = categoryNode.subcategories.get(subcategoryName);
+
+    if (subSubcategoryName) {
+      if (!subcategoryNode.subSubcategories.has(subSubcategoryName)) {
+        subcategoryNode.subSubcategories.set(subSubcategoryName, {
+          name: subSubcategoryName,
+          books: [],
+        });
+      }
+
+      subcategoryNode.subSubcategories.get(subSubcategoryName).books.push({
+        _id: book._id,
+        title: book.title,
+        author: book.author,
+        type: book.type,
+        language: book.language,
+      });
+    } else {
+      subcategoryNode.books.push({
+        _id: book._id,
+        title: book.title,
+        author: book.author,
+        type: book.type,
+        language: book.language,
+      });
+    }
+  });
+
+  const tree = Array.from(treeMap.values()).map((categoryNode) => ({
+    name: categoryNode.name,
+    subcategories: Array.from(categoryNode.subcategories.values()).map((subcategoryNode) => ({
+      name: subcategoryNode.name,
+      books: subcategoryNode.books,
+      subSubcategories: Array.from(subcategoryNode.subSubcategories.values()),
+    })),
+  }));
+
+  res.json({
+    success: true,
+    data: {
+      tree,
+      totalBooks: books.length,
+    },
   });
 });
 

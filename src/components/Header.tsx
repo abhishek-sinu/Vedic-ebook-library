@@ -12,10 +12,12 @@ interface HeaderProps {
   authUser?: { role: string; username: string; name?: string } | null;
   onLogout?: () => void;
   onViewChange?: (view: 'reading' | 'upload' | 'debug') => void;
+  onNavigate?: (section: 'vedic' | 'vaisnava' | 'classical') => void;
+  showNavigation?: boolean;
 }
 
 
-const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange }) => {
+const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange, onNavigate, showNavigation = false }) => {
   const [showBooksModal, setShowBooksModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [books, setBooks] = useState<any[]>([]);

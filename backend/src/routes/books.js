@@ -15,6 +15,7 @@ import {
   getBooksByLanguage,
   getBooksByCategory,
   getBooksByAuthor,
+  getBooksHierarchyTree,
   getCacheStats,
   clearBookCache,
   clearAllCache,
@@ -164,6 +165,7 @@ router.get('/search', optionalAuth, searchBooks);
 router.get('/language/:language', optionalAuth, getBooksByLanguage);
 router.get('/category/:category', optionalAuth, getBooksByCategory);
 router.get('/author/:author', optionalAuth, getBooksByAuthor);
+router.get('/tree', optionalAuth, getBooksHierarchyTree);
 
 // Protected content routes (more specific routes should come first)
 router.get('/:id/content', authenticate, getBookContent);

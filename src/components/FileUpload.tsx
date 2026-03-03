@@ -29,24 +29,55 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
     title: '',
     author: '',
     category: '',
+    subcategory: '',
+    paramparaCategory: '',
+    acharyaName: '',
     description: '',
     tags: '',
     language: 'english',
     type: ''
   });
 
-  // Define the same categories as in EBookReader
-  const bookCategories = [
-    'Srila Prabhupada',
-    'Acaryas',
-    'Great Vaishnavas',
-    'Vaishnavas of ISKCON',
-    'Contemporary vaishnavas',
-    'Vedic Sages',
-    'Other authors',
-    'Sastras',
-    'Other'
+  const categoryOptions = {
+    'Vaisnava Literature': ['Parampara', 'Acharya'],
+    'Sruti': ['Rig Veda', 'Sama Veda', 'Yajur Veda', 'Atharva Veda'],
+    'Smriti': ['Upavedas', 'Vedangas', 'Sad Darsanas', 'Puranas', 'Itihasas', 'Tantras', 'Agamas'],
+    'Classical Literature': ['Sanskrit', 'Regional'],
+  } as const;
+
+  const bookCategories = Object.keys(categoryOptions);
+  const paramparaOptions = [
+    'Sri Sampradaya',
+    'Brahma Sampradaya',
+    'Rudra Sampradaya',
+    'Kumara Sampradaya'
   ];
+  const acharyaOptions = [
+    'Śrīla Mādhvācārya',
+    'Śrīla Ramanuja Acharya',
+    'Śrīla Vishnuswami',
+    'Śrīla Nimbarka',
+    'Śrīla Svarūpa Dāmodara',
+    'Śrīla Rūpa Gosvāmī',
+    'Śrīla Sanātana Gosvāmī',
+    'Śrīla Raghunātha dāsa Gosvāmī',
+    'Śrīla Jīva Gosvāmī',
+    'Śrīla Gopāla Bhaṭṭa Gosvāmī',
+    'Śrīla Raghunātha Bhaṭṭa Gosvāmī',
+    'Śrīla Kṛṣṇadāsa Kavirāja Gosvāmī',
+    'Śrīla Narottama dāsa Ṭhākura',
+    'Śrīla Vṛndāvana dāsa Ṭhākura',
+    'Śrīla Viśvanātha Cakravartī Ṭhākura',
+    'Śrīla Baladeva Vidyābhūṣaṇa',
+    'Śrīla Bhaktivinoda Ṭhākura',
+    'Śrīla Gaurakiśora dāsa Bābājī',
+    'Śrīla Bhaktisiddhānta Sarasvatī Ṭhākura',
+    'Śrīla A.C. Bhaktivedanta Swami Prabhupāda'
+  ];
+
+  const availableSubcategories = metadata.category
+    ? categoryOptions[metadata.category as keyof typeof categoryOptions] || []
+    : [];
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,9 +100,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
       title: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
       author: '',
       category: '',
+      subcategory: '',
+      paramparaCategory: '',
+      acharyaName: '',
       description: '',
       tags: '',
-      language: 'english' // Default to lowercase to match backend
+      language: 'english', // Default to lowercase to match backend
+      type: ''
     });
     setShowMetadataForm(true);
   };
@@ -95,17 +130,43 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
       if (!metadata.category) {
         throw new Error('Category is required');
       }
+      if (!metadata.subcategory) {
+        throw new Error('Subcategory is required');
+      }
+      if (metadata.subcategory === 'Parampara' && !metadata.paramparaCategory) {
+        throw new Error('Parampara category is required');
+      }
+      if (metadata.subcategory === 'Acharya' && !metadata.acharyaName) {
+        throw new Error('Acharya is required');
+      }
       if (!metadata.language) {
         throw new Error('Language is required');
       }
+
+      const parsedTags = metadata.tags
+        ? metadata.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+        : [];
+
+      const mergedTags = metadata.subcategory
+        ? [
+            metadata.subcategory,
+            ...(metadata.paramparaCategory ? [metadata.paramparaCategory] : []),
+            ...(metadata.acharyaName ? [metadata.acharyaName] : []),
+            ...parsedTags,
+          ]
+        : parsedTags;
+
+      const selectedSubSubcategory = metadata.paramparaCategory || metadata.acharyaName || '';
       
       await uploadBook(currentFile, {
         title: metadata.title.trim(),
         author: metadata.author.trim(),
         category: metadata.category,
+        subcategory: metadata.subcategory,
+        subSubcategory: selectedSubSubcategory || undefined,
         language: metadata.language.toLowerCase(),
         description: metadata.description.trim() || undefined,
-        tags: metadata.tags ? metadata.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : undefined,
+        tags: mergedTags.length ? mergedTags : undefined,
         type: metadata.type || 'normal'
       });
 
@@ -115,33 +176,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
       
       setShowMetadataForm(false);
       setCurrentFile(null);
-      setMetadata({ title: '', author: '', category: '', description: '', tags: '', language: 'english', type: '' });
-      const typeOptions = [
-        { value: 'normal', label: 'Normal' },
-        { value: 'special', label: 'Special' },
-        { value: 'private', label: 'Private' }
-      ];
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
-                    Type *
-                  </label>
-                  <select
-                    value={metadata.type}
-                    onChange={e => setMetadata(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
-                    style={{
-                      background: 'var(--input)',
-                      color: 'var(--text)',
-                      borderColor: 'var(--border)'
-                    }}
-                    required
-                  >
-                    <option value="">Select type...</option>
-                    {typeOptions.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
+      setMetadata({ title: '', author: '', category: '', subcategory: '', paramparaCategory: '', acharyaName: '', description: '', tags: '', language: 'english', type: '' });
     } catch (err: any) {
       setError(err.message || 'Failed to upload file');
     } finally {
@@ -179,7 +214,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
           style={{ background: theme === 'dark' ? 'rgba(20,20,20,0.85)' : 'rgba(0,0,0,0.12)' }}
         >
           <div
-            className="rounded-lg shadow-lg p-8 border-l-4 w-full max-w-2xl relative"
+            className="rounded-lg shadow-lg p-8 border-l-4 w-full max-w-5xl relative max-h-[90vh] overflow-y-auto"
             style={{
               background: 'var(--card)',
               borderColor: 'var(--accent)',
@@ -199,7 +234,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
             </div>
           </div>
 
-          <form onSubmit={handleMetadataSubmit} className="space-y-6">
+          <form onSubmit={handleMetadataSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                 <BookOpen className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
@@ -247,7 +282,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
               </label>
               <select
                 value={metadata.category}
-                onChange={(e) => setMetadata(prev => ({ ...prev, category: e.target.value }))}
+                onChange={(e) => setMetadata(prev => ({ ...prev, category: e.target.value, subcategory: '', paramparaCategory: '', acharyaName: '' }))}
                 className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 category-dropdown"
                 style={{
                   background: 'var(--card)',
@@ -267,6 +302,86 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
 
             <div>
               <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
+                <FolderOpen className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
+                Subcategory *
+              </label>
+              <select
+                value={metadata.subcategory}
+                onChange={(e) => setMetadata(prev => ({ ...prev, subcategory: e.target.value, paramparaCategory: '', acharyaName: '' }))}
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--card)',
+                  color: 'var(--text)',
+                  borderColor: 'var(--border)'
+                }}
+                disabled={!metadata.category}
+                required
+              >
+                <option value="">{metadata.category ? 'Select a subcategory...' : 'Select category first...'}</option>
+                {availableSubcategories.map((subcategory) => (
+                  <option key={subcategory} value={subcategory}>
+                    {subcategory}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {metadata.subcategory === 'Parampara' && (
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
+                  <FolderOpen className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
+                  Parampara Category *
+                </label>
+                <select
+                  value={metadata.paramparaCategory}
+                  onChange={(e) => setMetadata(prev => ({ ...prev, paramparaCategory: e.target.value }))}
+                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    background: 'var(--card)',
+                    color: 'var(--text)',
+                    borderColor: 'var(--border)'
+                  }}
+                  required
+                >
+                  <option value="">Select Parampara category...</option>
+                  {paramparaOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {metadata.subcategory === 'Acharya' && (
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
+                  <FolderOpen className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
+                  Acharya *
+                </label>
+                <select
+                  value={metadata.acharyaName}
+                  onChange={(e) => setMetadata(prev => ({ ...prev, acharyaName: e.target.value }))}
+                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+                  style={{
+                    background: 'var(--card)',
+                    color: 'var(--text)',
+                    borderColor: 'var(--border)'
+                  }}
+                  required
+                >
+                  <option value="">Select Acharya...</option>
+                  {acharyaOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                 Description (Optional)
               </label>
               <textarea
@@ -282,7 +397,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
               />
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
                 <Tag className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
                 Categories/Tags (Optional)
@@ -345,7 +460,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
               </select>
             </div>
 
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 md:col-span-2">
               <button
                 type="submit"
                 className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors"

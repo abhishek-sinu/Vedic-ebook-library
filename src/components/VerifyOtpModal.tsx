@@ -4,7 +4,7 @@ interface VerifyOtpModalProps {
   open: boolean;
   email: string;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (otp: string) => void;
 }
 
 const VerifyOtpModal: React.FC<VerifyOtpModalProps> = ({ open, email, onClose, onSuccess }) => {

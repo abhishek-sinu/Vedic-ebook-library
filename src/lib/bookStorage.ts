@@ -6,6 +6,8 @@ export interface Book {
   description: string;
   language: string;
   category: string;
+  subcategory?: string;
+  subSubcategory?: string;
   tags: string[];
   fileInfo: {
     gridfsId: string;
@@ -42,6 +44,30 @@ export interface Book {
 
 export interface BookMetadata {
   books: Book[];
+}
+
+export interface HierarchyBookNode {
+  _id: string;
+  title: string;
+  author: string;
+  type: string;
+  language: string;
+}
+
+export interface HierarchySubSubcategoryNode {
+  name: string;
+  books: HierarchyBookNode[];
+}
+
+export interface HierarchySubcategoryNode {
+  name: string;
+  books: HierarchyBookNode[];
+  subSubcategories: HierarchySubSubcategoryNode[];
+}
+
+export interface HierarchyCategoryNode {
+  name: string;
+  subcategories: HierarchySubcategoryNode[];
 }
 
 // API functions for backend integration
@@ -162,7 +188,7 @@ export const fetchBookContent = async (bookId: string, page: number = 1, format:
   }
 };
 
-export const uploadBook = async (file: File, metadata: { title: string; author: string; category: string; language: string; description?: string; tags?: string[]; type?: string }): Promise<Book | null> => {
+export const uploadBook = async (file: File, metadata: { title: string; author: string; category: string; subcategory?: string; subSubcategory?: string; language: string; description?: string; tags?: string[]; type?: string }): Promise<Book | null> => {
   try {
     const token = localStorage.getItem('vedic_auth_token') || sessionStorage.getItem('vedic_auth_token');
     
@@ -175,6 +201,12 @@ export const uploadBook = async (file: File, metadata: { title: string; author: 
     formData.append('title', metadata.title);
     formData.append('author', metadata.author);
     formData.append('category', metadata.category);
+    if (metadata.subcategory) {
+      formData.append('subcategory', metadata.subcategory);
+    }
+    if (metadata.subSubcategory) {
+      formData.append('subSubcategory', metadata.subSubcategory);
+    }
     formData.append('language', metadata.language);
     
     if (metadata.description) {
@@ -275,4 +307,35 @@ export const formatDate = (dateString: string): string => {
     hour: '2-digit',
     minute: '2-digit'
   });
+};
+
+export const fetchBooksHierarchyTree = async (language?: string): Promise<HierarchyCategoryNode[]> => {
+  try {
+    const token = localStorage.getItem('vedic_auth_token') || sessionStorage.getItem('vedic_auth_token');
+    const params = new URLSearchParams();
+
+    if (language) {
+      params.append('language', language);
+    }
+
+    const query = params.toString();
+    const url = `${BACKEND_API_URL}/api/books/tree${query ? `?${query}` : ''}`;
+    const headers: Record<string, string> = {};
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, { headers });
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      return [];
+    }
+
+    return data.data?.tree || [];
+  } catch (error) {
+    console.error('Error fetching hierarchy tree:', error);
+    return [];
+  }
 };

@@ -7,9 +7,10 @@ import { Eye, EyeOff, User, Lock, BookOpen } from 'lucide-react';
 
 interface LoginProps {
   onLoginSuccess: (user: any, token: string) => void;
+  noticeMessage?: string;
 }
 
-const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+const Login: React.FC<LoginProps> = ({ onLoginSuccess, noticeMessage }) => {
   const [email, setEmail] = useState('');
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [password, setPassword] = useState('');
@@ -145,6 +146,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       }}
     >
       <div className="max-w-md w-full">
+        {noticeMessage && (
+          <div className="mb-5 p-4 rounded-xl bg-yellow-200/95 border-2 border-yellow-500 shadow-lg relative z-20">
+            <p className="text-yellow-950 text-base font-semibold text-center">{noticeMessage}</p>
+          </div>
+        )}
+
         {/* Decorative Background Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-yellow-400 bg-opacity-5 rounded-full blur-3xl"></div>
@@ -166,9 +173,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   <BookOpen className="w-8 h-8 text-yellow-100 drop-shadow-lg" />
                 </div>
                 <div className="space-y-2 text-center">
-                  <h1 className="text-3xl font-bold text-yellow-900 tracking-wide drop-shadow-lg">Vaisnava-Manjusha</h1>
+                  <h1 className="text-3xl font-bold text-yellow-900 tracking-wide drop-shadow-lg">Śāstra Nidhi</h1>
                   <p className="text-yellow-900/90 text-sm font-medium drop-shadow-lg">Vedic E-Books Library</p>
-                  <p className="text-yellow-900/80 text-xs drop-shadow-lg">Gaudiya Vaisnava Literature</p>
+                  <p className="text-yellow-900/80 text-xs drop-shadow-lg">Vedic Literature</p>
                 </div>
               </div>
             </div>

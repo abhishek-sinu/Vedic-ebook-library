@@ -2,7 +2,7 @@
 
 import { Search, Plus, Book as BookIcon, BookOpen, FileText } from 'lucide-react';
 import { Book } from '../lib/bookStorage';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 interface CategoryPanelProps {
   selectedLanguage: string;
@@ -72,6 +72,19 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   const [expandedAuthors, setExpandedAuthors] = useState<{[key: string]: boolean}>({});
   const [expandedTitleLetters, setExpandedTitleLetters] = useState<{[key: string]: boolean}>({});
   const [expandedBookChapters, setExpandedBookChapters] = useState<{[bookId: string]: boolean}>({});
+
+  useEffect(() => {
+    if (!bookId) return;
+
+    const timer = setTimeout(() => {
+      const selectedBookElement = document.querySelector(`[data-book-id="${bookId}"]`) as HTMLElement | null;
+      if (selectedBookElement) {
+        selectedBookElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [bookId, expandedCategories]);
 
   // Organize books by author first letter
   const authorGroups = useMemo(() => {
@@ -476,8 +489,13 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                                   [book._id]: !prev[book._id]
                                 }));
                               }}
+                              data-book-id={book._id}
                               className={`flex items-center w-full p-3 pl-8 text-left transition-colors category-panel-book-btn${bookId === book._id ? ' selected' : ''}`}
-                              style={{ background: 'transparent', border: 'none' }}
+                              style={bookId === book._id ? {
+                                background: 'var(--bg)',
+                                border: 'none',
+                                borderLeft: '4px solid var(--color-vb-header-bottom, var(--border))'
+                              } : { background: 'transparent', border: 'none' }}
                               onMouseEnter={e => {
                                 const theme = typeof window !== 'undefined' ? document.body.getAttribute('data-theme') : null;
                                 if ((!theme || theme === 'light')) {
@@ -507,9 +525,6 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                                 )}
                               </span>
                               <span className="text-lg font-bold category-panel-book-title" style={{lineHeight: '1.3'}}>{book.title}</span>
-                              {book.author && (
-                                <span className="text-xs category-panel-book-author ml-2" style={{ opacity: 0.7 }}>{book.author}</span>
-                              )}
                             </button>
                           </div>
                           {bookId === book._id && expandedBookChapters[book._id] && (() => {

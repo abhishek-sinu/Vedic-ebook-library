@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import Login from '../components/Login';
 import EBookReader from '../components/EBookReader';
@@ -10,8 +11,27 @@ import { Book } from '../lib/bookStorage';
 
 const AppContent = () => {
   const { isAuthenticated, user, logout, login, isLoading } = useAuth();
+  const searchParams = useSearchParams();
   const [currentView, setCurrentView] = useState<'reading' | 'upload' | 'debug'>('reading');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [isGuestSessionExpired, setIsGuestSessionExpired] = useState(false);
+  const bookIdFromQuery = searchParams.get('bookId') || '';
+  const selectedBookId = selectedBook?._id || '';
+  const activeBookId = selectedBookId || bookIdFromQuery;
+  const isGuestReading = !isAuthenticated && !!activeBookId;
+
+  useEffect(() => {
+    if (!isGuestReading) {
+      setIsGuestSessionExpired(false);
+      return;
+    }
+
+    const guestTimeout = setTimeout(() => {
+      setIsGuestSessionExpired(true);
+    }, 1 * 60 * 1000);
+
+    return () => clearTimeout(guestTimeout);
+  }, [isGuestReading, activeBookId]);
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -25,11 +45,16 @@ const AppContent = () => {
     );
   }
 
-  // Show login if not authenticated
-  if (!isAuthenticated) {
+  // Show login if unauthenticated and no guest book session
+  if (!isAuthenticated && (!activeBookId || isGuestSessionExpired)) {
+    const guestTimeoutMessage = isGuestSessionExpired
+      ? 'Your guest reading session has timed out. Please sign up or log in to continue reading.'
+      : undefined;
+
     return <Login onLoginSuccess={(user, token) => {
+      setIsGuestSessionExpired(false);
       login(user, token);
-    }} />;
+    }} noticeMessage={guestTimeoutMessage} />;
   }
 
   // Handle book selection
@@ -50,10 +75,10 @@ const AppContent = () => {
       <main>
         {currentView === 'reading' && (
           <EBookReader 
-            bookId={selectedBook?._id || ''} 
+            bookId={activeBookId} 
             title={selectedBook?.title}
-            user={user}
-            onLogout={handleLogout}
+            user={user || null}
+            onLogout={isAuthenticated ? handleLogout : undefined}
             onBookSelect={handleBookSelect}
             onViewChange={setCurrentView}
           />

@@ -22,6 +22,13 @@
   box-shadow: 0 0 0 2px var(--color-vb-header-bottom, #eebd89);
   z-index: 1;
 }
+
+[data-theme='dark'] .category-panel-book-btn.selected {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  box-shadow: 0 0 0 2px var(--border);
+  z-index: 1;
+}
 /* Book reading area and search bar theme-specific styles */
 .ebook-reader-content,
 .ebook-reader-searchbar,

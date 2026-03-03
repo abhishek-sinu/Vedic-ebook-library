@@ -40,17 +40,22 @@ const bookSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Category is required'],
-    enum: [
-      'Srila Prabhupada',
-      'Acaryas',
-      'Great Vaishnavas',
-      'Vaishnavas of ISKCON',
-      'Contemporary vaishnavas',
-      'Vedic Sages',
-      'Other authors',
-      'Sastras',
-      'Other'
-    ]
+    trim: true,
+    maxlength: [120, 'Category cannot exceed 120 characters']
+  },
+
+  subcategory: {
+    type: String,
+    trim: true,
+    maxlength: [120, 'Subcategory cannot exceed 120 characters'],
+    default: ''
+  },
+
+  subSubcategory: {
+    type: String,
+    trim: true,
+    maxlength: [180, 'Sub-subcategory cannot exceed 180 characters'],
+    default: ''
   },
   
   tags: [{
@@ -186,6 +191,7 @@ bookSchema.index({ title: 'text', author: 'text', description: 'text' }, {
   language_override: 'textLanguage'  // Use a different field name to avoid conflict
 });
 bookSchema.index({ language: 1, category: 1 });
+bookSchema.index({ category: 1, subcategory: 1, subSubcategory: 1 });
 bookSchema.index({ author: 1 });
 bookSchema.index({ tags: 1 });
 bookSchema.index({ 'uploadInfo.uploadDate': -1 });

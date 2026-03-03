@@ -226,39 +226,40 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
       return true;
     });
 
-    // Define the predefined categories in order
-    const predefinedCategories = [
-      'Srila Prabhupada',
-      'Acaryas',
-      'Great Vaishnavas',
-      'Vaishnavas of ISKCON',
-      'Contemporary vaishnavas',
-      'Vedic Sages',
-      'Other authors',
-      'Sastras',
-      'Other'
-    ];
-
-    // Group books strictly by their category field
+    // Group books strictly by their category field (dynamic categories from DB)
     const categoryMap = new Map<string, Book[]>();
-    predefinedCategories.forEach(category => {
-      categoryMap.set(category, []);
-    });
 
     filteredBooks.forEach(book => {
-      const category = predefinedCategories.includes(book.category) ? book.category : 'Other';
+      const category = (book.category || 'Other').trim() || 'Other';
+      if (!categoryMap.has(category)) {
+        categoryMap.set(category, []);
+      }
       categoryMap.get(category)!.push(book);
     });
 
-    // Create organized categories, filtering out empty ones
-    const organizedCategories = predefinedCategories.map(name => ({
+    // Create organized categories in sorted order
+    const orderedCategoryNames = Array.from(categoryMap.keys()).sort((a, b) => a.localeCompare(b));
+    const organizedCategories = orderedCategoryNames.map(name => ({
       name,
       books: categoryMap.get(name) || [],
       expanded: false
-    })).filter(category => category.books.length > 0);
+    }));
 
     setCategories(organizedCategories);
   };
+
+  // Auto-expand category containing the selected book (from tree/direct link)
+  useEffect(() => {
+    if (!bookId || books.length === 0) return;
+
+    const selected = books.find(book => book._id === bookId);
+    if (selected?.category) {
+      setExpandedCategories(prev => ({
+        ...prev,
+        [selected.category]: true,
+      }));
+    }
+  }, [bookId, books]);
 
   const toggleCategory = (categoryName: string) => {
     setExpandedCategories(prev => ({
