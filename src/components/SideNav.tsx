@@ -1,6 +1,6 @@
 'use client';
 
-import { User, PanelLeftOpen, PanelLeftClose, Settings as SettingsIcon } from 'lucide-react';
+import { User, PanelLeftOpen, PanelLeftClose, Settings as SettingsIcon, ZoomIn, ZoomOut } from 'lucide-react';
 import Settings from './Settings';
 import { useState } from 'react';
 import UserProfile from './UserProfile';
@@ -20,6 +20,8 @@ interface SideNavProps {
   isCategoryPanelVisible: boolean;
   onLanguageToggle: (language: string) => void;
   onCategoryPanelToggle: () => void;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
 }
 
 const SideNav: React.FC<SideNavProps> = ({ 
@@ -27,7 +29,9 @@ const SideNav: React.FC<SideNavProps> = ({
   languageConfig, 
   isCategoryPanelVisible,
   onLanguageToggle,
-  onCategoryPanelToggle
+  onCategoryPanelToggle,
+  onZoomIn,
+  onZoomOut
 }) => {
   const { user: authUser } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
@@ -143,6 +147,26 @@ const SideNav: React.FC<SideNavProps> = ({
             onChangePassword={(oldPassword, newPassword) => handleChangePassword(oldPassword, newPassword, newPassword)}
           />
         )}
+      </div>
+
+      {/* Zoom Controls */}
+      <div className="flex flex-col space-y-3 pt-4 mt-2 border-t" style={{ borderColor: 'var(--color-vb-header-bottom, var(--border))' }}>
+        <button
+          className="p-2"
+          style={{ color: 'var(--color-vb-action-bg, var(--icon))' }}
+          title="Zoom In (Ctrl +)"
+          onClick={onZoomIn}
+        >
+          <ZoomIn className="w-5 h-5" style={{ color: 'var(--color-vb-action-bg, var(--icon))' }} />
+        </button>
+        <button
+          className="p-2"
+          style={{ color: 'var(--color-vb-action-bg, var(--icon))' }}
+          title="Zoom Out (Ctrl -)"
+          onClick={onZoomOut}
+        >
+          <ZoomOut className="w-5 h-5" style={{ color: 'var(--color-vb-action-bg, var(--icon))' }} />
+        </button>
       </div>
     </div>
   );

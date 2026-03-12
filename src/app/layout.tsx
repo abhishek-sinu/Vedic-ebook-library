@@ -1,5 +1,4 @@
 import React from "react";
-import ZoomSetter from "../components/ZoomSetter";
 import type { Metadata } from "next";
 import { Noto_Serif_Devanagari, Lora } from "next/font/google";
 import "./globals.css";

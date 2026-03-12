@@ -7,7 +7,6 @@ import { useAuth } from '../contexts/AuthContext';
 import Header from './Header';
 import SideNav from './SideNav';
 import CategoryPanel from './CategoryPanel';
-import FooterControls from './FooterControls';
 
 interface EBookReaderProps {
   bookId?: string;
@@ -74,6 +73,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   };
   
   const [fontSize, setFontSize] = useState(getDefaultFontSize());
+  const [pageZoom, setPageZoom] = useState(0.8);
   const [lineHeight, setLineHeight] = useState(1.8);
   const [showSettings, setShowSettings] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -1017,6 +1017,40 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     setFontSize(prev => Math.max(prev - 2, 14)); // Minimum 14px
   };
 
+  const increasePageZoom = () => {
+    setPageZoom(prev => Math.min(Number((prev + 0.1).toFixed(2)), 2));
+  };
+
+  const decreasePageZoom = () => {
+    setPageZoom(prev => Math.max(Number((prev - 0.1).toFixed(2)), 0.7));
+  };
+
+  const resetPageZoom = () => {
+    setPageZoom(1);
+  };
+
+  useEffect(() => {
+    const handleKeyboardZoom = (event: KeyboardEvent) => {
+      if (!event.ctrlKey) return;
+
+      if (event.key === '+' || event.key === '=') {
+        event.preventDefault();
+        increasePageZoom();
+      } else if (event.key === '-' || event.key === '_') {
+        event.preventDefault();
+        decreasePageZoom();
+      } else if (event.key === '0') {
+        event.preventDefault();
+        resetPageZoom();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboardZoom);
+    return () => {
+      window.removeEventListener('keydown', handleKeyboardZoom);
+    };
+  }, []);
+
   // Bookmark functions
   const getBookmarkKey = () => {
     const currentUser = user || authUser;
@@ -1229,16 +1263,25 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
 
   return (
     <>
-      <div className="h-screen bg-gradient-to-br from-amber-50 to-amber-100 flex flex-col">
-        {/* Header Bar */}
-        <Header 
-          user={user} 
-          authUser={authUser} 
-          onLogout={onLogout} 
-          onViewChange={onViewChange} 
-        />
+      <div className="w-screen h-screen overflow-hidden">
+        <div
+          className="h-screen bg-gradient-to-br from-amber-50 to-amber-100 flex flex-col"
+          style={{
+            transform: `scale(${pageZoom})`,
+            transformOrigin: 'top left',
+            width: `${100 / pageZoom}%`,
+            height: `${100 / pageZoom}%`,
+          }}
+        >
+          {/* Header Bar */}
+          <Header 
+            user={user} 
+            authUser={authUser} 
+            onLogout={onLogout} 
+            onViewChange={onViewChange} 
+          />
 
-        <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-1 overflow-hidden">
           {/* Left Sidebar - Language Selection */}
           <SideNav 
             selectedLanguage={selectedLanguage}
@@ -1246,6 +1289,8 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
             isCategoryPanelVisible={isCategoryPanelVisible}
             onLanguageToggle={toggleLanguage}
             onCategoryPanelToggle={toggleCategoryPanel}
+            onZoomIn={increasePageZoom}
+            onZoomOut={decreasePageZoom}
           />
 
           {/* Categories Panel */}
@@ -1486,8 +1531,6 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                       />
                     </div>
 
-                    {/* Footer Controls */}
-                    <FooterControls onAboutBook={() => console.log('About book clicked')} />
                   </div>
                 )}
               </div>
@@ -1510,6 +1553,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                 </div>
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>
