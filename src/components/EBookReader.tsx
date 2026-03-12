@@ -25,6 +25,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [searchResults, setSearchResults] = useState<{pageIndex: number; context: string; match: string; beforeContext: string; afterContext: string; fullContext: string}[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
@@ -319,15 +320,13 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
       console.log('📖 Book ID:', bookId);
       setIsLoading(true);
       
-      // Call backend API directly with proper CORS handling
-      const apiUrl = `http://localhost:5000/api/books/${bookId}/search?q=${encodeURIComponent(query)}&limit=200`;
-      console.log('📡 Calling backend API directly:', apiUrl);
+      const apiUrl = `/api/books/${bookId}/search?q=${encodeURIComponent(query)}&limit=200`;
+      console.log('📡 Calling search API:', apiUrl);
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        mode: 'cors', // Enable CORS
       });
       
       console.log('📥 API Response status:', response.status);
@@ -454,22 +453,38 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setSearchQuery(value);
+    setSearchInput(value);
     
     console.log('🔤 Search input changed to:', value);
     
-    // Debounce search to avoid too many calls
-    if (value.trim()) {
-      console.log('⏱️ Setting timeout for search...');
-      setTimeout(() => {
-        console.log('⏰ Timeout executed, calling performSearch');
-        performSearch(value);
-      }, 500);
-    } else {
+    if (!value.trim()) {
       console.log('🧹 Clearing search results');
+      setSearchQuery('');
       setSearchResults([]);
       setShowSearchResults(false);
       setIsSearchMode(false);
+    }
+  };
+
+  const handleSearchSubmit = () => {
+    const trimmedQuery = searchInput.trim();
+
+    if (!trimmedQuery || !bookId) {
+      setSearchQuery('');
+      setSearchResults([]);
+      setShowSearchResults(false);
+      setIsSearchMode(false);
+      return;
+    }
+
+    setSearchQuery(trimmedQuery);
+    performSearch(trimmedQuery);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearchSubmit();
     }
   };
 
@@ -801,6 +816,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
 
   const totalPages = paginationInfo?.totalPages || pages.length;
   const currentPageContent = paginationInfo ? content : (pages[currentPage - 1] || '');
+  const displayTitle = bookTitle || title || 'this book';
 
   // Update highlighted content when page content changes or search query changes
   useEffect(() => {
@@ -1325,13 +1341,22 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2" size={20} style={{ color: 'var(--icon)' }} />
                     <input
                       type="text"
-                      value={searchQuery}
+                      value={searchInput}
                       onChange={handleSearchChange}
-                      placeholder={`Search in "${title}"...`}
+                      onKeyDown={handleSearchKeyDown}
+                      placeholder={`Search in "${displayTitle}"...`}
                       className="w-full pl-10 pr-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent search-input"
                       style={{ background: 'var(--search-bar-bg)', color: 'var(--book-content-text)' }}
                     />
                   </div>
+                  <button
+                    onClick={handleSearchSubmit}
+                    className="px-4 py-2 rounded-lg font-semibold border border-amber-400 transition-colors"
+                    style={{ background: 'var(--color-vb-action-bg, #0f766e)', color: 'var(--color-vb-action-text, #fff)' }}
+                    title="Search this book"
+                  >
+                    Search
+                  </button>
                   
                   {/* Search Results Navigation */}
                   {showSearchResults && searchResults.length > 0 && (
@@ -1394,7 +1419,9 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                         onClick={() => {
                           setIsSearchMode(false);
                           setSearchQuery('');
+                          setSearchInput('');
                           setSearchResults([]);
+                          setShowSearchResults(false);
                         }}
                         className="text-amber-600 hover:text-amber-800 p-2 text-xl font-bold rounded-full border border-amber-300 bg-white shadow"
                         title="Close search"
@@ -1421,7 +1448,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                             <span className="text-lg font-semibold text-amber-700">Page {result.pageIndex + 1}</span>
                             <span className="text-lg text-amber-500">Match {index + 1}</span>
                           </div>
-                          <p className="text-2xl text-gray-900 leading-relaxed" style={{fontWeight: 400}} dangerouslySetInnerHTML={{__html: highlightSearchWord(result.fullContext, searchQuery)}} />
+                          <p className="text-2xl text-gray-900 leading-relaxed" style={{fontWeight: 400}} dangerouslySetInnerHTML={{__html: highlightSearchWord(result.fullContext, result.match || searchQuery)}} />
                         </div>
                       ))}
                     </div>

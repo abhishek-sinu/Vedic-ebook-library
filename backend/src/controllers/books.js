@@ -8,6 +8,22 @@ import { AppError, catchAsync, validationError } from '../middleware/errorHandle
 import { extractTextContent, getPaginatedContent, extractHtmlContent } from '../utils/textExtractor.js';
 import optimizedCache from '../../utils/optimizedContentCache.js';
 
+const normalizeSearchText = (input = '') => {
+  return input
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+};
+
 // Upload a new book
 export const uploadBook = catchAsync(async (req, res, next) => {
   // Check validation results
@@ -867,7 +883,7 @@ export const searchInBook = catchAsync(async (req, res, next) => {
 
     // Perform search across full content
     const results = [];
-    const searchTerm = searchQuery.toLowerCase();
+    const normalizedSearchQuery = normalizeSearchText(searchQuery);
     
     // Get the same pagination logic as used by getPaginatedContent API
     const cached = await optimizedCache.getCachedContent(book._id.toString(), 'html');
@@ -891,23 +907,33 @@ export const searchInBook = catchAsync(async (req, res, next) => {
       const startParagraph = (pageNum - 1) * paragraphsPerPage;
       const endParagraph = Math.min(startParagraph + paragraphsPerPage, paragraphs.length);
       const pageParagraphs = paragraphs.slice(startParagraph, endParagraph);
-      const pageContent = pageParagraphs.join(' ');
-      const pageContentLower = pageContent.toLowerCase();
+      const rawPageContent = pageParagraphs.join(' ');
+      const pageContent = rawPageContent
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+      const normalizedPageContent = normalizeSearchText(pageContent);
       
       let searchIndex = 0;
       while (true) {
-        const foundIndex = pageContentLower.indexOf(searchTerm, searchIndex);
+        const foundIndex = normalizedPageContent.indexOf(normalizedSearchQuery, searchIndex);
         if (foundIndex === -1) break;
         
 
         // Extract more context around the match (increase window from 150 to 350 chars)
         const CONTEXT_WINDOW = 350;
         const contextStart = Math.max(0, foundIndex - CONTEXT_WINDOW);
-        const contextEnd = Math.min(pageContent.length, foundIndex + searchTerm.length + CONTEXT_WINDOW);
+        const contextEnd = Math.min(pageContent.length, foundIndex + normalizedSearchQuery.length + CONTEXT_WINDOW);
 
         const beforeContext = pageContent.substring(contextStart, foundIndex);
-        const matchText = pageContent.substring(foundIndex, foundIndex + searchTerm.length);
-        const afterContext = pageContent.substring(foundIndex + searchTerm.length, contextEnd);
+        const matchText = pageContent.substring(foundIndex, foundIndex + normalizedSearchQuery.length);
+        const afterContext = pageContent.substring(foundIndex + normalizedSearchQuery.length, contextEnd);
 
         const fullContext = pageContent.substring(contextStart, contextEnd);
         
@@ -934,7 +960,7 @@ export const searchInBook = catchAsync(async (req, res, next) => {
           fullContext: `${contextStart > 0 ? '...' : ''}${cleanHtml(fullContext)}${contextEnd < pageContent.length ? '...' : ''}`
         });
         
-        searchIndex = foundIndex + 1;
+        searchIndex = foundIndex + normalizedSearchQuery.length;
       }
     }
     

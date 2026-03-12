@@ -7,6 +7,7 @@ export async function GET(
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
+    const limit = searchParams.get('limit');
     
     if (!query) {
       return NextResponse.json({ success: false, message: 'Query parameter required' }, { status: 400 });
@@ -15,7 +16,7 @@ export async function GET(
     console.log('🔄 Proxying search request for book:', params.id, 'query:', query);
     
     // Forward the request to the backend
-    const backendUrl = `http://localhost:5000/api/books/${params.id}/search?q=${encodeURIComponent(query)}`;
+    const backendUrl = `http://localhost:5000/api/books/${params.id}/search?q=${encodeURIComponent(query)}${limit ? `&limit=${encodeURIComponent(limit)}` : ''}`;
     console.log('📡 Backend URL:', backendUrl);
     
     const response = await fetch(backendUrl);
