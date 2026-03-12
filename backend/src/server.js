@@ -17,6 +17,7 @@ import authRoutes from './routes/auth.js';
 import bookRoutes from './routes/books.js';
 import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
+import cashfreeRoutes from './routes/cashfree.js';
 
 // Load environment variables
 dotenv.config();
@@ -120,6 +121,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', cashfreeRoutes);
 
 // 404 handler for unknown routes
 app.use('*', (req, res) => {

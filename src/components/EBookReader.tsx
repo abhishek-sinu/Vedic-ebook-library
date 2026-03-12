@@ -278,13 +278,13 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     fetchBookContent(book._id, 1, 'html')
       .then(result => {
         console.log('DEBUG: fetchBookContent result in handleBookSelection:', result);
-        if (result && result.chapterswithPageNo) {
+        if (result && 'chapterswithPageNo' in result && Array.isArray(result.chapterswithPageNo)) {
           setCategories(prev =>
             prev.map(cat => ({
               ...cat,
               books: cat.books.map(b =>
                 b._id === book._id
-                  ? { ...b, chapterswithPageNo: result.chapterswithPageNo }
+                  ? { ...b, chapterswithPageNo: (result as any).chapterswithPageNo }
                   : b
               )
             }))

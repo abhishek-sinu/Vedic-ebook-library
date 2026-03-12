@@ -881,7 +881,8 @@ export default function VedicKnowledgeFlow() {
               position: 'relative',
               zIndex: 1,
               width: window.innerWidth < 768 ? '100%' : 'auto',
-            }}>Donate</button>
+            }} onClick={() => router.push('/sastranidhi/donate')}
+            >Donate</button>
           </div>
         </div>
       </div>
