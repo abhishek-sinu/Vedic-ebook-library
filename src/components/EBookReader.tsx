@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, BookOpen, ArrowLeft, ZoomIn, ZoomOut, Settings, SkipForward, SkipBack, AlertCircle, Bookmark, BookmarkCheck, User, Upload, Bug, ChevronDown, Plus, FileText, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, ArrowLeft, Settings, SkipForward, SkipBack, AlertCircle, Bookmark, BookmarkCheck, User, Upload, Bug, ChevronDown, Plus, FileText, Search } from 'lucide-react';
 import { updateBookProgress, fetchBookContent, fetchBooks, Book } from '../lib/bookStorage';
 import { useAuth } from '../contexts/AuthContext';
 import Header from './Header';
@@ -1229,293 +1228,293 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-amber-50 to-amber-100 flex flex-col">
-      {/* Header Bar */}
-      <Header 
-        user={user} 
-        authUser={authUser} 
-        onLogout={onLogout} 
-        onViewChange={onViewChange} 
-      />
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar - Language Selection */}
-        <SideNav 
-          selectedLanguage={selectedLanguage}
-          languageConfig={languageConfig}
-          isCategoryPanelVisible={isCategoryPanelVisible}
-          onLanguageToggle={toggleLanguage}
-          onCategoryPanelToggle={toggleCategoryPanel}
+    <>
+      <div className="h-screen bg-gradient-to-br from-amber-50 to-amber-100 flex flex-col">
+        {/* Header Bar */}
+        <Header 
+          user={user} 
+          authUser={authUser} 
+          onLogout={onLogout} 
+          onViewChange={onViewChange} 
         />
 
-        {/* Categories Panel */}
-        {isCategoryPanelVisible && (
-          <CategoryPanel
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left Sidebar - Language Selection */}
+          <SideNav 
             selectedLanguage={selectedLanguage}
             languageConfig={languageConfig}
-            loadingBooks={loadingBooks}
-            categories={categories}
-            expandedCategories={expandedCategories}
-            bookId={bookId}
-            onCategoryToggle={toggleCategoryExpanded}
-            onBookSelection={handleBookSelection}
-            onFoldAll={foldAllCategories}
-            onUnfoldAll={unfoldAllCategories}
-            bookChapters={bookChapters}
-            onChapterSelect={(pageNumber) => {
-              console.log('EBookReader: Navigating to chapter page', pageNumber);
-              setCurrentPage(pageNumber);
-              setPageInputValue(pageNumber.toString());
-            }}
+            isCategoryPanelVisible={isCategoryPanelVisible}
+            onLanguageToggle={toggleLanguage}
+            onCategoryPanelToggle={toggleCategoryPanel}
           />
-        )}
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col ebook-reader-content" style={{ background: 'var(--bg)' }}>
-          {/* Search Bar */}
-          {bookId && content && (
-            <div className="p-4 border-b border-amber-300 ebook-reader-searchbar" style={{ background: 'var(--search-bar-bg)' }}>
-              <div className="relative flex items-center space-x-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2" size={20} style={{ color: 'var(--icon)' }} />
+          {/* Categories Panel */}
+          {isCategoryPanelVisible && (
+            <CategoryPanel
+              selectedLanguage={selectedLanguage}
+              languageConfig={languageConfig}
+              loadingBooks={loadingBooks}
+              categories={categories}
+              expandedCategories={expandedCategories}
+              bookId={bookId}
+              onCategoryToggle={toggleCategoryExpanded}
+              onBookSelection={handleBookSelection}
+              onFoldAll={foldAllCategories}
+              onUnfoldAll={unfoldAllCategories}
+              bookChapters={bookChapters}
+              onChapterSelect={(pageNumber) => {
+                console.log('EBookReader: Navigating to chapter page', pageNumber);
+                setCurrentPage(pageNumber);
+                setPageInputValue(pageNumber.toString());
+              }}
+            />
+          )}
+
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col ebook-reader-content" style={{ background: 'var(--bg)', flex: 1, overflowY: 'auto' }}>
+            {/* Search Bar */}
+            {bookId && content && (
+              <div className="p-4 border-b border-amber-300 ebook-reader-searchbar" style={{ background: 'var(--search-bar-bg)' }}>
+                <div className="relative flex items-center space-x-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2" size={20} style={{ color: 'var(--icon)' }} />
                     <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    placeholder={`Search in "${title}"...`}
-                    className="w-full pl-10 pr-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent search-input"
-                    style={{ background: 'var(--search-bar-bg)', color: 'var(--book-content-text)' }}
-                  />
+                      type="text"
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      placeholder={`Search in "${title}"...`}
+                      className="w-full pl-10 pr-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent search-input"
+                      style={{ background: 'var(--search-bar-bg)', color: 'var(--book-content-text)' }}
+                    />
+                  </div>
+                  
+                  {/* Search Results Navigation */}
+                  {showSearchResults && searchResults.length > 0 && (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-amber-800">
+                        {currentSearchIndex + 1} of {searchResults.length}
+                      </span>
+                      <button
+                        onClick={goToPreviousSearchResult}
+                        className="p-1 hover:bg-amber-200 rounded text-amber-700"
+                        disabled={searchResults.length <= 1}
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <button
+                        onClick={goToNextSearchResult}
+                        className="p-1 hover:bg-amber-200 rounded text-amber-700"
+                        disabled={searchResults.length <= 1}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 
-                {/* Search Results Navigation */}
-                {showSearchResults && searchResults.length > 0 && (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-amber-800">
-                      {currentSearchIndex + 1} of {searchResults.length}
-                    </span>
-                    <button
-                      onClick={goToPreviousSearchResult}
-                      className="p-1 hover:bg-amber-200 rounded text-amber-700"
-                      disabled={searchResults.length <= 1}
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <button
-                      onClick={goToNextSearchResult}
-                      className="p-1 hover:bg-amber-200 rounded text-amber-700"
-                      disabled={searchResults.length <= 1}
-                    >
-                      <ChevronRight size={16} />
-                    </button>
+                {/* Search Results Summary */}
+                {showSearchResults && (
+                  <div className="mt-2 text-sm text-amber-800">
+                    {searchResults.length > 0 ? (
+                      `Found ${searchResults.length} matches`
+                    ) : (
+                      searchQuery && 'No matches found'
+                    )}
                   </div>
                 )}
               </div>
-              
-              {/* Search Results Summary */}
-              {showSearchResults && (
-                <div className="mt-2 text-sm text-amber-800">
-                  {searchResults.length > 0 ? (
-                    `Found ${searchResults.length} matches`
-                  ) : (
-                    searchQuery && 'No matches found'
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-          
-          {bookId && isLoading ? (
-            <LoadingContent />
-          ) : bookId && content ? (
-            <div className="flex flex-col flex-1 overflow-hidden">
-              {/* Search Results Display */}
-              {isSearchMode && searchResults.length > 0 && (
-                <div className="flex-1 overflow-auto flex flex-col bg-amber-50" style={{borderRadius: '0.75rem', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.04)', border: '1.5px solid #ffe066', margin: '1.5rem', minHeight: 0}}>
-                  <div className="p-4 bg-amber-100 border-b border-amber-200 flex items-center justify-between sticky top-0 z-40">
-                    <div>
-                      <h3 className="font-semibold text-amber-800 text-lg">Search Results</h3>
-                      <p className="text-sm text-amber-700">
-                        Found {searchResults.length} matches for "{searchQuery}"
-                        {searchResults.length > 0 && (
-                          <span className="text-xs text-amber-600 ml-2">
-                            (Pages: {[...new Set(searchResults.map(r => r.pageIndex + 1))].sort((a, b) => a - b).slice(0, 20).join(', ')}
-                            {[...new Set(searchResults.map(r => r.pageIndex + 1))].length > 20 ? '...' : ''})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setIsSearchMode(false);
-                        setSearchQuery('');
-                        setSearchResults([]);
-                      }}
-                      className="text-amber-600 hover:text-amber-800 p-2 text-xl font-bold rounded-full border border-amber-300 bg-white shadow"
-                      title="Close search"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-8 space-y-8">
-                    {searchResults.map((result, index) => (
-                      <div
-                        key={index}
-                        className={`p-10 rounded-2xl shadow-lg border-2 transition-colors cursor-pointer bg-white border-amber-200 hover:border-amber-400 hover:shadow-2xl`}
+            )}
+            
+            {bookId && isLoading ? (
+              <LoadingContent />
+            ) : bookId && content ? (
+              <div className="flex flex-col flex-1 overflow-hidden">
+                {/* Search Results Display */}
+                {isSearchMode && searchResults.length > 0 && (
+                  <div className="flex-1 overflow-auto flex flex-col bg-amber-50" style={{borderRadius: '0.75rem', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.04)', border: '1.5px solid #ffe066', margin: '1.5rem', minHeight: 0}}>
+                    <div className="p-4 bg-amber-100 border-b border-amber-200 flex items-center justify-between sticky top-0 z-40">
+                      <div>
+                        <h3 className="font-semibold text-amber-800 text-lg">Search Results</h3>
+                        <p className="text-sm text-amber-700">
+                          Found {searchResults.length} matches for "{searchQuery}"
+                          {searchResults.length > 0 && (
+                            <span className="text-xs text-amber-600 ml-2">
+                              (Pages: {[...new Set(searchResults.map(r => r.pageIndex + 1))].sort((a, b) => a - b).slice(0, 20).join(', ')}
+                              {[...new Set(searchResults.map(r => r.pageIndex + 1))].length > 20 ? '...' : ''})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <button
                         onClick={() => {
-                          console.log('[Search Result Card] Clicked:', { page: result.pageIndex + 1, match: result.match, searchQuery });
-                          setCurrentPage(result.pageIndex + 1);
-                          setPageInputValue((result.pageIndex + 1).toString());
-                          setLastSearchWord(searchQuery); // Ensure this is the searched word
                           setIsSearchMode(false);
+                          setSearchQuery('');
                           setSearchResults([]);
                         }}
-                        style={{ fontSize: '1.5rem', lineHeight: 2.1 }}
+                        className="text-amber-600 hover:text-amber-800 p-2 text-xl font-bold rounded-full border border-amber-300 bg-white shadow"
+                        title="Close search"
                       >
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="text-lg font-semibold text-amber-700">Page {result.pageIndex + 1}</span>
-                          <span className="text-lg text-amber-500">Match {index + 1}</span>
-                        </div>
-                        <p className="text-2xl text-gray-900 leading-relaxed" style={{fontWeight: 400}} dangerouslySetInnerHTML={{__html: highlightSearchWord(result.fullContext, searchQuery)}} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Normal Reading Mode */}
-              {!isSearchMode && (
-                <div className="flex flex-col flex-1 overflow-hidden">
-                  {/* Reading Controls */}
-                  <div className="border-b border-gray-200 p-4 flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <BookOpen className="w-5 h-5" style={{ color: 'var(--icon)' }} />
-                    <span className="font-bold text-lg" style={{ color: 'var(--book-content-text-light)' }}>Reading: {title}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={decreaseFontSize}
-                      className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-                      title="Decrease font size"
-                    >
-                      <ZoomOut className="w-4 h-4" />
-                    </button>
-                    
-                    <span className="text-sm px-2 font-semibold" style={{ color: 'var(--book-content-text-light)' }}>{fontSize}px</span>
-                    
-                    <button
-                      onClick={increaseFontSize}
-                      className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-                      title="Increase font size"
-                    >
-                      <ZoomIn className="w-4 h-4" />
-                    </button>
-                    
-                    <button
-                      onClick={toggleBookmark}
-                      className={`p-2 rounded-lg transition-colors ${
-                        isBookmarked 
-                          ? 'text-yellow-600 bg-yellow-100' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                      title={isBookmarked ? 'Remove bookmark' : 'Bookmark this page'}
-                    >
-                      {isBookmarked ? (
-                        <BookmarkCheck className="w-4 h-4" />
-                      ) : (
-                        <Bookmark className="w-4 h-4" />
-                      )}
-                    </button>
-                    
-                    {/* Page Navigation */}
-                    <div className="flex items-center space-x-2 border-l border-gray-300 pl-4 ml-2">
-                      <button
-                        onClick={goToPreviousPage}
-                        disabled={currentPage === 1}
-                        className={`p-2 rounded-lg transition-colors ${
-                          currentPage === 1 
-                            ? 'text-gray-400 cursor-not-allowed' 
-                            : 'text-gray-600 hover:bg-gray-100'
-                        }`}
-                        title="Previous page"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      
-                      <div className="flex items-center space-x-1 min-w-[4rem] text-center">
-                        <input
-                          type="number"
-                          value={pageInputValue}
-                          onChange={handlePageInput}
-                          onKeyDown={handlePageInputSubmit}
-                          onBlur={handlePageInputBlur}
-                          min={1}
-                          max={totalPages}
-                          className="w-12 text-sm text-center border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                        />
-                        <span className="text-sm" style={{ color: 'var(--book-content-text-light)' }}>/ {totalPages}</span>
-                      </div>
-                      
-                      <button
-                        onClick={goToNextPage}
-                        disabled={currentPage >= totalPages}
-                        className={`p-2 rounded-lg transition-colors ${
-                          currentPage >= totalPages 
-                            ? 'text-gray-400 cursor-not-allowed' 
-                            : 'text-gray-600 hover:bg-gray-100'
-                        }`}
-                        title="Next page"
-                      >
-                        <ChevronRight className="w-4 h-4" />
+                        ✕
                       </button>
                     </div>
+                    <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                      {searchResults.map((result, index) => (
+                        <div
+                          key={index}
+                          className={`p-10 rounded-2xl shadow-lg border-2 transition-colors cursor-pointer bg-white border-amber-200 hover:border-amber-400 hover:shadow-2xl`}
+                          onClick={() => {
+                            console.log('[Search Result Card] Clicked:', { page: result.pageIndex + 1, match: result.match, searchQuery });
+                            setCurrentPage(result.pageIndex + 1);
+                            setPageInputValue((result.pageIndex + 1).toString());
+                            setLastSearchWord(searchQuery); // Ensure this is the searched word
+                            setIsSearchMode(false);
+                            setSearchResults([]);
+                          }}
+                          style={{ fontSize: '1.5rem', lineHeight: 2.1 }}
+                        >
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-lg font-semibold text-amber-700">Page {result.pageIndex + 1}</span>
+                            <span className="text-lg text-amber-500">Match {index + 1}</span>
+                          </div>
+                          <p className="text-2xl text-gray-900 leading-relaxed" style={{fontWeight: 400}} dangerouslySetInnerHTML={{__html: highlightSearchWord(result.fullContext, searchQuery)}} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                )}
+                
+                {/* Normal Reading Mode */}
+                {!isSearchMode && (
+                  <div className="flex flex-col flex-1 overflow-hidden">
+                    {/* Reading Controls */}
+                    <div className="border-b border-gray-200 p-4 flex-shrink-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <BookOpen className="w-5 h-5" style={{ color: 'var(--icon)' }} />
+                          <span className="font-bold text-lg" style={{ color: 'var(--book-content-text-light)' }}>Reading: {title}</span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={decreaseFontSize}
+                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+                            title="Decrease font size"
+                          >
+                      
+                          </button>
+                          
+                          <span className="text-sm px-2 font-semibold" style={{ color: 'var(--book-content-text-light)' }}>{fontSize}px</span>
+                          
+                          <button
+                            onClick={increaseFontSize}
+                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+                            title="Increase font size"
+                          >
+                            
+                          </button>
+                          
+                          <button
+                            onClick={toggleBookmark}
+                            className={`p-2 rounded-lg transition-colors ${
+                              isBookmarked 
+                                ? 'text-yellow-600 bg-yellow-100' 
+                                : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                            title={isBookmarked ? 'Remove bookmark' : 'Bookmark this page'}
+                          >
+                            {isBookmarked ? (
+                              <BookmarkCheck className="w-4 h-4" />
+                            ) : (
+                              <Bookmark className="w-4 h-4" />
+                            )}
+                          </button>
+                          
+                          {/* Page Navigation */}
+                          <div className="flex items-center space-x-2 border-l border-gray-300 pl-4 ml-2">
+                            <button
+                              onClick={goToPreviousPage}
+                              disabled={currentPage === 1}
+                              className={`p-2 rounded-lg transition-colors ${
+                                currentPage === 1 
+                                  ? 'text-gray-400 cursor-not-allowed' 
+                                  : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                              title="Previous page"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            
+                            <div className="flex items-center space-x-1 min-w-[4rem] text-center">
+                              <input
+                                type="number"
+                                value={pageInputValue}
+                                onChange={handlePageInput}
+                                onKeyDown={handlePageInputSubmit}
+                                onBlur={handlePageInputBlur}
+                                min={1}
+                                max={totalPages}
+                                className="w-12 text-sm text-center border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                              />
+                              <span className="text-sm" style={{ color: 'var(--book-content-text-light)' }}>/ {totalPages}</span>
+                            </div>
+                            
+                            <button
+                              onClick={goToNextPage}
+                              disabled={currentPage >= totalPages}
+                              className={`p-2 rounded-lg transition-colors ${
+                                currentPage >= totalPages 
+                                  ? 'text-gray-400 cursor-not-allowed' 
+                                  : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                              title="Next page"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Book Content */}
+                    <div ref={contentRef} className="flex-1 overflow-y-auto p-6 ebook-reader-book-content" style={{ background: 'var(--book-content-bg)', color: 'var(--book-content-text)' }}>
+                      <div 
+                        className="prose max-w-none leading-relaxed"
+                        style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight, color: 'var(--book-content-text)' }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: highlightedContent
+                        }}
+                      />
+                    </div>
+
+                    {/* Footer Controls */}
+                    <FooterControls onAboutBook={() => console.log('About book clicked')} />
+                  </div>
+                )}
+              </div>
+            ) : bookId && !content && !isLoading ? (
+              <div className="flex-1 flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                  <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                  <h2 className="text-xl font-semibold text-gray-700 mb-2">Book Not Found</h2>
+                  <p className="text-gray-500 mb-2">The selected book could not be loaded</p>
+                  <p className="text-gray-500">Please try selecting another book</p>
                 </div>
               </div>
-
-              {/* Book Content */}
-              <div ref={contentRef} className="flex-1 overflow-y-auto p-6 ebook-reader-book-content" style={{ background: 'var(--book-content-bg)', color: 'var(--book-content-text)' }}>
-                <div 
-                  className="prose max-w-none leading-relaxed"
-                  style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight, color: 'var(--book-content-text)' }}
-                  dangerouslySetInnerHTML={{ 
-                    __html: highlightedContent
-                  }}
-                />
-              </div>
-
-              {/* Footer Controls */}
-              <FooterControls onAboutBook={() => console.log('About book clicked')} />
+            ) : (
+              <div className="flex-1 flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                  <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                  <h2 className="text-xl font-semibold text-gray-700 mb-2">Welcome to Your Vedic Library</h2>
+                  <p className="text-gray-500 mb-2">Select a book from the categories on the left to start reading</p>
+                  <p className="text-gray-500">Browse through sacred texts and spiritual literature</p>
                 </div>
-              )}
-            </div>
-          ) : bookId && !content && !isLoading ? (
-            <div className="flex-1 flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h2 className="text-xl font-semibold text-gray-700 mb-2">Book Not Found</h2>
-                <p className="text-gray-500 mb-2">The selected book could not be loaded</p>
-                <p className="text-gray-500">Please try selecting another book</p>
               </div>
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h2 className="text-xl font-semibold text-gray-700 mb-2">Welcome to Your Vedic Library</h2>
-                <p className="text-gray-500 mb-2">Select a book from the categories on the left to start reading</p>
-                <p className="text-gray-500">Browse through sacred texts and spiritual literature</p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
-
-
 
 export default EBookReader;
