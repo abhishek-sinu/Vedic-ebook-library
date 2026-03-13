@@ -1,7 +1,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 
-const VedicKnowledgeFlow = dynamic(() => import('./VedicKnowledgeFlow'), { ssr: false });
+const VedicKnwledgeFlow = dynamic(() => import('./VedicKnowledgeFlow'), { ssr: false });
 
 type HomeLandingProps = {
   onLoginClick?: () => void;
@@ -12,7 +12,7 @@ export default function HomeLanding(_props: HomeLandingProps) {
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 flex flex-col items-center justify-center w-full">
         <div className="w-full">
-          <VedicKnowledgeFlow />
+          <VedicKnwledgeFlow />
         </div>
       </main>
 

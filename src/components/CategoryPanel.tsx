@@ -67,6 +67,92 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
 
 
   // Use filteredCategories everywhere below instead of categories
+    // Recursive tree rendering for hierarchical categories/books
+    const renderTree = (node, depth = 0) => {
+      if (!node) return null;
+      // If node is a category
+      if (node.name && node.books) {
+        return (
+          <div key={node.name} style={{ marginLeft: depth * 16 }}>
+            <button
+              onClick={() => onCategoryToggle(node.name)}
+              className="w-full p-4 text-left flex items-center justify-between group transition-colors category-panel-category-btn"
+              style={{ background: 'transparent', border: 'none' }}
+            >
+              <div className="flex items-center space-x-3">
+                <Plus className={`w-4 h-4 text-gray-400 transition-transform ${expandedCategories[node.name] ? 'transform rotate-45' : ''}`} />
+                <span className="text-xl font-bold category-panel-category-text" style={{lineHeight: '1.3'}}>{node.name}</span>
+              </div>
+            </button>
+            {expandedCategories[node.name] && (
+              <div>
+                {node.books.map(book => renderTree(book, depth + 1))}
+              </div>
+            )}
+          </div>
+        );
+      }
+      // If node is a book (with possible chapters)
+      if (node.title) {
+        return (
+          <div key={node._id} style={{ marginLeft: depth * 16 }}>
+            <button
+              onClick={() => {
+                onBookSelection(node);
+                setExpandedBookChapters(prev => ({ ...prev, [node._id]: !prev[node._id] }));
+              }}
+              data-book-id={node._id}
+              className={`flex items-center w-full p-3 pl-8 text-left transition-colors category-panel-book-btn${bookId === node._id ? ' selected' : ''}`}
+              style={bookId === node._id ? {
+                background: 'var(--bg)',
+                border: 'none',
+                borderLeft: '4px solid var(--color-vb-header-bottom, var(--border))'
+              } : { background: 'transparent', border: 'none' }}
+            >
+              <span className="mr-2">
+                {expandedBookChapters[node._id] ? <BookOpen size={16} /> : <BookIcon size={16} />}
+              </span>
+              <span className="text-lg font-bold category-panel-book-title" style={{lineHeight: '1.3'}}>{node.title}</span>
+            </button>
+            {bookId === node._id && expandedBookChapters[node._id] && Array.isArray(node.chapterswithPageNo) && node.chapterswithPageNo.length > 0 && (
+              <div className="pl-16 pt-2 border-l border-gray-700">
+                {node.chapterswithPageNo.map((chapter, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center text-base py-3 cursor-pointer hover:text-yellow-400 border-b border-gray-700 last:border-b-0 transition-all"
+                    style={{ color: 'var(--text)' }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (onChapterSelect) onChapterSelect(chapter.pageNumber);
+                    }}
+                  >
+                    <span className="mr-2"><FileText size={16} /></span>
+                    <span className="ml-2 font-semibold">{chapter.chapterName}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+      // If node is a nested subcategory (e.g., Acharya)
+      if (node.children && Array.isArray(node.children)) {
+        return (
+          <div key={node.label} style={{ marginLeft: depth * 16 }}>
+            <button
+              className="w-full p-3 text-left flex items-center justify-between group transition-colors"
+              style={{ background: 'transparent', border: 'none' }}
+            >
+              <span className="font-bold text-lg">{node.label}</span>
+            </button>
+            <div>
+              {node.children.map(child => renderTree(child, depth + 1))}
+            </div>
+          </div>
+        );
+      }
+      return null;
+    };
   const [activeTab, setActiveTab] = useState<'categories' | 'authors' | 'title'>('categories');
   const [expandedLetters, setExpandedLetters] = useState<{[key: string]: boolean}>({});
   const [expandedAuthors, setExpandedAuthors] = useState<{[key: string]: boolean}>({});
@@ -455,110 +541,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                 <div className="text-gray-400">Loading...</div>
               </div>
             ) : (
-              filteredCategories.map((category) => (
-                <div key={category.name} className="border-b" style={{ borderColor: 'var(--color-vb-header-bottom, var(--border))' }}>
-                  <button
-                    onClick={() => onCategoryToggle(category.name)}
-                    className="w-full p-4 text-left flex items-center justify-between group transition-colors category-panel-category-btn"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Plus className={`w-4 h-4 text-gray-400 transition-transform ${
-                        expandedCategories[category.name] ? 'transform rotate-45' : ''
-                      }`}
-                      style={{
-                        color:
-                          typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
-                            ? 'var(--text) !important'
-                            : 'var(--color-vb-input-border) !important'
-                      }}
-                    />
-                      <span className="text-xl font-bold category-panel-category-text" style={{lineHeight: '1.3'}}>{category.name}</span>
-                    </div>
-                  </button>
-                  
-                  {expandedCategories[category.name] && (
-                    <div>
-                      {category.books.map((book) => (
-                        <div key={book._id} className="border-b border-gray-600 last:border-b-0">
-                          <div className="flex items-center">
-                            <button
-                              onClick={() => {
-                                onBookSelection(book);
-                                setExpandedBookChapters(prev => ({
-                                  ...prev,
-                                  [book._id]: !prev[book._id]
-                                }));
-                              }}
-                              data-book-id={book._id}
-                              className={`flex items-center w-full p-3 pl-8 text-left transition-colors category-panel-book-btn${bookId === book._id ? ' selected' : ''}`}
-                              style={bookId === book._id ? {
-                                background: 'var(--bg)',
-                                border: 'none',
-                                borderLeft: '4px solid var(--color-vb-header-bottom, var(--border))'
-                              } : { background: 'transparent', border: 'none' }}
-                              onMouseEnter={e => {
-                                const theme = typeof window !== 'undefined' ? document.body.getAttribute('data-theme') : null;
-                                if ((!theme || theme === 'light')) {
-                                  if (bookId === book._id) {
-                                    e.currentTarget.style.background = '';
-                                  } else {
-                                    e.currentTarget.style.background = 'var(--color-vb-hover-bg, #f8f9fa)';
-                                  }
-                                }
-                              }}
-                              onMouseLeave={e => {
-                                const theme = typeof window !== 'undefined' ? document.body.getAttribute('data-theme') : null;
-                                if ((!theme || theme === 'light')) {
-                                  if (bookId === book._id) {
-                                    e.currentTarget.style.background = '';
-                                  } else {
-                                    e.currentTarget.style.background = '';
-                                  }
-                                }
-                              }}
-                            >
-                              <span className="mr-2">
-                                {expandedBookChapters[book._id] ? (
-                                  <BookOpen size={16} />
-                                ) : (
-                                  <BookIcon size={16} />
-                                )}
-                              </span>
-                              <span className="text-lg font-bold category-panel-book-title" style={{lineHeight: '1.3'}}>{book.title}</span>
-                            </button>
-                          </div>
-                          {bookId === book._id && expandedBookChapters[book._id] && (() => {
-                            return (
-                              <div className="pl-16 pt-2 border-l border-gray-700">
-                                {Array.isArray(book.chapterswithPageNo) && book.chapterswithPageNo.length > 0 ? (
-                                  book.chapterswithPageNo.map((chapter, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-center text-base py-3 cursor-pointer hover:text-yellow-400 border-b border-gray-700 last:border-b-0 transition-all"
-                                      style={{ color: 'var(--text)' }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (onChapterSelect) onChapterSelect(chapter.pageNumber);
-                                      }}
-                                    >
-                                      <span className="mr-2"><FileText size={16} /></span>
-                                      <span className="ml-2 font-semibold">{chapter.chapterName}</span>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="text-xs" style={{ color: 'red' }}>
-                                    No chapters found for this book.
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
+              filteredCategories.map(category => renderTree(category))
             )}
           </>
         )}

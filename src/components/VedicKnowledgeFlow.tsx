@@ -647,7 +647,8 @@ export default function VedicKnowledgeFlow() {
           {/* Vaisnava Literature Box (left) */}
           <div ref={vaisnavaRef} style={{
             scrollMarginTop: '70px',
-            width: window.innerWidth < 768 ? '100%' : '700px',
+            width: '100%',
+            maxWidth: '1400px',
             height: '320px',
             background: 'linear-gradient(180deg,#fffde4 0%,#ffe9ca 100%)',
             border: '2px solid #1abc9c',
@@ -658,20 +659,20 @@ export default function VedicKnowledgeFlow() {
             justifyContent: 'center',
             padding: 0,
           }}>
-            <div style={{ width: '100%', height: '280px' }}>
+            <div style={{ width: '100%', height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ReactFlow
                 nodes={[
                   {
                     id: 'vaisnava',
-                    position: { x: 250, y: 0 },
+                    position: { x: 450, y: 0 },
                     data: { label: (
                       <span style={{ fontWeight: 700, fontSize: 24, color: '#1a237e' }}>
-                        Vaisnava Literature <span style={{ fontWeight: 400, fontSize: 18 }}>(Vaishnava Manjusha)</span>
+                        Vaishnava Manjusha <span style={{ fontWeight: 400, fontSize: 18 }}></span>
                       </span>
                     ) },
                     style: {
-                      width: 200,
-                      height: 150,
+                      width: 340,
+                      height: 80,
                       background: 'linear-gradient(90deg,#e3f0ff 60%,#c7e0ff 100%)',
                       border: '2.5px solid #1976d2',
                       borderRadius: 16,
@@ -683,7 +684,7 @@ export default function VedicKnowledgeFlow() {
                   },
                   {
                     id: 'parampara',
-                    position: { x: 150, y: 220 },
+                    position: { x: 550, y: 120 },
                     data: { label: <span style={{ fontWeight: 600, fontSize: 20, color: '#1a237e' }}>Parampara</span> },
                     style: {
                       width: 140,
@@ -697,12 +698,57 @@ export default function VedicKnowledgeFlow() {
                     },
                   },
                   {
-                    id: 'acharya',
-                    position: { x: 410, y: 220 },
-                    data: { label: <span style={{ fontWeight: 600, fontSize: 20, color: '#1a237e' }}>Acharya</span> },
+                    id: 'sri',
+                    position: { x: 250, y: 260 },
+                    data: { label: <span style={{ fontWeight: 600, fontSize: 18, color: '#1a237e' }}>Sri Sampradaya</span> },
                     style: {
-                      width: 120,
-                      height: 48,
+                      width: 200,
+                      height: 40,
+                      background: '#fff',
+                      border: '2px solid #388e3c',
+                      borderRadius: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
+                  },
+                  {
+                    id: 'madhava',
+                    position: { x: 480, y: 260 },
+                    data: { label: <span style={{ fontWeight: 600, fontSize: 18, color: '#1a237e' }}>Madhava Sampradaya</span> },
+                    style: {
+                      width: 200,
+                      height: 40,
+                      background: '#fff',
+                      border: '2px solid #388e3c',
+                      borderRadius: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
+                  },
+                  {
+                    id: 'rudra',
+                    position: { x: 700, y: 260 },
+                    data: { label: <span style={{ fontWeight: 600, fontSize: 18, color: '#1a237e' }}>Rudra Sampradaya</span> },
+                    style: {
+                      width: 200,
+                      height: 40,
+                      background: '#fff',
+                      border: '2px solid #388e3c',
+                      borderRadius: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
+                  },
+                  {
+                    id: 'kumara',
+                    position: { x: 950, y: 260 },
+                    data: { label: <span style={{ fontWeight: 600, fontSize: 18, color: '#1a237e' }}>Kumara Sampradaya</span> },
+                    style: {
+                      width: 200,
+                      height: 40,
                       background: '#fff',
                       border: '2px solid #388e3c',
                       borderRadius: 12,
@@ -714,7 +760,10 @@ export default function VedicKnowledgeFlow() {
                 ]}
                 edges={[
                   { id: 'e1', source: 'vaisnava', target: 'parampara', type: 'straight' },
-                  { id: 'e2', source: 'vaisnava', target: 'acharya', type: 'straight' },
+                  { id: 'e2', source: 'parampara', target: 'sri', type: 'straight' },
+                  { id: 'e3', source: 'parampara', target: 'madhava', type: 'straight' },
+                  { id: 'e4', source: 'parampara', target: 'rudra', type: 'straight' },
+                  { id: 'e5', source: 'parampara', target: 'kumara', type: 'straight' },
                 ]}
                 fitView
                 panOnDrag={window.innerWidth < 768}
@@ -728,17 +777,21 @@ export default function VedicKnowledgeFlow() {
                 proOptions={{ hideAttribution: true }}
                 defaultEdgeOptions={{ type: 'straight' }}
                 onNodeClick={onSecondaryNodeClick}
-                style={{ width: '100%', height: '180px' }}
+                style={{ width: '700px', height: '180px', margin: '0 auto' }}
               >
                 <Background color="#fbc02d22" gap={32} />
               </ReactFlow>
             </div>
           </div>
+        </div>
+        
           {/* Classical Literature Box (right) */}
           <div ref={classicalRef} style={{
             scrollMarginTop: '70px',
-            width: window.innerWidth < 768 ? '100%' : '700px',
+            width: '100%',
+            maxWidth: '1400px',
             height: '320px',
+            margin: '32px auto 0 auto',
             background: 'linear-gradient(180deg,#fffde4 0%,#ffe9ca 100%)',
             border: '2px solid #1abc9c',
             borderRadius: 12,
@@ -753,7 +806,7 @@ export default function VedicKnowledgeFlow() {
                 nodes={[
                   {
                     id: 'classical',
-                    position: { x: 250, y: 0 },
+                    position: { x: 450, y: 0 },
                     data: { label: (
                       <span style={{ fontWeight: 700, fontSize: 24, color: '#1a237e' }}>
                         Classical Literature
@@ -773,7 +826,7 @@ export default function VedicKnowledgeFlow() {
                   },
                   {
                     id: 'sanskrit',
-                    position: { x: 150, y: 220 },
+                    position: { x: 350, y: 220 },
                     data: { label: <span style={{ fontWeight: 600, fontSize: 20, color: '#1a237e' }}>Sanskrit</span> },
                     style: {
                       width: 140,
@@ -788,7 +841,7 @@ export default function VedicKnowledgeFlow() {
                   },
                   {
                     id: 'regional',
-                    position: { x: 410, y: 220 },
+                    position: { x: 650, y: 220 },
                     data: { label: <span style={{ fontWeight: 600, fontSize: 20, color: '#1a237e' }}>Regional</span> },
                     style: {
                       width: 120,
@@ -824,8 +877,6 @@ export default function VedicKnowledgeFlow() {
               </ReactFlow>
             </div>
           </div>
-        </div>
-
         {/* Donor/Acknowledgment Section */}
         <div style={{
           maxWidth: '1400px',
