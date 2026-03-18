@@ -68,7 +68,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
 
   // Use filteredCategories everywhere below instead of categories
     // Recursive tree rendering for hierarchical categories/books
-    const renderTree = (node, depth = 0) => {
+    const renderTree = (node: any, depth = 0) => {
       if (!node) return null;
       // If node is a category
       if (node.name && node.books) {
@@ -86,7 +86,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
             </button>
             {expandedCategories[node.name] && (
               <div>
-                {node.books.map(book => renderTree(book, depth + 1))}
+                {node.books.map((book: any) => renderTree(book, depth + 1))}
               </div>
             )}
           </div>
@@ -116,7 +116,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
             </button>
             {bookId === node._id && expandedBookChapters[node._id] && Array.isArray(node.chapterswithPageNo) && node.chapterswithPageNo.length > 0 && (
               <div className="pl-16 pt-2 border-l border-gray-700">
-                {node.chapterswithPageNo.map((chapter, idx) => (
+                {node.chapterswithPageNo.map((chapter: any, idx: number) => (
                   <div
                     key={idx}
                     className="flex items-center text-base py-3 cursor-pointer hover:text-yellow-400 border-b border-gray-700 last:border-b-0 transition-all"
@@ -146,7 +146,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
               <span className="font-bold text-lg">{node.label}</span>
             </button>
             <div>
-              {node.children.map(child => renderTree(child, depth + 1))}
+               {node.children.map((child: any) => renderTree(child, depth + 1))}
             </div>
           </div>
         );

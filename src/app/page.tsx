@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { Suspense } from 'react';
 import Login from '../components/Login';
 import EBookReader from '../components/EBookReader';
 // import FileUpload from '../components/FileUpload';
@@ -107,7 +108,9 @@ const AppContent = () => {
 export default function Home() {
   return (
     <AuthProvider>
-      <AppContent />
+      <Suspense>
+        <AppContent />
+      </Suspense>
     </AuthProvider>
   );
 }

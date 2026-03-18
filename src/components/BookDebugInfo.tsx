@@ -69,7 +69,7 @@ const BookDebugInfo: React.FC = () => {
           <div className="text-center">
             <Calendar className="w-6 h-6 mx-auto mb-2" style={{color: 'var(--saffron)'}} />
             <div className="font-bold">
-              {books.length > 0 ? formatDate(books[books.length - 1].uploadDate) : 'None'}
+              {books.length > 0 ? formatDate(books[books.length - 1].uploadInfo.uploadDate) : 'None'}
             </div>
             <div className="text-sm opacity-75">Last Upload</div>
           </div>
@@ -91,7 +91,7 @@ const BookDebugInfo: React.FC = () => {
         <div className="space-y-4">
           {books.map((book, index) => (
             <div 
-              key={book.id} 
+              key={book._id}
               className="p-4 rounded-lg border"
               style={{background: 'var(--cream)', borderColor: 'var(--saffron)'}}
             >
@@ -100,7 +100,7 @@ const BookDebugInfo: React.FC = () => {
                   {index + 1}. {book.title}
                 </h4>
                 <span className="text-xs px-2 py-1 rounded" style={{background: 'var(--saffron)', color: 'var(--deep-blue)'}}>
-                  {book.fileSize}
+                  {book.fileInfo?.fileSize}
                 </span>
               </div>
               
@@ -111,11 +111,11 @@ const BookDebugInfo: React.FC = () => {
                 </div>
                 <div className="flex items-center">
                   <FileText className="w-4 h-4 mr-2" style={{color: 'var(--saffron)'}} />
-                  <span>File: {book.originalName || book.filename}</span>
+                  <span>File: {book.fileInfo?.originalName || book.fileInfo?.filename}</span>
                 </div>
                 <div className="flex items-center">
                   <Calendar className="w-4 h-4 mr-2" style={{color: 'var(--saffron)'}} />
-                  <span>Uploaded: {formatDate(book.uploadDate)}</span>
+                  <span>Uploaded: {formatDate(book.uploadInfo?.uploadDate)}</span>
                 </div>
                 <div className="flex items-center">
                   <HardDrive className="w-4 h-4 mr-2" style={{color: 'var(--saffron)'}} />
@@ -145,10 +145,9 @@ const BookDebugInfo: React.FC = () => {
                 </div>
               )}
               
-              {book.currentPage && book.totalPages && (
+              {book.metadata?.totalPages && (
                 <div className="mt-2 text-sm">
-                  <strong>Reading Progress:</strong> Page {book.currentPage} of {book.totalPages} 
-                  ({Math.round((book.currentPage / book.totalPages) * 100)}%)
+                  <strong>Total Pages:</strong> {book.metadata.totalPages}
                 </div>
               )}
             </div>

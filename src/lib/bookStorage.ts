@@ -40,6 +40,7 @@ export interface Book {
   };
   isActive: boolean;
   type: 'normal' | 'special' | 'private';
+  contentLength?: number;
 }
 
 export interface BookMetadata {
@@ -126,7 +127,7 @@ export const getBookDetails = async (bookId: string): Promise<Book | null> => {
   }
 };
 
-export const fetchBookContent = async (bookId: string, page: number = 1, format: string = 'html'): Promise<{ content: string; metadata: Book; pagination?: any } | null> => {
+export const fetchBookContent = async (bookId: string, page: number = 1, format: string = 'html'): Promise<{ content: string; metadata: Book; chapterswithPageNo?: any[]; pagination?: any } | null> => {
   try {
     // Get auth token from storage
     const token = localStorage.getItem('vedic_auth_token') || sessionStorage.getItem('vedic_auth_token');
