@@ -1,8 +1,10 @@
 'use client';
 
 import { Search, Plus, Book as BookIcon, BookOpen, FileText } from 'lucide-react';
+import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import { Book } from '../lib/bookStorage';
 import { useState, useMemo, useEffect } from 'react';
+import axios from 'axios';
 
 interface CategoryPanelProps {
   selectedLanguage: string;
@@ -14,150 +16,114 @@ interface CategoryPanelProps {
       count: number;
     };
   };
-  loadingBooks: boolean;
-  categories: {name: string; books: Book[]; expanded: boolean}[];
-  expandedCategories: {[key: string]: boolean};
+  loadingBooks?: boolean;
+  expandedCategories?: {[key: string]: boolean};
   bookId?: string;
-  onCategoryToggle: (category: string) => void;
+  onCategoryToggle?: (category: string) => void;
   onBookSelection: (book: Book) => void;
-  onFoldAll: () => void;
-  onUnfoldAll: () => void;
+  onFoldAll?: () => void;
+  onUnfoldAll?: () => void;
   onChapterSelect?: (pageNumber: number) => void;
 }
+
+const API_URL = 'http://localhost:5000/api/categories/tree';
 
 const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: string; wordIndex: number }[] }> = ({
   selectedLanguage,
   languageConfig,
-  loadingBooks,
-  categories,
-  expandedCategories,
   bookId,
-  onCategoryToggle,
   onBookSelection,
+  onChapterSelect,
   onFoldAll,
   onUnfoldAll,
-  bookChapters = [],
-  onChapterSelect
+  ...rest
 }) => {
-  // Get user privilege from localStorage/sessionStorage
-  let userPrivilege = 'normal';
-  let userPrivileges: string[] = ['normal'];
-  try {
-    const userStr = localStorage.getItem('vedic_user') || sessionStorage.getItem('vedic_user');
-    if (userStr) {
-      const userObj = JSON.parse(userStr);
-      if (userObj.privilegeForBooks) {
-        if (Array.isArray(userObj.privilegeForBooks)) {
-          userPrivileges = userObj.privilegeForBooks;
-        } else if (typeof userObj.privilegeForBooks === 'string') {
-          userPrivileges = [userObj.privilegeForBooks];
+  // Provide default no-op functions if not passed
+  const handleFoldAll = onFoldAll || (() => {});
+  const handleUnfoldAll = onUnfoldAll || (() => {});
+  // Local state for categories and user privileges
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userPrivileges, setUserPrivileges] = useState<string[] | null>(null);
+
+  // Fetch categories and user privileges on client only
+  useEffect(() => {
+    setLoading(true);
+    // Fetch categories
+    axios.get(API_URL)
+      .then(res => {
+        setCategories(res.data || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+
+    // Get user privilege from localStorage/sessionStorage
+    let privileges: string[] = ['normal'];
+    try {
+      const userStr = localStorage.getItem('vedic_user') || sessionStorage.getItem('vedic_user');
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        if (userObj.privilegeForBooks) {
+          if (Array.isArray(userObj.privilegeForBooks)) {
+            privileges = userObj.privilegeForBooks;
+          } else if (typeof userObj.privilegeForBooks === 'string') {
+            privileges = [userObj.privilegeForBooks];
+          }
         }
       }
-    }
-  } catch {}
+    } catch {}
+    setUserPrivileges(privileges);
+  }, []);
+  // (Removed duplicate userPrivileges and userPrivilege declarations. Only use state variable.)
 
-  // Filter categories/books by user privilege
-  const filteredCategories = categories.map(category => ({
+  // Filter categories/books by user privilege (only after privileges loaded)
+  const filteredCategories = (userPrivileges ? categories.map(category => ({
     ...category,
-    books: category.books.filter(book => {
-      // Show book if its type is included in user's privileges
-      return userPrivileges.includes(book.type);
-    })
-  }));
+    books: category.books ? category.books.filter(book => userPrivileges.includes(book.type)) : [],
+    children: category.children ? category.children : [],
+  })) : []);
 
 
-  // Use filteredCategories everywhere below instead of categories
-    // Recursive tree rendering for hierarchical categories/books
-    const renderTree = (node: any, depth = 0) => {
-      if (!node) return null;
-      // If node is a category
-      if (node.name && node.books) {
-        return (
-          <div key={node.name} style={{ marginLeft: depth * 16 }}>
-            <button
-              onClick={() => onCategoryToggle(node.name)}
-              className="w-full p-4 text-left flex items-center justify-between group transition-colors category-panel-category-btn"
-              style={{ background: 'transparent', border: 'none' }}
-            >
-              <div className="flex items-center space-x-3">
-                <Plus className={`w-4 h-4 text-gray-400 transition-transform ${expandedCategories[node.name] ? 'transform rotate-45' : ''}`} />
-                <span className="text-xl font-bold category-panel-category-text" style={{lineHeight: '1.3'}}>{node.name}</span>
-              </div>
-            </button>
-            {expandedCategories[node.name] && (
-              <div>
-                {node.books.map((book: any) => renderTree(book, depth + 1))}
-              </div>
-            )}
-          </div>
-        );
-      }
-      // If node is a book (with possible chapters)
-      if (node.title) {
-        return (
-          <div key={node._id} style={{ marginLeft: depth * 16 }}>
-            <button
-              onClick={() => {
-                onBookSelection(node);
-                setExpandedBookChapters(prev => ({ ...prev, [node._id]: !prev[node._id] }));
-              }}
-              data-book-id={node._id}
-              className={`flex items-center w-full p-3 pl-8 text-left transition-colors category-panel-book-btn${bookId === node._id ? ' selected' : ''}`}
-              style={bookId === node._id ? {
-                background: 'var(--bg)',
-                border: 'none',
-                borderLeft: '4px solid var(--color-vb-header-bottom, var(--border))'
-              } : { background: 'transparent', border: 'none' }}
-            >
-              <span className="mr-2">
-                {expandedBookChapters[node._id] ? <BookOpen size={16} /> : <BookIcon size={16} />}
-              </span>
-              <span className="text-lg font-bold category-panel-book-title" style={{lineHeight: '1.3'}}>{node.title}</span>
-            </button>
-            {bookId === node._id && expandedBookChapters[node._id] && Array.isArray(node.chapterswithPageNo) && node.chapterswithPageNo.length > 0 && (
-              <div className="pl-16 pt-2 border-l border-gray-700">
-                {node.chapterswithPageNo.map((chapter: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className="flex items-center text-base py-3 cursor-pointer hover:text-yellow-400 border-b border-gray-700 last:border-b-0 transition-all"
-                    style={{ color: 'var(--text)' }}
-                    onClick={e => {
-                      e.stopPropagation();
-                      if (onChapterSelect) onChapterSelect(chapter.pageNumber);
-                    }}
-                  >
-                    <span className="mr-2"><FileText size={16} /></span>
-                    <span className="ml-2 font-semibold">{chapter.chapterName}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      }
-      // If node is a nested subcategory (e.g., Acharya)
-      if (node.children && Array.isArray(node.children)) {
-        return (
-          <div key={node.label} style={{ marginLeft: depth * 16 }}>
-            <button
-              className="w-full p-3 text-left flex items-center justify-between group transition-colors"
-              style={{ background: 'transparent', border: 'none' }}
-            >
-              <span className="font-bold text-lg">{node.label}</span>
-            </button>
-            <div>
-               {node.children.map((child: any) => renderTree(child, depth + 1))}
-            </div>
-          </div>
-        );
-      }
-      return null;
-    };
+  // Helper to get all IDs for default expansion
+  function getAllIds(node) {
+    let ids = [String(node._id)];
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => {
+        ids = ids.concat(getAllIds(child));
+      });
+    }
+    return ids;
+  }
+
+  // MUI TreeView recursive rendering (always show children and books)
+  const renderTree = (nodes: any[], parentId = '') => {
+    return nodes.map((node, idx) => {
+      const itemId = node._id ? String(node._id) : `${parentId}${node.name || node.title || 'node'}-${idx}`;
+      return (
+        <TreeItem key={itemId} itemId={itemId} label={node.name || node.title}>
+          {/* Render children categories */}
+          {node.children && node.children.length > 0 && renderTree(node.children, itemId)}
+          {/* Render books at leaf node */}
+          {node.books && node.books.length > 0 && node.books.map((book, bidx) => {
+            const bookId = book._id ? String(book._id) : `${itemId}-book-${bidx}`;
+            return (
+              <TreeItem
+                key={bookId}
+                itemId={bookId}
+                label={book.title}
+                onClick={() => onBookSelection(book)}
+              />
+            );
+          })}
+        </TreeItem>
+      );
+    });
+  };
   const [activeTab, setActiveTab] = useState<'categories' | 'authors' | 'title'>('categories');
   const [expandedLetters, setExpandedLetters] = useState<{[key: string]: boolean}>({});
   const [expandedAuthors, setExpandedAuthors] = useState<{[key: string]: boolean}>({});
   const [expandedTitleLetters, setExpandedTitleLetters] = useState<{[key: string]: boolean}>({});
-  const [expandedBookChapters, setExpandedBookChapters] = useState<{[bookId: string]: boolean}>({});
+  // removed expandedBookChapters and expandedCategories
 
   useEffect(() => {
     if (!bookId) return;
@@ -170,7 +136,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [bookId, expandedCategories]);
+  }, [bookId]);
 
   // Organize books by author first letter
   const authorGroups = useMemo(() => {
@@ -536,12 +502,14 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
       <div className="flex-1 overflow-y-auto">
         {activeTab === 'categories' && (
           <>
-            {loadingBooks ? (
+            {loading || !userPrivileges ? (
               <div className="p-4 text-center">
                 <div className="text-gray-400">Loading...</div>
               </div>
             ) : (
-              filteredCategories.map(category => renderTree(category))
+              <SimpleTreeView sx={{ background: 'var(--card)' }}>
+                {renderTree(filteredCategories)}
+              </SimpleTreeView>
             )}
           </>
         )}
@@ -554,13 +522,13 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
       {/* Footer Controls */}
       <div className="p-4 border-t flex justify-between items-center gap-2 category-panel-footer" style={{ borderColor: 'var(--color-vb-header-bottom, var(--border))' }}>
         <button 
-          onClick={onFoldAll}
+          onClick={handleFoldAll}
           className="text-sm px-3 py-1 rounded category-panel-footer-btn"
         >
           Fold all
         </button>
         <button 
-          onClick={onUnfoldAll}
+          onClick={handleUnfoldAll}
           className="text-sm px-3 py-1 rounded category-panel-footer-btn"
         >
           Unfold all

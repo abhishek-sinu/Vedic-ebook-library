@@ -13,6 +13,10 @@
   },
   "dependencies": {
     "@cashfreepayments/cashfree-js": "^1.0.6",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.9",
+    "@mui/x-tree-view": "^8.27.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/formidable": "^3.4.6",
     "@types/jsonwebtoken": "^9.0.10",
