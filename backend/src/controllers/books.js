@@ -907,61 +907,60 @@ export const searchInBook = catchAsync(async (req, res, next) => {
       const startParagraph = (pageNum - 1) * paragraphsPerPage;
       const endParagraph = Math.min(startParagraph + paragraphsPerPage, paragraphs.length);
       const pageParagraphs = paragraphs.slice(startParagraph, endParagraph);
-      const rawPageContent = pageParagraphs.join(' ');
-      const pageContent = rawPageContent
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/\s+/g, ' ')
-        .trim();
-      const normalizedPageContent = normalizeSearchText(pageContent);
-      
-      let searchIndex = 0;
-      while (true) {
-        const foundIndex = normalizedPageContent.indexOf(normalizedSearchQuery, searchIndex);
-        if (foundIndex === -1) break;
-        
-
-        // Extract more context around the match (increase window from 150 to 350 chars)
-        const CONTEXT_WINDOW = 350;
-        const contextStart = Math.max(0, foundIndex - CONTEXT_WINDOW);
-        const contextEnd = Math.min(pageContent.length, foundIndex + normalizedSearchQuery.length + CONTEXT_WINDOW);
-
-        const beforeContext = pageContent.substring(contextStart, foundIndex);
-        const matchText = pageContent.substring(foundIndex, foundIndex + normalizedSearchQuery.length);
-        const afterContext = pageContent.substring(foundIndex + normalizedSearchQuery.length, contextEnd);
-
-        const fullContext = pageContent.substring(contextStart, contextEnd);
-        
-        // Helper function to clean HTML tags for display
-        const cleanHtml = (htmlString) => {
-          return htmlString
-            .replace(/<[^>]*>/g, '') // Remove all HTML tags
-            .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
-            .replace(/&amp;/g, '&') // Replace HTML entities
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-            .replace(/&#39;/g, "'")
-            .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-            .trim();
-        };
-        
-        results.push({
-          pageNumber: pageNum, // Now matches API pagination
-          match: cleanHtml(matchText),
-          beforeContext: cleanHtml(beforeContext),
-          afterContext: cleanHtml(afterContext),
-          context: `${contextStart > 0 ? '...' : ''}${cleanHtml(beforeContext)}${cleanHtml(matchText)}${cleanHtml(afterContext)}${contextEnd < pageContent.length ? '...' : ''}`,
-          fullContext: `${contextStart > 0 ? '...' : ''}${cleanHtml(fullContext)}${contextEnd < pageContent.length ? '...' : ''}`
+      // For each paragraph, search for matches and record paragraph index
+      pageParagraphs.forEach((paragraph, localParagraphIndex) => {
+        const cleanParagraph = paragraph
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/\s+/g, ' ')
+          .trim();
+        const normalizedParagraph = normalizeSearchText(cleanParagraph);
+        // Split paragraph into sentences (simple split on . ! ?)
+        const sentenceRegex = /[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g;
+        const sentences = cleanParagraph.match(sentenceRegex) || [cleanParagraph];
+        sentences.forEach((sentence, sentenceIdx) => {
+          const normalizedSentence = normalizeSearchText(sentence);
+          let searchIndex = 0;
+          while (true) {
+            const foundIndex = normalizedSentence.indexOf(normalizedSearchQuery, searchIndex);
+            if (foundIndex === -1) break;
+            // Context is just the sentence
+            const beforeContext = sentence.substring(0, foundIndex);
+            const matchText = sentence.substring(foundIndex, foundIndex + normalizedSearchQuery.length);
+            const afterContext = sentence.substring(foundIndex + normalizedSearchQuery.length);
+            // Helper function to clean HTML tags for display
+            const cleanHtml = (htmlString) => {
+              return htmlString
+                .replace(/<[^>]*>/g, '') // Remove all HTML tags
+                .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
+                .replace(/&amp;/g, '&') // Replace HTML entities
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+                .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+                .trim();
+            };
+            results.push({
+              pageNumber: pageNum, // Now matches API pagination
+              match: cleanHtml(matchText),
+              beforeContext: cleanHtml(beforeContext),
+              afterContext: cleanHtml(afterContext),
+              context: cleanHtml(sentence),
+              fullContext: cleanHtml(sentence),
+              paragraphIndex: startParagraph + localParagraphIndex,
+              paragraphText: cleanHtml(cleanParagraph),
+              sentenceIndex: sentenceIdx
+            });
+            searchIndex = foundIndex + normalizedSearchQuery.length;
+          }
         });
-        
-        searchIndex = foundIndex + normalizedSearchQuery.length;
-      }
+      });
     }
     
     console.log(`✅ Found ${results.length} total matches for "${searchQuery}" in ${book.title}`);

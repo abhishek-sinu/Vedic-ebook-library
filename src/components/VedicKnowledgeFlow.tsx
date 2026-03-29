@@ -1,940 +1,465 @@
-import React, { useRef, useEffect } from 'react';
-import ReactFlow, { Background, Controls, MiniMap, useReactFlow } from 'reactflow';
+'use client';
+import React, { useRef } from 'react';
+import ReactFlow, { Background } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useRouter } from 'next/navigation';
+import dagre from 'dagre';
 
+// ─── Dagre layout ────────────────────────────────────────────────────────────
+const NODE_W = 180;
+const NODE_H = 52;
 
-// Expanded nodes and edges for the full Vedic Knowledge diagram
-const nodes = [
-  // Top level
-  { id: 'vedic', position: { x: 650, y: 0 }, data: { label: 'Vedic Literature' }, style: { width: 340, height: 80, background: 'linear-gradient(90deg,#e3f0ff 60%,#c7e0ff 100%)', fontWeight: 'bold', fontSize: 28, border: '2.5px solid #1976d2', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1a237e', boxShadow: '0 2px 12px #7bb0ff33' } },
-  { id: 'sruti', position: { x: 400, y: 120 }, data: { label: 'ŚRUTI' }, style: { width: 120, height: 40, background: '#d0f5c7', fontWeight: 'bold', border: '2px solid #388e3c', borderRadius: 8 } },
-  { id: 'smrti', position: { x: 900, y: 120 }, data: { label: 'SMṚTI' }, style: { width: 120, height: 40, background: '#ffe0b2', fontWeight: 'bold', border: '2px solid #f57c00', borderRadius: 8 } },
-  // SRUTI children (only VEDAS)
-  { id: 'vedas', position: { x: 400, y: 240 }, data: { label: 'VEDAS\nṚg, Yajur, Sāma, Atharva' }, style: { width: 180, height: 60, background: '#e8f5e9', border: '1px solid #388e3c', borderRadius: 6, whiteSpace: 'pre-line' } },
-  // SMRTI children (all others)
-  { id: 'upvedas', position: { x: 700, y: 240 }, data: { label: 'UPAVEDAS' }, style: { width: 100, height: 36, background: '#e8f5e9', border: '1px solid #388e3c', borderRadius: 6 } },
-  { id: 'vedangas', position: { x: 850, y: 240 }, data: { label: 'VEDĀṄGAS' }, style: { width: 110, height: 36, background: '#e8f5e9', border: '1px solid #388e3c', borderRadius: 6 } },
-  // VEDAS sub
-  { id: 'samhitas', position: { x: 450, y: 370 }, data: { label: 'Saṃhitās mantras' }, style: { width: 110, height: 40, background: '#fff', border: '1px solid #388e3c', borderRadius: 6, whiteSpace: 'pre-line' } },
-  { id: 'brahmanas', position: { x: 450, y: 370 }, data: { label: 'Brāhmaṇas Ritual explanation of mantras' }, style: { width: 180, height: 60, background: '#fff', border: '1px solid #388e3c', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'aranyakas', position: { x: 450, y: 440 }, data: { label: 'Āraṇyakas Esoteric explanation of mantras' }, style: { width: 180, height: 60, background: '#fff', border: '1px solid #388e3c', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'upanishads', position: { x: 450, y: 510 }, data: { label: 'Upaniṣads\nJñāna-kāṇḍa' }, style: { width: 180, height: 60, background: '#fff', border: '1px solid #1976d2', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  // UPVEDAS sub
-  { id: 'ayurveda', position: { x: 800, y: 320 }, data: { label: 'Āyurveda' }, style: { width: 100, height: 32, background: '#fff', border: '1px solid #388e3c', borderRadius: 6 } },
-  { id: 'dhanurveda', position: { x: 800, y: 360 }, data: { label: 'Dhanurveda' }, style: { width: 100, height: 32, background: '#fff', border: '1px solid #388e3c', borderRadius: 6 } },
-  { id: 'gandharvaveda', position: { x: 800, y: 400 }, data: { label: 'Gāndharvaveda' }, style: { width: 100, height: 32, background: '#fff', border: '1px solid #388e3c', borderRadius: 6 } },
-  { id: 'sthapathyaveda', position: { x: 800, y: 440 }, data: { label: 'Sthāpatyaveda' }, style: { width: 100, height: 32, background: '#fff', border: '1px solid #388e3c', borderRadius: 6 } },
-  { id: 'arthashastra', position: { x: 800, y: 480 }, data: { label: 'Arthaśāstra' }, style: { width: 100, height: 32, background: '#fff', border: '1px solid #388e3c', borderRadius: 6 } },
-  // VEDANGAS sub
-  { id: 'kalpa', position: { x: 950, y: 320 }, data: { label: 'Kalpa\nritual details' }, style: { width: 110, height: 36, background: '#fff', border: '1px solid #388e3c', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'siksa', position: { x: 950, y: 360 }, data: { label: 'Śikṣā\npronunciation' }, style: { width: 110, height: 36, background: '#fff', border: '1px solid #388e3c', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'vyakarana', position: { x: 950, y: 400 }, data: { label: 'Vyākaraṇa\ngrammar' }, style: { width: 110, height: 36, background: '#fff', border: '1px solid #388e3c', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'nirukta', position: { x: 950, y: 440 }, data: { label: 'Nirukta\netymology' }, style: { width: 110, height: 36, background: '#fff', border: '1px solid #388e3c', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'chandas', position: { x: 950, y: 480 }, data: { label: 'Chandas\nmeters' }, style: { width: 110, height: 36, background: '#fff', border: '1px solid #388e3c', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'jyotisa', position: { x: 950, y: 520 }, data: { label: 'Jyotiṣa\nAstronomy' }, style: { width: 110, height: 52, background: '#fff', border: '1px solid #388e3c', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  // SMRTI children
-  { id: 'darshanas', position: { x: 980, y: 240 }, data: { label: 'ṢAḌ DARŚANAS' }, style: { width: 150, height: 40, background: 'linear-gradient(90deg,#e3f0ff 60%,#c7e0ff 100%)', border: '2px solid #1976d2', borderRadius: 10, color: '#1a237e', fontWeight: 'bold', fontSize: 15, boxShadow: '0 2px 8px #7bb0ff33' } },
-  { id: 'puranas', position: { x: 1150, y: 240 }, data: { label: 'PURĀṆAS' }, style: { width: 120, height: 40, background: 'linear-gradient(90deg,#e3f0ff 60%,#c7e0ff 100%)', border: '2px solid #1976d2', borderRadius: 10, color: '#1a237e', fontWeight: 'bold', fontSize: 18, boxShadow: '0 2px 8px #7bb0ff33' } },
-  { id: 'itihasas', position: { x: 1300, y: 240 }, data: { label: 'ITIHĀSAS' }, style: { width: 120, height: 40, background: 'linear-gradient(90deg,#e3f0ff 60%,#c7e0ff 100%)', border: '2px solid #1976d2', borderRadius: 10, color: '#1a237e', fontWeight: 'bold', fontSize: 18, boxShadow: '0 2px 8px #7bb0ff33' } },
-  { id: 'tantras', position: { x: 1450, y: 240 }, data: { label: 'TANTRAS' }, style: { width: 120, height: 40, background: 'linear-gradient(90deg,#e3f0ff 60%,#c7e0ff 100%)', border: '2px solid #1976d2', borderRadius: 10, color: '#1a237e', fontWeight: 'bold', fontSize: 18, boxShadow: '0 2px 8px #7bb0ff33' } },
-  { id: 'agamas', position: { x: 1600, y: 240 }, data: { label: 'ĀGAMAS' }, style: { width: 120, height: 40, background: 'linear-gradient(90deg,#e3f0ff 60%,#c7e0ff 100%)', border: '2px solid #1976d2', borderRadius: 10, color: '#1a237e', fontWeight: 'bold', fontSize: 18, boxShadow: '0 2px 8px #7bb0ff33' } },
-  // SIX DARSHANAS sub
-  { id: 'sankhya', position: { x: 1100, y: 320 }, data: { label: 'Sāṅkhya\n(Atheist Kapila)' }, style: { width: 130, height: 36, background: '#fffde7', border: '1px solid #fbc02d', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'yoga', position: { x: 1100, y: 360 }, data: { label: 'Yoga\n(Patañjali)' }, style: { width: 130, height: 36, background: '#fffde7', border: '1px solid #fbc02d', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'nyaya', position: { x: 1100, y: 400 }, data: { label: 'Nyāya\n(Gautama)' }, style: { width: 130, height: 36, background: '#e3f2fd', border: '1px solid #1976d2', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'vaisesika', position: { x: 1100, y: 440 }, data: { label: 'Vaiśeṣika\n(Kaṇāda)' }, style: { width: 130, height: 36, background: '#e3f2fd', border: '1px solid #1976d2', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'mimamsa', position: { x: 1100, y: 480 }, data: { label: 'Mīmāṃsā\n(Jaimini)' }, style: { width: 130, height: 36, background: '#ede7f6', border: '1px solid #7e57c2', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  { id: 'vedanta', position: { x: 1100, y: 520 }, data: { label: 'Vedānta\n(Vyāsa)' }, style: { width: 130, height: 52, background: '#ede7f6', border: '1px solid #7e57c2', borderRadius: 6, whiteSpace: 'pre-line', fontSize: 13 } },
-  // PURANAS sub
-  { id: 'maha', position: { x: 1250, y: 320 }, data: { label: 'Mahā Purāṇas 18' }, style: { width: 120, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'upa', position: { x: 1250, y: 360 }, data: { label: 'Upa Purāṇas 18' }, style: { width: 120, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'aupa', position: { x: 1250, y: 400 }, data: { label: 'Aupa Purāṇas' }, style: { width: 120, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'aupupa', position: { x: 1250, y: 440 }, data: { label: 'Aupupa Purāṇas' }, style: { width: 120, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'sthala', position: { x: 1250, y: 480 }, data: { label: 'Sthala Purāṇas' }, style: { width: 120, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  // ITIHASAS sub
-  { id: 'ramayana', position: { x: 1400, y: 320 }, data: { label: 'Rāmāyaṇa' }, style: { width: 100, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'mahabharata', position: { x: 1400, y: 360 }, data: { label: 'Mahābhārata' }, style: { width: 100, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'visnu', position: { x: 1420, y: 400 }, data: { label: 'Viṣṇu Sahasranāma' }, style: { width: 120, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-   { id: 'gita', position: { x: 1420, y: 440 }, data: { label: 'Bhagavad Gītā' }, style: { width: 120, height: 36, background: '#c8e6c9', border: '2px solid #388e3c', borderRadius: 6, fontWeight: 'bold' } },
-  // TANTRAS sub
-  { id: 'tamasic', position: { x: 1550, y: 320 }, data: { label: 'Tāmasic' }, style: { width: 90, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'rajasic', position: { x: 1550, y: 360 }, data: { label: 'Rājasic' }, style: { width: 90, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-   { id: 'sattvic', position: { x: 1550, y: 400 }, data: { label: 'Sāttvic' }, style: { width: 90, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  // AGAMAS sub (closer, vertically aligned)
-  { id: 'shakta', position: { x: 1650, y: 300 }, data: { label: 'Śākta' }, style: { width: 90, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'shaiva', position: { x: 1650, y: 340 }, data: { label: 'Śaiva' }, style: { width: 90, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'vaisnava', position: { x: 1650, y: 380 }, data: { label: 'Vaiṣṇava' }, style: { width: 90, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'vaikhanasa', position: { x: 1720, y: 420 }, data: { label: 'Vaikhānasa' }, style: { width: 90, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  { id: 'pancharatra', position: { x: 1720, y: 460 }, data: { label: 'Pāñcarātra' }, style: { width: 90, height: 32, background: '#fff', border: '1px solid #fbc02d', borderRadius: 6 } },
-  // BOTTOM PHILOSOPHIES
-  { id: 'advaita', position: { x: 800, y: 700 }, data: { label: 'Advaita' }, style: { width: 100, height: 36, background: '#ede7f6', border: '1px solid #7e57c2', borderRadius: 6, fontWeight: 'bold' } },
-  { id: 'kevala', position: { x: 600, y: 860 }, data: { label: 'Kevala-Advaita (Śaṅkara)' }, style: { width: 160, height: 32, background: '#fff', border: '1px solid #7e57c2', borderRadius: 6, fontSize: 13 } },
-  { id: 'siva', position: { x: 600, y: 900 }, data: { label: 'Śiva-advaita (Kashmir Śaivism)' }, style: { width: 180, height: 52, background: '#fff', border: '1px solid #7e57c2', borderRadius: 6, fontSize: 13 } },
-  { id: 'suddha', position: { x: 800, y: 860 }, data: { label: 'Śuddha-advaita (Vallabha)' }, style: { width: 160, height: 32, background: '#fff', border: '1px solid #7e57c2', borderRadius: 6, fontSize: 13 } },
-  { id: 'visita', position: { x: 800, y: 900 }, data: { label: 'Viśiṣṭa-Advaita (Rāmānuja)' }, style: { width: 160, height: 52, background: '#fff', border: '1px solid #7e57c2', borderRadius: 6, fontSize: 13 } },
-  { id: 'bheda', position: { x: 1000, y: 700 }, data: { label: 'Bheda-abheda' }, style: { width: 120, height: 36, background: '#ede7f6', border: '1px solid #7e57c2', borderRadius: 6, fontWeight: 'bold' } },
-  { id: 'bheda-bhaskara', position: { x: 1000, y: 860 }, data: { label: 'Bheda-abheda (Bhaskara)' }, style: { width: 160, height: 32, background: '#fff', border: '1px solid #7e57c2', borderRadius: 6, fontSize: 13 } },
-  { id: 'bheda-nimbarka', position: { x: 1200, y: 860 }, data: { label: 'Bheda-abheda (Nimbarka)' }, style: { width: 160, height: 32, background: '#fff', border: '1px solid #7e57c2', borderRadius: 6, fontSize: 13 } },
-  { id: 'acintya', position: { x: 1400, y: 860 }, data: { label: 'Acintya Bheda-abheda (Lord Caitanya)' }, style: { width: 220, height: 52, background: '#fff', border: '1px solid #7e57c2', borderRadius: 6, fontSize: 13 } },
-  { id: 'dvaita', position: { x: 1200, y: 700 }, data: { label: 'Dvaita (Mādhva)' }, style: { width: 140, height: 36, background: '#ede7f6', border: '1px solid #7e57c2', borderRadius: 6, fontWeight: 'bold' } },
+function layout(nodes: any[], edges: any[], dir = 'LR') {
+  const g = new dagre.graphlib.Graph();
+  g.setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: dir, nodesep: 28, ranksep: 90, marginx: 30, marginy: 30 });
+  nodes.forEach((n) => g.setNode(n.id, { width: n._w ?? NODE_W, height: n._h ?? NODE_H }));
+  edges.forEach((e) => g.setEdge(e.source, e.target));
+  dagre.layout(g);
+
+  const isLR = dir === 'LR';
+  return {
+    nodes: nodes.map((n) => {
+      const p = g.node(n.id);
+      return {
+        ...n,
+        position: { x: p.x - (n._w ?? NODE_W) / 2, y: p.y - (n._h ?? NODE_H) / 2 },
+        // Tell ReactFlow exactly which side handles sit on
+        sourcePosition: isLR ? 'right'  : 'bottom',
+        targetPosition: isLR ? 'left'   : 'top',
+      };
+    }),
+    // Use 'step' so edges bend at right angles — clean orthogonal routing
+    edges: edges.map((e) => ({ ...e, type: 'step' })),
+  };
+}
+
+// ─── Level colour palette ─────────────────────────────────────────────────────
+// Each depth in the LR tree gets a consistent bg + border + text colour
+// L0 = root | L1 = ŚRUTI/SMṚTI | L2 = category headers | L3 = leaf children
+// L4 = Vedānta school headers  | L5 = Vedānta sub-school leaves
+const C = {
+  L0: { bg: 'linear-gradient(135deg,#1a237e 0%,#283593 100%)', border: '#7986cb', text: '#fff'    },
+  L1: { bg: 'linear-gradient(135deg,#0d47a1 0%,#1565c0 100%)', border: '#64b5f6', text: '#fff'    },
+  L2: { bg: 'linear-gradient(135deg,#1b5e20 0%,#2e7d32 100%)', border: '#81c784', text: '#fff'    },
+  L3: { bg: '#e8f5e9',                                          border: '#43a047', text: '#1b5e20' },
+  L4: { bg: 'linear-gradient(135deg,#4a148c 0%,#6a1b9a 100%)', border: '#ce93d8', text: '#fff'    },
+  L5: { bg: '#f3e5f5',                                          border: '#9c27b0', text: '#4a148c' },
+  gita: { bg: 'linear-gradient(135deg,#b71c1c 0%,#c62828 100%)', border: '#ef9a9a', text: '#fff'  },
+};
+
+// ─── Style helpers — fonts are 1.5× the originals ────────────────────────────
+// originals: root 20 → 30 | section 16 → 24 | category 14 → 21
+//            leaf 13 → 19.5 (~20) | philo 14 → 21 | philoSub 13 → 20
+
+const base = (extra: React.CSSProperties = {}): React.CSSProperties => ({
+  borderRadius: 8,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  textAlign: 'center' as const,
+  padding: '6px 10px',
+  lineHeight: 1.35,
+  boxSizing: 'border-box' as const,
+  ...extra,
+});
+
+const styles = {
+  // L0 — root
+  root: base({
+    width: 280, height: 76,
+    background: C.L0.bg, border: `3px solid ${C.L0.border}`,
+    borderRadius: 18, fontWeight: 800, fontSize: 30, color: C.L0.text,
+    boxShadow: '0 3px 16px #0003',
+  }),
+
+  // L1 — ŚRUTI / SMṚTI (both same level colour)
+  section: () => base({
+    width: 165, height: 60,
+    background: C.L1.bg, border: `2.5px solid ${C.L1.border}`,
+    borderRadius: 10, fontWeight: 700, fontSize: 24, color: C.L1.text,
+    boxShadow: '0 2px 10px #0002',
+  }),
+
+  // L2 — category headers (UPAVEDAS, VEDĀṄGAS, DARŚANAS, PURĀṆAS, ITIHĀSAS, TANTRAS, ĀGAMAS + VEDAS)
+  category: () => base({
+    width: 210, height: 60,
+    background: C.L2.bg, border: `2.5px solid ${C.L2.border}`,
+    borderRadius: 10, fontWeight: 700, fontSize: 21, color: C.L2.text,
+    boxShadow: '0 2px 10px #0002',
+  }),
+
+  // L3 — leaf children of L2 categories
+  leaf: () => base({
+    width: 240, height: 66,
+    background: C.L3.bg, border: `2px solid ${C.L3.border}`,
+    borderRadius: 8, fontSize: 20, color: C.L3.text,
+    whiteSpace: 'pre-line' as const,
+  }),
+
+  // L4 — Vedānta school headers
+  philo: () => base({
+    width: 210, height: 60,
+    background: C.L4.bg, border: `2.5px solid ${C.L4.border}`,
+    borderRadius: 10, fontWeight: 700, fontSize: 21, color: C.L4.text,
+    boxShadow: '0 2px 10px #0002',
+  }),
+
+  // L5 — Vedānta sub-school leaves
+  philoSub: () => base({
+    width: 255, height: 66,
+    background: C.L5.bg, border: `2px solid ${C.L5.border}`,
+    borderRadius: 8, fontSize: 20, color: C.L5.text,
+    whiteSpace: 'pre-line' as const,
+  }),
+
+  // Special — Bhagavad Gītā
+  gita: base({
+    width: 240, height: 60,
+    background: C.gita.bg, border: `2.5px solid ${C.gita.border}`,
+    borderRadius: 10, fontWeight: 700, fontSize: 21, color: C.gita.text,
+    boxShadow: '0 2px 10px #0002',
+  }),
+};
+
+// ─── Nodes ────────────────────────────────────────────────────────────────────
+const rawNodes: any[] = [
+  // L0
+  { id: 'vedic',           data: { label: 'Vedic Literature' },                       style: styles.root,        _w: 280, _h: 76  },
+
+  // L1
+  { id: 'sruti',           data: { label: 'ŚRUTI' },                                  style: styles.section(),   _w: 165, _h: 60  },
+  { id: 'smrti',           data: { label: 'SMṚTI' },                                  style: styles.section(),   _w: 165, _h: 60  },
+
+  // L2 — SRUTI branch (VEDAS treated as a category since it has children)
+  { id: 'vedas',           data: { label: 'VEDAS\nṚg · Yajur · Sāma · Atharva' },    style: styles.category(),  _w: 210, _h: 60  },
+
+  // L3 — VEDAS children
+  { id: 'samhitas',        data: { label: 'Saṃhitās\nmantras' },                      style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'brahmanas',       data: { label: 'Brāhmaṇas\nRitual explanation' },          style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'aranyakas',       data: { label: 'Āraṇyakas\nEsoteric explanation' },        style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'upanishads',      data: { label: 'Upaniṣads\nJñāna-kāṇḍa' },                style: styles.leaf(),      _w: 240, _h: 66  },
+
+  // L2 — SMṚTI categories
+  { id: 'upvedas',         data: { label: 'UPAVEDAS' },                               style: styles.category(),  _w: 210, _h: 60  },
+  { id: 'vedangas',        data: { label: 'VEDĀṄGAS' },                               style: styles.category(),  _w: 210, _h: 60  },
+  { id: 'darshanas',       data: { label: 'ṢAḌ DARŚANAS' },                           style: styles.category(),  _w: 210, _h: 60  },
+  { id: 'puranas',         data: { label: 'PURĀṆAS' },                                style: styles.category(),  _w: 210, _h: 60  },
+  { id: 'itihasas',        data: { label: 'ITIHĀSAS' },                               style: styles.category(),  _w: 210, _h: 60  },
+  { id: 'tantras',         data: { label: 'TANTRAS' },                                style: styles.category(),  _w: 210, _h: 60  },
+  { id: 'agamas',          data: { label: 'ĀGAMAS' },                                 style: styles.category(),  _w: 210, _h: 60  },
+
+  // L3 — Upavedas children
+  { id: 'ayurveda',        data: { label: 'Āyurveda' },                               style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'dhanurveda',      data: { label: 'Dhanurveda' },                             style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'gandharvaveda',   data: { label: 'Gāndharvaveda' },                          style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'sthapathyaveda',  data: { label: 'Sthāpatyaveda' },                          style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'arthashastra',    data: { label: 'Arthaśāstra' },                            style: styles.leaf(),      _w: 240, _h: 66  },
+
+  // L3 — Vedangas children
+  { id: 'kalpa',           data: { label: 'Kalpa\nritual details' },                  style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'siksa',           data: { label: 'Śikṣā\npronunciation' },                   style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'vyakarana',       data: { label: 'Vyākaraṇa\ngrammar' },                     style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'nirukta',         data: { label: 'Nirukta\netymology' },                     style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'chandas',         data: { label: 'Chandas\nmeters' },                        style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'jyotisa',         data: { label: 'Jyotiṣa\nastronomy' },                     style: styles.leaf(),      _w: 240, _h: 66  },
+
+  // L3 — Darshanas children
+  { id: 'sankhya',         data: { label: 'Sāṅkhya\n(Kapila)' },                      style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'yoga',            data: { label: 'Yoga\n(Patañjali)' },                      style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'nyaya',           data: { label: 'Nyāya\n(Gautama)' },                       style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'vaisesika',       data: { label: 'Vaiśeṣika\n(Kaṇāda)' },                    style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'mimamsa',         data: { label: 'Mīmāṃsā\n(Jaimini)' },                     style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'vedanta',         data: { label: 'Vedānta\n(Vyāsa)' },                       style: styles.leaf(),      _w: 240, _h: 66  },
+
+  // L3 — Puranas children
+  { id: 'maha',            data: { label: 'Mahā Purāṇas 18' },                        style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'upa',             data: { label: 'Upa Purāṇas 18' },                         style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'aupa',            data: { label: 'Aupa Purāṇas' },                           style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'aupupa',          data: { label: 'Aupupa Purāṇas' },                         style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'sthala',          data: { label: 'Sthala Purāṇas' },                         style: styles.leaf(),      _w: 240, _h: 66  },
+
+  // L3 — Itihasas children
+  { id: 'ramayana',        data: { label: 'Rāmāyaṇa' },                               style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'mahabharata',     data: { label: 'Mahābhārata' },                            style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'visnu',           data: { label: 'Viṣṇu Sahasranāma' },                      style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'gita',            data: { label: 'Bhagavad Gītā' },                          style: styles.gita,        _w: 240, _h: 60  },
+
+  // L3 — Tantras children
+  { id: 'tamasic',         data: { label: 'Tāmasic' },                                style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'rajasic',         data: { label: 'Rājasic' },                                style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'sattvic',         data: { label: 'Sāttvic' },                                style: styles.leaf(),      _w: 240, _h: 66  },
+
+  // L3 — Agamas children
+  { id: 'shakta',          data: { label: 'Śākta' },                                  style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'shaiva',          data: { label: 'Śaiva' },                                  style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'vaisnava',        data: { label: 'Vaiṣṇava' },                               style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'vaikhanasa',      data: { label: 'Vaikhānasa' },                             style: styles.leaf(),      _w: 240, _h: 66  },
+  { id: 'pancharatra',     data: { label: 'Pāñcarātra' },                             style: styles.leaf(),      _w: 240, _h: 66  },
+
+  // L4 — Vedānta school headers
+  { id: 'advaita',         data: { label: 'Advaita' },                                style: styles.philo(),     _w: 210, _h: 60  },
+  { id: 'bheda',           data: { label: 'Bheda-abheda' },                           style: styles.philo(),     _w: 210, _h: 60  },
+  { id: 'dvaita',          data: { label: 'Dvaita\n(Mādhva)' },                       style: styles.philo(),     _w: 210, _h: 60  },
+
+  // L5 — Advaita sub-schools
+  { id: 'kevala',          data: { label: 'Kevala-Advaita\n(Śaṅkara)' },             style: styles.philoSub(),  _w: 255, _h: 66  },
+  { id: 'siva_adv',        data: { label: 'Śiva-advaita\n(Kashmir Śaivism)' },        style: styles.philoSub(),  _w: 255, _h: 66  },
+  { id: 'suddha',          data: { label: 'Śuddha-advaita\n(Vallabha)' },            style: styles.philoSub(),  _w: 255, _h: 66  },
+  { id: 'visita',          data: { label: 'Viśiṣṭādvaita\n(Rāmānuja)' },             style: styles.philoSub(),  _w: 255, _h: 66  },
+
+  // L5 — Bheda-abheda sub-schools
+  { id: 'bheda_bhaskara',  data: { label: 'Bheda-abheda\n(Bhāskara)' },              style: styles.philoSub(),  _w: 255, _h: 66  },
+  { id: 'bheda_nimbarka',  data: { label: 'Bheda-abheda\n(Nimbārka)' },              style: styles.philoSub(),  _w: 255, _h: 66  },
+  { id: 'acintya',         data: { label: 'Acintya Bheda-abheda\n(Lord Caitanya)' }, style: styles.philoSub(),  _w: 255, _h: 66  },
 ];
 
-const edges = [
-  // Main flows (all straight lines)
-  { id: 'e1', source: 'vedic', target: 'sruti', type: 'straight' },
-  { id: 'e2', source: 'vedic', target: 'smrti', type: 'straight' },
-  { id: 'e3', source: 'sruti', target: 'vedas', type: 'straight' },
-  { id: 'e4', source: 'smrti', target: 'upvedas', type: 'straight' },
-  { id: 'e5', source: 'smrti', target: 'vedangas', type: 'straight' },
-  { id: 'e6', source: 'vedas', target: 'samhitas', type: 'straight' },
-  { id: 'e7', source: 'vedas', target: 'brahmanas', type: 'straight' },
-  { id: 'e8', source: 'vedas', target: 'aranyakas', type: 'straight' },
-  { id: 'e9', source: 'vedas', target: 'upanishads', type: 'straight' },
-  { id: 'e10', source: 'upvedas', target: 'ayurveda', type: 'straight' },
-  { id: 'e11', source: 'upvedas', target: 'dhanurveda', type: 'straight' },
-  { id: 'e12', source: 'upvedas', target: 'gandharvaveda', type: 'straight' },
-  { id: 'e13', source: 'upvedas', target: 'sthapathyaveda', type: 'straight' },
-  { id: 'e14', source: 'upvedas', target: 'arthashastra', type: 'straight' },
-  { id: 'e15', source: 'vedangas', target: 'kalpa', type: 'straight' },
-  { id: 'e16', source: 'vedangas', target: 'siksa', type: 'straight' },
-  { id: 'e17', source: 'vedangas', target: 'vyakarana', type: 'straight' },
-  { id: 'e18', source: 'vedangas', target: 'nirukta', type: 'straight' },
-  { id: 'e19', source: 'vedangas', target: 'chandas', type: 'straight' },
-  { id: 'e20', source: 'vedangas', target: 'jyotisa', type: 'straight' },
-  { id: 'e21', source: 'smrti', target: 'darshanas', type: 'straight' },
-  { id: 'e22', source: 'smrti', target: 'puranas', type: 'straight' },
-  { id: 'e23', source: 'smrti', target: 'itihasas', type: 'straight' },
-  { id: 'e24', source: 'smrti', target: 'tantras', type: 'straight' },
-  { id: 'e25', source: 'smrti', target: 'agamas', type: 'straight' },
-  { id: 'e26', source: 'darshanas', target: 'sankhya', type: 'straight' },
-  { id: 'e27', source: 'darshanas', target: 'yoga', type: 'straight' },
-  { id: 'e28', source: 'darshanas', target: 'nyaya', type: 'straight' },
-  { id: 'e29', source: 'darshanas', target: 'vaisesika', type: 'straight' },
-  { id: 'e30', source: 'darshanas', target: 'mimamsa', type: 'straight' },
-  { id: 'e31', source: 'darshanas', target: 'vedanta', type: 'straight' },
-  { id: 'e32', source: 'puranas', target: 'maha', type: 'straight' },
-  { id: 'e33', source: 'puranas', target: 'upa', type: 'straight' },
-  { id: 'e34', source: 'puranas', target: 'aupa', type: 'straight' },
-  { id: 'e35', source: 'puranas', target: 'aupupa', type: 'straight' },
-  { id: 'e36', source: 'puranas', target: 'sthala', type: 'straight' },
-  { id: 'e37', source: 'itihasas', target: 'ramayana', type: 'straight' },
-  { id: 'e38', source: 'itihasas', target: 'mahabharata', type: 'straight' },
-  { id: 'e39', source: 'mahabharata', target: 'visnu', type: 'straight' },
-  { id: 'e40', source: 'tantras', target: 'tamasic', type: 'straight' },
-  { id: 'e41', source: 'tantras', target: 'rajasic', type: 'straight' },
-  { id: 'e42', source: 'tantras', target: 'sattvic', type: 'straight' },
-  { id: 'e43', source: 'agamas', target: 'shakta', type: 'straight' },
-  { id: 'e44', source: 'agamas', target: 'shaiva', type: 'straight' },
-  { id: 'e45', source: 'agamas', target: 'vaisnava', type: 'straight' },
-  { id: 'e46', source: 'vaisnava', target: 'vaikhanasa', type: 'straight' },
-  { id: 'e47', source: 'vaisnava', target: 'pancharatra', type: 'straight' },
-  // Prasthana Trayam
-  { id: 'e48', source: 'gita', target: 'mahabharata', type: 'straight' },
-  // Bottom philosophies
-  { id: 'e49', source: 'vedanta', target: 'advaita', type: 'straight' },
-  { id: 'e50', source: 'vedanta', target: 'bheda', type: 'straight' },
-  { id: 'e51', source: 'vedanta', target: 'dvaita', type: 'straight' },
-  { id: 'e52', source: 'advaita', target: 'kevala', type: 'straight' },
-  { id: 'e53', source: 'advaita', target: 'siva', type: 'straight' },
-  { id: 'e54', source: 'advaita', target: 'suddha', type: 'straight' },
-  { id: 'e55', source: 'advaita', target: 'visita', type: 'straight' },
-  { id: 'e56', source: 'bheda', target: 'bheda-bhaskara', type: 'straight' },
-  { id: 'e57', source: 'bheda', target: 'bheda-nimbarka', type: 'straight' },
-  { id: 'e58', source: 'bheda', target: 'acintya', type: 'straight' },
-  // Dvaita does not have sub-branches in the diagram
+// ─── Edges ────────────────────────────────────────────────────────────────────
+const rawEdges: any[] = [
+  { id: 'e-root-sruti',  source: 'vedic',       target: 'sruti' },
+  { id: 'e-root-smrti',  source: 'vedic',       target: 'smrti' },
+  { id: 'e-sruti-vedas', source: 'sruti',       target: 'vedas' },
+  { id: 'e-v-sam',       source: 'vedas',       target: 'samhitas' },
+  { id: 'e-v-bra',       source: 'vedas',       target: 'brahmanas' },
+  { id: 'e-v-ara',       source: 'vedas',       target: 'aranyakas' },
+  { id: 'e-v-upa',       source: 'vedas',       target: 'upanishads' },
+  { id: 'e-s-upv',       source: 'smrti',       target: 'upvedas' },
+  { id: 'e-s-vga',       source: 'smrti',       target: 'vedangas' },
+  { id: 'e-s-dar',       source: 'smrti',       target: 'darshanas' },
+  { id: 'e-s-pur',       source: 'smrti',       target: 'puranas' },
+  { id: 'e-s-iti',       source: 'smrti',       target: 'itihasas' },
+  { id: 'e-s-tan',       source: 'smrti',       target: 'tantras' },
+  { id: 'e-s-aga',       source: 'smrti',       target: 'agamas' },
+  { id: 'e-uv-ay',       source: 'upvedas',     target: 'ayurveda' },
+  { id: 'e-uv-dh',       source: 'upvedas',     target: 'dhanurveda' },
+  { id: 'e-uv-ga',       source: 'upvedas',     target: 'gandharvaveda' },
+  { id: 'e-uv-st',       source: 'upvedas',     target: 'sthapathyaveda' },
+  { id: 'e-uv-ar',       source: 'upvedas',     target: 'arthashastra' },
+  { id: 'e-vg-ka',       source: 'vedangas',    target: 'kalpa' },
+  { id: 'e-vg-si',       source: 'vedangas',    target: 'siksa' },
+  { id: 'e-vg-vy',       source: 'vedangas',    target: 'vyakarana' },
+  { id: 'e-vg-ni',       source: 'vedangas',    target: 'nirukta' },
+  { id: 'e-vg-ch',       source: 'vedangas',    target: 'chandas' },
+  { id: 'e-vg-jy',       source: 'vedangas',    target: 'jyotisa' },
+  { id: 'e-d-sa',        source: 'darshanas',   target: 'sankhya' },
+  { id: 'e-d-yo',        source: 'darshanas',   target: 'yoga' },
+  { id: 'e-d-ny',        source: 'darshanas',   target: 'nyaya' },
+  { id: 'e-d-va',        source: 'darshanas',   target: 'vaisesika' },
+  { id: 'e-d-mi',        source: 'darshanas',   target: 'mimamsa' },
+  { id: 'e-d-ve',        source: 'darshanas',   target: 'vedanta' },
+  { id: 'e-p-ma',        source: 'puranas',     target: 'maha' },
+  { id: 'e-p-up',        source: 'puranas',     target: 'upa' },
+  { id: 'e-p-au',        source: 'puranas',     target: 'aupa' },
+  { id: 'e-p-aup',       source: 'puranas',     target: 'aupupa' },
+  { id: 'e-p-st',        source: 'puranas',     target: 'sthala' },
+  { id: 'e-i-ra',        source: 'itihasas',    target: 'ramayana' },
+  { id: 'e-i-mb',        source: 'itihasas',    target: 'mahabharata' },
+  { id: 'e-mb-vi',       source: 'mahabharata', target: 'visnu' },
+  { id: 'e-mb-gi',       source: 'mahabharata', target: 'gita' },
+  { id: 'e-t-ta',        source: 'tantras',     target: 'tamasic' },
+  { id: 'e-t-ra',        source: 'tantras',     target: 'rajasic' },
+  { id: 'e-t-sa',        source: 'tantras',     target: 'sattvic' },
+  { id: 'e-a-sh',        source: 'agamas',      target: 'shakta' },
+  { id: 'e-a-sv',        source: 'agamas',      target: 'shaiva' },
+  { id: 'e-a-va',        source: 'agamas',      target: 'vaisnava' },
+  { id: 'e-va-vk',       source: 'vaisnava',    target: 'vaikhanasa' },
+  { id: 'e-va-pa',       source: 'vaisnava',    target: 'pancharatra' },
+  { id: 'e-ve-ad',       source: 'vedanta',     target: 'advaita' },
+  { id: 'e-ve-bh',       source: 'vedanta',     target: 'bheda' },
+  { id: 'e-ve-dv',       source: 'vedanta',     target: 'dvaita' },
+  { id: 'e-ad-ke',       source: 'advaita',     target: 'kevala' },
+  { id: 'e-ad-si',       source: 'advaita',     target: 'siva_adv' },
+  { id: 'e-ad-su',       source: 'advaita',     target: 'suddha' },
+  { id: 'e-ad-vi',       source: 'advaita',     target: 'visita' },
+  { id: 'e-bh-bh',       source: 'bheda',       target: 'bheda_bhaskara' },
+  { id: 'e-bh-ni',       source: 'bheda',       target: 'bheda_nimbarka' },
+  { id: 'e-bh-ac',       source: 'bheda',       target: 'acintya' },
 ];
 
+const { nodes: lNodes, edges: lEdges } = layout(rawNodes, rawEdges, 'LR');
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function VedicKnowledgeFlow() {
   const router = useRouter();
-  const vedicRef = useRef<HTMLDivElement>(null);
-  const vaisnavaRef = useRef<HTMLDivElement>(null);
+  const vedicRef     = useRef<HTMLDivElement>(null);
+  const vaisnavaRef  = useRef<HTMLDivElement>(null);
   const classicalRef = useRef<HTMLDivElement>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
 
-  // List of node ids and their target routes (add more as needed)
   const nodeRoutes: Record<string, string> = {
-    ramayana: '/category/ramayana',
+    ramayana:    '/category/ramayana',
     mahabharata: '/category/mahabharata',
-    vedas: '/category/vedas',
-    upanishads: '/category/upanishads',
-    gita: '/category/gita',
-    puranas: '/category/puranas',
-    // Add more mappings as needed
+    vedas:       '/category/vedas',
+    upanishads:  '/category/upanishads',
+    gita:        '/category/gita',
+    puranas:     '/category/puranas',
   };
 
-
-  // Custom node click handler
   const onNodeClick = (_: any, node: any) => {
     const route = nodeRoutes[node.id];
-    if (route) {
-      if (typeof window !== 'undefined') {
-        window.open(route, '_blank', 'noopener,noreferrer');
-      }
-    }
+    if (route) window.open(route, '_blank', 'noopener,noreferrer');
   };
 
-  const openLibraryTree = (category: string, subcategory?: string) => {
-    const params = new URLSearchParams({ category });
-    if (subcategory) {
-      params.set('subcategory', subcategory);
-    }
-    const targetUrl = `/library-tree?${params.toString()}`;
-    if (typeof window !== 'undefined') {
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
-    }
+  const scrollTo = (ref: React.RefObject<HTMLDivElement>) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setMobileOpen(false);
   };
 
-  const onSecondaryNodeClick = (_: any, node: any) => {
-    const map: Record<string, { category: string; subcategory?: string }> = {
-      vaisnava: { category: 'Vaisnava Literature' },
-      parampara: { category: 'Vaisnava Literature', subcategory: 'Parampara' },
-      acharya: { category: 'Vaisnava Literature', subcategory: 'Acharya' },
-      classical: { category: 'Classical Literature' },
-      sanskrit: { category: 'Classical Literature', subcategory: 'Sanskrit' },
-      regional: { category: 'Classical Literature', subcategory: 'Regional' },
-    };
-
-    const target = map[node.id];
-    if (target) {
-      openLibraryTree(target.category, target.subcategory);
-    }
+  const navBtn: React.CSSProperties = {
+    padding: '8px 14px', background: 'transparent', border: 'none',
+    color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer',
+    borderRadius: 6, whiteSpace: 'nowrap',
   };
 
-  const handleNavigate = (section: 'vedic' | 'vaisnava' | 'classical') => {
-    const refs = {
-      vedic: vedicRef,
-      vaisnava: vaisnavaRef,
-      classical: classicalRef,
-    };
-    refs[section].current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setIsMobileMenuOpen(false); // Close mobile menu after navigation
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  // ─── Vaisnava sub-diagram ─────────────────────────────────────────────────
+  const vNodes = [
+    { id: 'vr',      position: { x: 0, y: 0 }, data: { label: 'Vaishnava Manjusha' }, style: { ...styles.root,      width: 260, fontSize: 22 }, _w: 260, _h: 76  },
+    { id: 'pp',      position: { x: 0, y: 0 }, data: { label: 'Parampara' },           style: { ...styles.section(), width: 180, fontSize: 22 }, _w: 180, _h: 60  },
+    { id: 's1',      position: { x: 0, y: 0 }, data: { label: 'Śrī Sampradāya' },      style: { ...styles.leaf(),    width: 220, fontSize: 20 }, _w: 220, _h: 66  },
+    { id: 's2',      position: { x: 0, y: 0 }, data: { label: 'Mādhava Sampradāya' },  style: { ...styles.leaf(),    width: 230, fontSize: 20 }, _w: 230, _h: 66  },
+    { id: 's3',      position: { x: 0, y: 0 }, data: { label: 'Rudra Sampradāya' },    style: { ...styles.leaf(),    width: 220, fontSize: 20 }, _w: 220, _h: 66  },
+    { id: 's4',      position: { x: 0, y: 0 }, data: { label: 'Kumāra Sampradāya' },   style: { ...styles.leaf(),    width: 225, fontSize: 20 }, _w: 225, _h: 66  },
+  ];
+  const vEdges = [
+    { id: 'ev1', source: 'vr', target: 'pp' },
+    { id: 'ev2', source: 'pp', target: 's1' },
+    { id: 'ev3', source: 'pp', target: 's2' },
+    { id: 'ev4', source: 'pp', target: 's3' },
+    { id: 'ev5', source: 'pp', target: 's4' },
+  ];
+  const { nodes: lvNodes, edges: lvEdges } = layout(vNodes, vEdges, 'TB');
+
+  // ─── Classical sub-diagram ────────────────────────────────────────────────
+  const cNodes = [
+    { id: 'cl', position: { x: 0, y: 0 }, data: { label: 'Classical Literature' }, style: { ...styles.root,      width: 280, fontSize: 24 }, _w: 280, _h: 76  },
+    { id: 'sk', position: { x: 0, y: 0 }, data: { label: 'Sanskrit' },             style: { ...styles.section(), width: 180, fontSize: 22 }, _w: 180, _h: 60  },
+    { id: 're', position: { x: 0, y: 0 }, data: { label: 'Regional' },             style: { ...styles.section(), width: 180, fontSize: 22 }, _w: 180, _h: 60  },
+  ];
+  const cEdges = [
+    { id: 'ec1', source: 'cl', target: 'sk' },
+    { id: 'ec2', source: 'cl', target: 're' },
+  ];
+  const { nodes: lcNodes, edges: lcEdges } = layout(cNodes, cEdges, 'TB');
+
+  const flowProps = {
+    fitView: true,
+    nodesDraggable: false,
+    nodesConnectable: false,
+    elementsSelectable: true,
+    selectionOnDrag: false,
+    proOptions: { hideAttribution: true },
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        width: '100%',
-        maxWidth: '100%',
-        overflowX: 'hidden',
-        background: 'linear-gradient(135deg, #f5e6d3 0%, #e8d5b7 50%, #d4a574 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-      }}
-    >
-      
-      {/* Fixed Navigation Bar */}
-      <div
-        style={{
-          position: 'sticky',
-          top: 0,
-          width: '100%',
-          zIndex: 100,
-          background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1400px',
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '12px 16px',
-            gap: '16px',
-            position: 'relative',
-          }}
-        >
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: '#fff',
-            fontSize: '16px',
-            fontWeight: 600,
-          }}>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="18" 
-              height="18" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            >
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-            </svg>
-            <span style={{ fontSize: '14px' }}>Śāstra Nidhi</span>
-          </div>
-          
-          {/* Desktop Navigation */}
-          <nav 
-            className="hidden md:flex"
-            style={{
-              gap: '16px',
-              flex: 1,
-            }}
-          >
-            <button
-              onClick={() => handleNavigate('vedic')}
-              style={{
-                padding: '8px 12px',
-                background: 'transparent',
-                border: 'none',
-                color: '#fff',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                borderRadius: '6px',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              Vedic Literature
-            </button>
-            <button
-              onClick={() => handleNavigate('vaisnava')}
-              style={{
-                padding: '8px 12px',
-                background: 'transparent',
-                border: 'none',
-                color: '#fff',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                borderRadius: '6px',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              Vaisnava Literature
-            </button>
-            <button
-              onClick={() => handleNavigate('classical')}
-              style={{
-                padding: '8px 12px',
-                background: 'transparent',
-                border: 'none',
-                color: '#fff',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                borderRadius: '6px',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              Classical Literature
-            </button>
-          </nav>
+    <div style={{ minHeight: '100vh', width: '100%', overflowX: 'hidden', background: 'linear-gradient(135deg,#f5e6d3,#e8d5b7 50%,#d4a574)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-          {/* Desktop Login Button */}
-          <button
-            onClick={() => router.push('/')}
-            className="hidden md:block"
-            style={{
-              padding: '8px 20px',
-              background: 'linear-gradient(90deg, #1abc9c 0%, #16a085 100%)',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#fff',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-              whiteSpace: 'nowrap',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(90deg, #16a085 0%, #1abc9c 100%)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(90deg, #1abc9c 0%, #16a085 100%)';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
-            }}
-          >
+      {/* Nav */}
+      <div style={{ position: 'sticky', top: 0, width: '100%', zIndex: 100, background: 'linear-gradient(135deg,#2c3e50,#34495e)', boxShadow: '0 2px 8px rgba(0,0,0,.15)' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', padding: '10px 16px', gap: 12 }}>
+          <span style={{ color: '#fff', fontWeight: 600, fontSize: 15, whiteSpace: 'nowrap' }}>📖 Śāstra Nidhi</span>
+          <nav style={{ display: isMobile ? 'none' : 'flex', gap: 4, flex: 1 }}>
+            {[['Vedic Literature', vedicRef], ['Vaisnava Literature', vaisnavaRef], ['Classical Literature', classicalRef]].map(([label, ref]) => (
+              <button key={label as string} style={navBtn} onClick={() => scrollTo(ref as React.RefObject<HTMLDivElement>)}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.12)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                {label as string}
+              </button>
+            ))}
+          </nav>
+          <button onClick={() => router.push('/')} style={{ padding: '7px 18px', background: 'linear-gradient(90deg,#1abc9c,#16a085)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: isMobile ? 'none' : 'block' }}>
             Login / Sign Up
           </button>
+          {isMobile && (
+            <button onClick={() => setMobileOpen(!mobileOpen)} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 8 }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                {mobileOpen ? <path d="M6 18L18 6M6 6l12 12" /> : <path d="M3 12h18M3 6h18M3 18h18" />}
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
 
-          {/* Mobile Hamburger Menu */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden"
-            style={{
-              marginLeft: 'auto',
-              background: 'transparent',
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              padding: '8px',
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {isMobileMenuOpen ? (
-                <path d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path d="M3 12h18M3 6h18M3 18h18" />
-              )}
-            </svg>
-          </button>
+      {/* Mobile drawer */}
+      {mobileOpen && <div onClick={() => setMobileOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 110 }} />}
+      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 260, background: 'linear-gradient(135deg,#2c3e50,#34495e)', zIndex: 120, transform: mobileOpen ? 'translateX(0)' : 'translateX(100%)', transition: 'transform .3s', display: 'flex', flexDirection: 'column', padding: '60px 0 20px' }}>
+        {[['Vedic Literature', vedicRef], ['Vaisnava Literature', vaisnavaRef], ['Classical Literature', classicalRef]].map(([label, ref]) => (
+          <button key={label as string} onClick={() => scrollTo(ref as React.RefObject<HTMLDivElement>)} style={{ ...navBtn, padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,.1)', textAlign: 'left' }}>{label as string}</button>
+        ))}
+        <button onClick={() => router.push('/')} style={{ margin: '20px 16px', padding: '11px 20px', background: 'linear-gradient(90deg,#1abc9c,#16a085)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Login / Sign Up</button>
+      </div>
+
+      {/* Content */}
+      <div style={{ width: '100%', maxWidth: 1400, padding: '14px 10px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
+        {/* Marquee */}
+        <div style={{ width: '100%', margin: '0 0 12px', padding: '7px 12px', background: 'linear-gradient(90deg,#e3f0ff,#c7e0ff)', borderRadius: 10, border: '2px solid #1abc9c', overflow: 'hidden', whiteSpace: 'nowrap', position: 'relative' }}>
+          <div style={{ display: 'inline-block', animation: 'marquee 60s linear infinite' }}>
+            <span style={{ color: '#6d4c00', fontSize: 13 }}>You can select any topic to read from the different literature. Without login you can read — login for bookmarks, reading progress, and more!</span>
+          </div>
+          <style>{`@keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }`}</style>
         </div>
 
-      </div>
-
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div
-          onClick={() => setIsMobileMenuOpen(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 110,
-          }}
-        />
-      )}
-
-      {/* Mobile Side Drawer Menu */}
-      <div
-        className="md:hidden"
-        style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: '280px',
-          background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-          boxShadow: '-4px 0 12px rgba(0,0,0,0.3)',
-          zIndex: 120,
-          transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.3s ease-in-out',
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '60px 0 20px 0',
-        }}
-      >
-        <button
-          onClick={() => handleNavigate('vedic')}
-          style={{
-            width: '100%',
-            padding: '16px 24px',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            color: '#fff',
-            fontSize: '15px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition: 'background 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-          }}
-        >
-          Vedic Literature
-        </button>
-        <button
-          onClick={() => handleNavigate('vaisnava')}
-          style={{
-            width: '100%',
-            padding: '16px 24px',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            color: '#fff',
-            fontSize: '15px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition: 'background 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-          }}
-        >
-          Vaisnava Literature
-        </button>
-        <button
-          onClick={() => handleNavigate('classical')}
-          style={{
-            width: '100%',
-            padding: '16px 24px',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            color: '#fff',
-            fontSize: '15px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition: 'background 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-          }}
-        >
-          Classical Literature
-        </button>
-        <button
-          onClick={() => router.push('/')}
-          style={{
-            margin: '24px 16px 16px 16px',
-            padding: '12px 20px',
-            background: 'linear-gradient(90deg, #1abc9c 0%, #16a085 100%)',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontSize: '15px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-          }}
-        >
-          Login / Sign Up
-        </button>
-      </div>
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '1200px',
-          margin: '0 auto',
-          paddingTop: '16px',
-          paddingBottom: 0,
-          paddingLeft: '8px',
-          paddingRight: '8px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            margin: '8px 0 16px 0',
-            padding: '8px 12px',
-            background: 'linear-gradient(90deg,#e3f0ff 60%,#c7e0ff 100%)',
-            borderRadius: 12,
-            boxShadow: '0 2px 12px #7bb0ff33',
-            fontFamily: 'inherit',
-            color: '#1a237e',
-            fontSize: 14,
-            lineHeight: 1.5,
-            border: '2.5px solid #1abc9c',
-            textAlign: 'center',
-            letterSpacing: 0.1,
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-            position: 'relative',
-          }}
-        >
-        <div style={{
-          display: 'inline-block',
-          animation: 'marquee 60s linear infinite',
-          minWidth: '100%',
-        }}>
-          <span style={{ color: '#6d4c00', fontSize: 14 }}>
-            You can select any topic to read from the different literature. Without login you can read and if you login you get many advantages like bookmarks, reading progress, and more!
-          </span>
+        {/* Legend */}
+        <div style={{ width: '100%', marginBottom: 14, padding: '8px 16px', background: 'rgba(255,255,255,0.65)', borderRadius: 10, border: '1px solid #d7ccc8', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+          {[
+            { label: 'Root',             bg: C.L0.bg, text: C.L0.text },
+            { label: 'ŚRUTI / SMṚTI',   bg: C.L1.bg, text: C.L1.text },
+            { label: 'Categories',       bg: C.L2.bg, text: C.L2.text },
+            { label: 'Texts / Branches', bg: C.L3.bg, text: C.L3.text },
+            { label: 'Vedānta Schools',  bg: C.L4.bg, text: C.L4.text },
+            { label: 'Sub-schools',      bg: C.L5.bg, text: C.L5.text },
+            { label: 'Bhagavad Gītā',    bg: C.gita.bg, text: C.gita.text },
+          ].map(({ label, bg, text }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 18, height: 18, borderRadius: 4, background: bg, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: '#5d4037', fontWeight: 500 }}>{label}</span>
+            </div>
+          ))}
         </div>
-        <style>{`
-          @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
-          }
-        `}</style>
-      </div>
 
-        {/* Vedic Knowledge Section */}
-        <div
-          ref={vedicRef}
-          style={{
-            width: '100%',
-            maxWidth: '1400px',
-            height: window.innerWidth < 768 ? '500px' : '800px',
-            background: 'linear-gradient(180deg,#fffde4 0%,#ffe9ca 100%)',
-            borderRadius: 12,
-            boxShadow: '0 2px 16px #e0c68a55',
-            margin: 'auto',
-            overflow: 'auto',
-            cursor: 'default',
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'auto',
-            scrollMarginTop: '70px',
-          }}
-        >
-          {/* Set initial zoom to 1.3 for better readability */}
+        {/* Vedic Flow */}
+        <div ref={vedicRef} style={{ scrollMarginTop: 68, width: '100%', height: isMobile ? 520 : 1800, background: 'linear-gradient(180deg,#fffde4,#ffe9ca)', borderRadius: 12, boxShadow: '0 2px 16px #e0c68a55', overflow: 'hidden' }}>
           <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            fitView
-            minZoom={0.3}
-            maxZoom={2.5}
-            defaultViewport={{ x: 0, y: 0, zoom: window.innerWidth < 768 ? 0.5 : 1.3 }}
-            panOnDrag={window.innerWidth < 768}
-            zoomOnScroll={window.innerWidth < 768}
-            zoomOnPinch={window.innerWidth < 768}
-            panOnScroll={window.innerWidth < 768}
-            nodesDraggable={false}
-            nodesConnectable={false}
-            elementsSelectable={true}
-            selectionOnDrag={false}
-            proOptions={{ hideAttribution: true }}
-            defaultEdgeOptions={{ type: 'straight' }}
+            {...flowProps}
+            nodes={lNodes}
+            edges={lEdges}
             onNodeClick={onNodeClick}
-            style={{ minWidth: 700 }}
+            minZoom={0.1}
+            maxZoom={2.5}
+            defaultViewport={{ x: 0, y: 0, zoom: isMobile ? 0.25 : 0.55 }}
+            panOnDrag
+            zoomOnScroll
+            zoomOnPinch
           >
             <Background color="#fbc02d22" gap={32} />
-            {/* MiniMap removed as per request */}
-            {/* Controls removed: no zoom in/out UI */}
           </ReactFlow>
         </div>
 
-
-        {/* Vaisnava Literature React Flow Diagram */}
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '1440px',
-            minHeight: '320px',
-            margin: '32px auto 0 auto',
-            display: 'flex',
-            flexDirection: window.innerWidth < 768 ? 'column' : 'row',
-            gap: window.innerWidth < 768 ? '16px' : '0',
-            justifyContent: 'flex-start',
-            alignItems: 'flex-start',
-          }}
-        >
-          {/* Vaisnava Literature Box (left) */}
-          <div ref={vaisnavaRef} style={{
-            scrollMarginTop: '70px',
-            width: '100%',
-            maxWidth: '1400px',
-            height: '320px',
-            background: 'linear-gradient(180deg,#fffde4 0%,#ffe9ca 100%)',
-            border: '2px solid #1abc9c',
-            borderRadius: 12,
-            boxShadow: '0 2px 16px #e0c68a55',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
-          }}>
-            <div style={{ width: '100%', height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ReactFlow
-                nodes={[
-                  {
-                    id: 'vaisnava',
-                    position: { x: 450, y: 0 },
-                    data: { label: (
-                      <span style={{ fontWeight: 700, fontSize: 24, color: '#1a237e' }}>
-                        Vaishnava Manjusha <span style={{ fontWeight: 400, fontSize: 18 }}></span>
-                      </span>
-                    ) },
-                    style: {
-                      width: 340,
-                      height: 80,
-                      background: 'linear-gradient(90deg,#e3f0ff 60%,#c7e0ff 100%)',
-                      border: '2.5px solid #1976d2',
-                      borderRadius: 16,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 2px 12px #7bb0ff33',
-                    },
-                  },
-                  {
-                    id: 'parampara',
-                    position: { x: 550, y: 120 },
-                    data: { label: <span style={{ fontWeight: 600, fontSize: 20, color: '#1a237e' }}>Parampara</span> },
-                    style: {
-                      width: 140,
-                      height: 48,
-                      background: '#e8f5e9',
-                      border: '2px solid #388e3c',
-                      borderRadius: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    },
-                  },
-                  {
-                    id: 'sri',
-                    position: { x: 250, y: 260 },
-                    data: { label: <span style={{ fontWeight: 600, fontSize: 18, color: '#1a237e' }}>Sri Sampradaya</span> },
-                    style: {
-                      width: 200,
-                      height: 40,
-                      background: '#fff',
-                      border: '2px solid #388e3c',
-                      borderRadius: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    },
-                  },
-                  {
-                    id: 'madhava',
-                    position: { x: 480, y: 260 },
-                    data: { label: <span style={{ fontWeight: 600, fontSize: 18, color: '#1a237e' }}>Madhava Sampradaya</span> },
-                    style: {
-                      width: 200,
-                      height: 40,
-                      background: '#fff',
-                      border: '2px solid #388e3c',
-                      borderRadius: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    },
-                  },
-                  {
-                    id: 'rudra',
-                    position: { x: 700, y: 260 },
-                    data: { label: <span style={{ fontWeight: 600, fontSize: 18, color: '#1a237e' }}>Rudra Sampradaya</span> },
-                    style: {
-                      width: 200,
-                      height: 40,
-                      background: '#fff',
-                      border: '2px solid #388e3c',
-                      borderRadius: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    },
-                  },
-                  {
-                    id: 'kumara',
-                    position: { x: 950, y: 260 },
-                    data: { label: <span style={{ fontWeight: 600, fontSize: 18, color: '#1a237e' }}>Kumara Sampradaya</span> },
-                    style: {
-                      width: 200,
-                      height: 40,
-                      background: '#fff',
-                      border: '2px solid #388e3c',
-                      borderRadius: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    },
-                  },
-                ]}
-                edges={[
-                  { id: 'e1', source: 'vaisnava', target: 'parampara', type: 'straight' },
-                  { id: 'e2', source: 'parampara', target: 'sri', type: 'straight' },
-                  { id: 'e3', source: 'parampara', target: 'madhava', type: 'straight' },
-                  { id: 'e4', source: 'parampara', target: 'rudra', type: 'straight' },
-                  { id: 'e5', source: 'parampara', target: 'kumara', type: 'straight' },
-                ]}
-                fitView
-                panOnDrag={window.innerWidth < 768}
-                zoomOnScroll={window.innerWidth < 768}
-                zoomOnPinch={window.innerWidth < 768}
-                panOnScroll={false}
-                nodesDraggable={false}
-                nodesConnectable={false}
-                elementsSelectable={false}
-                selectionOnDrag={false}
-                proOptions={{ hideAttribution: true }}
-                defaultEdgeOptions={{ type: 'straight' }}
-                onNodeClick={onSecondaryNodeClick}
-                style={{ width: '700px', height: '180px', margin: '0 auto' }}
-              >
-                <Background color="#fbc02d22" gap={32} />
-              </ReactFlow>
-            </div>
-          </div>
+        {/* Vaisnava Flow */}
+        <div ref={vaisnavaRef} style={{ scrollMarginTop: 68, width: '100%', height: 420, margin: '28px 0 0', background: 'linear-gradient(180deg,#fffde4,#ffe9ca)', border: '2px solid #1abc9c', borderRadius: 12, boxShadow: '0 2px 16px #e0c68a55', overflow: 'hidden' }}>
+          <ReactFlow {...flowProps} nodes={lvNodes} edges={lvEdges} minZoom={0.2} maxZoom={2} panOnDrag zoomOnPinch zoomOnScroll>
+            <Background color="#fbc02d22" gap={32} />
+          </ReactFlow>
         </div>
-        
-          {/* Classical Literature Box (right) */}
-          <div ref={classicalRef} style={{
-            scrollMarginTop: '70px',
-            width: '100%',
-            maxWidth: '1400px',
-            height: '320px',
-            margin: '32px auto 0 auto',
-            background: 'linear-gradient(180deg,#fffde4 0%,#ffe9ca 100%)',
-            border: '2px solid #1abc9c',
-            borderRadius: 12,
-            boxShadow: '0 2px 16px #e0c68a55',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
-          }}>
-            <div style={{ width: '100%', height: '280px' }}>
-              <ReactFlow
-                nodes={[
-                  {
-                    id: 'classical',
-                    position: { x: 450, y: 0 },
-                    data: { label: (
-                      <span style={{ fontWeight: 700, fontSize: 24, color: '#1a237e' }}>
-                        Classical Literature
-                      </span>
-                    ) },
-                    style: {
-                      width: 200,
-                      height: 150,
-                      background: 'linear-gradient(90deg,#e3f0ff 60%,#c7e0ff 100%)',
-                      border: '2.5px solid #1976d2',
-                      borderRadius: 16,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 2px 12px #7bb0ff33',
-                    },
-                  },
-                  {
-                    id: 'sanskrit',
-                    position: { x: 350, y: 220 },
-                    data: { label: <span style={{ fontWeight: 600, fontSize: 20, color: '#1a237e' }}>Sanskrit</span> },
-                    style: {
-                      width: 140,
-                      height: 48,
-                      background: '#e8f5e9',
-                      border: '2px solid #388e3c',
-                      borderRadius: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    },
-                  },
-                  {
-                    id: 'regional',
-                    position: { x: 650, y: 220 },
-                    data: { label: <span style={{ fontWeight: 600, fontSize: 20, color: '#1a237e' }}>Regional</span> },
-                    style: {
-                      width: 120,
-                      height: 48,
-                      background: '#fff',
-                      border: '2px solid #388e3c',
-                      borderRadius: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    },
-                  },
-                ]}
-                edges={[
-                  { id: 'e1', source: 'classical', target: 'sanskrit', type: 'straight' },
-                  { id: 'e2', source: 'classical', target: 'regional', type: 'straight' },
-                ]}
-                fitView
-                panOnDrag={window.innerWidth < 768}
-                zoomOnScroll={window.innerWidth < 768}
-                zoomOnPinch={window.innerWidth < 768}
-                panOnScroll={false}
-                nodesDraggable={false}
-                nodesConnectable={false}
-                elementsSelectable={false}
-                selectionOnDrag={false}
-                proOptions={{ hideAttribution: true }}
-                defaultEdgeOptions={{ type: 'straight' }}
-                onNodeClick={onSecondaryNodeClick}
-                style={{ width: '100%', height: '180px' }}
-              >
-                <Background color="#fbc02d22" gap={32} />
-              </ReactFlow>
-            </div>
+
+        {/* Classical Flow */}
+        <div ref={classicalRef} style={{ scrollMarginTop: 68, width: '100%', height: 340, margin: '28px 0 0', background: 'linear-gradient(180deg,#fffde4,#ffe9ca)', border: '2px solid #1abc9c', borderRadius: 12, boxShadow: '0 2px 16px #e0c68a55', overflow: 'hidden' }}>
+          <ReactFlow {...flowProps} nodes={lcNodes} edges={lcEdges} minZoom={0.2} maxZoom={2} panOnDrag zoomOnPinch zoomOnScroll>
+            <Background color="#fbc02d22" gap={32} />
+          </ReactFlow>
+        </div>
+
+        {/* Donor strip */}
+        <div style={{ width: '100%', margin: '28px 0 32px', background: 'linear-gradient(180deg,#fffde4,#ffe9ca)', border: '2px solid #1abc9c', borderRadius: 12, padding: '18px 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: 20, boxShadow: '0 2px 16px #e0c68a55', fontSize: isMobile ? 13 : 15, color: '#1a237e' }}>
+          <div style={{ flex: 1 }}>
+            Thanks to donors: Ananya Sharma; Rohan Patel; Priya Singh; Vikram Das; Meera Joshi; Suresh Kumar; Kavita Rao; Amit Verma; Sneha Gupta; Rahul Mehta; Sunita Reddy; Arjun Nair; Deepa Chawla; Mohan Iyer; Pooja Sethi; Ajay Malhotra; Neha Jain; and all others for{' '}
+            <span style={{ color: '#d2691e', fontWeight: 700 }}>supporting</span> this site.
           </div>
-        {/* Donor/Acknowledgment Section */}
-        <div style={{
-          maxWidth: '1400px',
-          width: '100%',
-          margin: '32px auto',
-          display: 'flex',
-          justifyContent: 'center',
-          padding: window.innerWidth < 768 ? '0 8px' : '0',
-        }}>
-          <div style={{
-            width: '100%',
-            maxWidth: '1400px',
-            background: 'linear-gradient(180deg,#fffde4 0%,#ffe9ca 100%)',
-            border: '2px solid #1abc9c',
-            padding: window.innerWidth < 768 ? '16px' : '20px 32px',
-            borderRadius: 12,
-            fontSize: window.innerWidth < 768 ? 14 : 18,
-            color: '#1a237e',
-            display: 'flex',
-            flexDirection: window.innerWidth < 768 ? 'column' : 'row',
-            alignItems: window.innerWidth < 768 ? 'stretch' : 'flex-start',
-            gap: window.innerWidth < 768 ? 16 : 32,
-            boxShadow: '0 2px 16px #e0c68a55',
-            fontFamily: 'inherit',
-          }}>
-            <div style={{flex: 1}}>
-              {(() => {
-                const donorData = {
-                  donors: [
-                    "Ananya Sharma", "Rohan Patel", "Priya Singh", "Vikram Das", "Meera Joshi", "Suresh Kumar", "Kavita Rao", "Amit Verma", "Sneha Gupta", "Rahul Mehta", "Sunita Reddy", "Arjun Nair", "Deepa Chawla", "Mohan Iyer", "Pooja Sethi", "Ajay Malhotra", "Neha Jain"
-                  ]
-                };
-                return (
-                  <>
-                    Thanks to donors: {donorData.donors.join('; ')}; and all others for <span style={{color:'#d2691e', fontWeight:'bold'}}>supporting</span> this site.
-                  </>
-                );
-              })()}
-            </div>
-            <button style={{
-              background: 'linear-gradient(90deg, #1976d2 0%, #ffd700 100%)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 12,
-              padding: window.innerWidth < 768 ? '12px 24px' : '14px 36px',
-              fontSize: window.innerWidth < 768 ? 16 : 20,
-              fontWeight: 700,
-              cursor: 'pointer',
-              marginLeft: window.innerWidth < 768 ? 0 : 16,
-              boxShadow: '0 2px 12px #1976d233',
-              letterSpacing: 0.5,
-              transition: 'background 0.3s',
-              position: 'relative',
-              zIndex: 1,
-              width: window.innerWidth < 768 ? '100%' : 'auto',
-            }} onClick={() => router.push('/sastranidhi/donate')}
-            >Donate</button>
-          </div>
+          <button onClick={() => router.push('/sastranidhi/donate')} style={{ padding: '12px 28px', background: 'linear-gradient(90deg,#1976d2,#ffd700)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px #1976d233', whiteSpace: 'nowrap' }}>
+            Donate
+          </button>
         </div>
       </div>
     </div>

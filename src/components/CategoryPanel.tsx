@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Plus, Book as BookIcon, BookOpen, FileText } from 'lucide-react';
+import { Search, Plus, Book as BookIcon, BookOpen, FileText, ChevronRight, ChevronDown } from 'lucide-react';
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import { Book } from '../lib/bookStorage';
 import { useState, useMemo, useEffect } from 'react';
@@ -95,6 +95,20 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
     return ids;
   }
 
+  // Track expanded state for each book
+  const [expandedBooks, setExpandedBooks] = useState<{ [bookId: string]: boolean }>({});
+
+  const handleBookToggle = (book: Book) => {
+    setExpandedBooks(prev => ({
+      ...prev,
+      [book._id]: !prev[book._id]
+    }));
+    // Only call onBookSelection if not already selected
+    if (book._id !== bookId && onBookSelection) {
+      onBookSelection(book);
+    }
+  };
+
   // MUI TreeView recursive rendering (always show children and books)
   const renderTree = (nodes: any[], parentId = '') => {
     return nodes.map((node, idx) => {
@@ -105,13 +119,45 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
           {node.children && node.children.length > 0 && renderTree(node.children, itemId)}
           {/* Render books at leaf node */}
           {node.books && node.books.length > 0 && node.books.map((book, bidx) => {
-            const bookId = book._id ? String(book._id) : `${itemId}-book-${bidx}`;
+            const bookIdStr = book._id ? String(book._id) : `${itemId}-book-${bidx}`;
+            const isSelected = book._id === bookId;
+            const isExpanded = !!expandedBooks[book._id];
             return (
               <TreeItem
-                key={bookId}
-                itemId={bookId}
-                label={book.title}
-                onClick={() => onBookSelection(book)}
+                key={bookIdStr}
+                itemId={bookIdStr}
+                label={
+                  <div>
+                    <span
+                      onClick={() => handleBookToggle(book)}
+                      style={{ cursor: 'pointer', fontWeight: isSelected ? 'bold' : 'normal', color: isSelected ? undefined : undefined, display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <span style={{ color: 'white', fontSize: '1em', display: 'inline-block', width: 18, textAlign: 'center' }}>
+                        {rest.bookChapters && isSelected ? (
+                          isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />
+                        ) : ''}
+                      </span>
+                      {book.title}
+                    </span>
+                    {/* Show chapters if this book is selected, expanded, and bookChapters exist */}
+                    {isSelected && isExpanded && rest.bookChapters && rest.bookChapters.length > 0 && (
+                      <div style={{ marginTop: 8, marginLeft: 16 }}>
+                        {rest.bookChapters.map((chapter, cidx) => (
+                          <div
+                            key={cidx}
+                            style={{ cursor: 'pointer', color: '#fbbf24', fontSize: '0.95em', padding: '2px 0' }}
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (onChapterSelect) onChapterSelect(chapter.wordIndex + 1);
+                            }}
+                          >
+                            {chapter.text}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                }
               />
             );
           })}

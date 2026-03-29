@@ -26,7 +26,16 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [searchResults, setSearchResults] = useState<{pageIndex: number; context: string; match: string; beforeContext: string; afterContext: string; fullContext: string}[]>([]);
+  const [searchResults, setSearchResults] = useState<{
+    pageIndex: number;
+    context: string;
+    match: string;
+    beforeContext: string;
+    afterContext: string;
+    fullContext: string;
+    paragraphIndex?: number;
+    paragraphText?: string;
+  }[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
   const [isSearchMode, setIsSearchMode] = useState(false);
@@ -152,7 +161,11 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
         // Prefer chapterswithPageNo if present
         if ('chapterswithPageNo' in result && Array.isArray(result.chapterswithPageNo)) {
           console.log('DEBUG: chapterswithPageNo from backend:', result.chapterswithPageNo);
-          setBookChapters(result.chapterswithPageNo);
+          // Map backend chapters to expected format
+          setBookChapters(result.chapterswithPageNo.map((ch: any) => ({
+            text: ch.chapterName || ch.chapter || ch.text || '',
+            wordIndex: (ch.pageNumber || ch.wordIndex || 1) - 1
+          })));
         } else if ('chapters' in result && Array.isArray(result.chapters)) {
           setBookChapters(result.chapters);
         } else if (result.pagination && Array.isArray(result.pagination.chapters)) {
@@ -347,20 +360,18 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
           match: result.match,
           beforeContext: result.beforeContext || '',
           afterContext: result.afterContext || '',
-          fullContext: result.fullContext || result.context
+          fullContext: result.fullContext || result.context,
+          paragraphIndex: result.paragraphIndex,
+          paragraphText: result.paragraphText,
         }));
-        
         console.log(`✅ Found ${results.length} matches returned (${searchData.data.totalMatches} total matches)`);
-        
         if (searchData.data.hasMore) {
           console.log(`📄 Note: Showing first ${results.length} of ${searchData.data.totalMatches} total matches`);
         }
-        
         setSearchResults(results);
         setShowSearchResults(results.length > 0);
         setIsSearchMode(results.length > 0);
         setCurrentSearchIndex(0);
-        
         // Navigate to first result if found
         if (results.length > 0) {
           setCurrentPage(results[0].pageIndex + 1);
@@ -1278,26 +1289,17 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
   }
 
   return (
-    <>
-      <div className="w-screen h-screen overflow-hidden">
-        <div
-          className="h-screen bg-gradient-to-br from-amber-50 to-amber-100 flex flex-col"
-          style={{
-            transform: `scale(${pageZoom})`,
-            transformOrigin: 'top left',
-            width: `${100 / pageZoom}%`,
-            height: `${100 / pageZoom}%`,
-          }}
-        >
-          {/* Header Bar */}
-          <Header 
-            user={user} 
-            authUser={authUser} 
-            onLogout={onLogout} 
-            onViewChange={onViewChange} 
-          />
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f9f9f9' }}>
+      <div style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {/* Header Bar */}
+        <Header 
+          user={user} 
+          authUser={authUser} 
+          onLogout={onLogout} 
+          onViewChange={onViewChange} 
+        />
 
-          <div className="flex flex-1 overflow-hidden">
+        <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
           {/* Left Sidebar - Language Selection */}
           <SideNav 
             selectedLanguage={selectedLanguage}
@@ -1315,7 +1317,6 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
               selectedLanguage={selectedLanguage}
               languageConfig={languageConfig}
               loadingBooks={loadingBooks}
-              categories={categories}
               expandedCategories={expandedCategories}
               bookId={bookId}
               onCategoryToggle={toggleCategoryExpanded}
@@ -1332,7 +1333,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
           )}
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col ebook-reader-content" style={{ background: 'var(--bg)', flex: 1, overflowY: 'auto' }}>
+          <div className="flex-1 flex flex-col ebook-reader-content" style={{ background: 'var(--bg)', flex: 1, minHeight: 0, overflowY: 'auto' }}>
             {/* Search Bar */}
             {bookId && content && (
               <div className="p-4 border-b border-amber-300 ebook-reader-searchbar" style={{ background: 'var(--search-bar-bg)' }}>
@@ -1430,25 +1431,64 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                       </button>
                     </div>
                     <div className="flex-1 overflow-y-auto p-8 space-y-8">
-                      {searchResults.map((result, index) => (
+                      {/* Group search results by paragraphIndex */}
+                      {Object.entries(
+                        searchResults.reduce((acc, result) => {
+                          const key = result.paragraphIndex ?? `no-paragraph-${result.pageIndex}`;
+                          if (!acc[key]) acc[key] = [];
+                          acc[key].push(result);
+                          return acc;
+                        }, {} as Record<string, typeof searchResults>)
+                      ).map(([paragraphKey, group], groupIdx) => (
                         <div
-                          key={index}
-                          className={`p-10 rounded-2xl shadow-lg border-2 transition-colors cursor-pointer bg-white border-amber-200 hover:border-amber-400 hover:shadow-2xl`}
-                          onClick={() => {
-                            console.log('[Search Result Card] Clicked:', { page: result.pageIndex + 1, match: result.match, searchQuery });
-                            setCurrentPage(result.pageIndex + 1);
-                            setPageInputValue((result.pageIndex + 1).toString());
-                            setLastSearchWord(searchQuery); // Ensure this is the searched word
-                            setIsSearchMode(false);
-                            setSearchResults([]);
-                          }}
+                          key={paragraphKey}
+                          className="p-10 rounded-2xl shadow-lg border-2 transition-colors cursor-pointer bg-white border-amber-200 hover:border-amber-400 hover:shadow-2xl"
                           style={{ fontSize: '1.5rem', lineHeight: 2.1 }}
                         >
+                          {/* Book name and paragraph info */}
                           <div className="flex items-center justify-between mb-4">
-                            <span className="text-lg font-semibold text-amber-700">Page {result.pageIndex + 1}</span>
-                            <span className="text-lg text-amber-500">Match {index + 1}</span>
+                            <span className="text-lg font-semibold text-amber-700">
+                              {bookTitle || title} — Page {group[0].pageIndex + 1}
+                            </span>
+                            <span className="text-lg text-amber-500">
+                              Paragraph {group[0].paragraphIndex !== undefined ? group[0].paragraphIndex + 1 : '?'}
+                            </span>
                           </div>
-                          <p className="text-2xl text-gray-900 leading-relaxed" style={{fontWeight: 400}} dangerouslySetInnerHTML={{__html: highlightSearchWord(result.fullContext, result.match || searchQuery)}} />
+                          {/* Show only the context line for single match, or multiple lines for multiple matches */}
+                          {group.length === 1 ? (
+                            <div
+                              className="mb-4 cursor-pointer hover:bg-amber-100 rounded"
+                              onClick={() => {
+                                setCurrentPage(group[0].pageIndex + 1);
+                                setPageInputValue((group[0].pageIndex + 1).toString());
+                                setLastSearchWord(group[0].match || searchQuery);
+                                setSearchQuery(group[0].match || searchQuery);
+                                setIsSearchMode(false);
+                                setSearchResults([]);
+                              }}
+                            >
+                              <span className="block text-sm text-amber-600 mb-1">Match {searchResults.indexOf(group[0]) + 1}</span>
+                              <p className="text-2xl text-gray-900 leading-relaxed" style={{fontWeight: 400}} dangerouslySetInnerHTML={{__html: highlightSearchWord(group[0].context, group[0].match || searchQuery)}} />
+                            </div>
+                          ) : (
+                            group.map((result, idx) => (
+                              <div
+                                key={idx}
+                                className="mb-4 cursor-pointer hover:bg-amber-100 rounded"
+                                onClick={() => {
+                                  setCurrentPage(result.pageIndex + 1);
+                                  setPageInputValue((result.pageIndex + 1).toString());
+                                  setLastSearchWord(result.match || searchQuery);
+                                  setSearchQuery(result.match || searchQuery);
+                                  setIsSearchMode(false);
+                                  setSearchResults([]);
+                                }}
+                              >
+                                <span className="block text-sm text-amber-600 mb-1">Match {searchResults.indexOf(result) + 1}</span>
+                                <p className="text-2xl text-gray-900 leading-relaxed" style={{fontWeight: 400}} dangerouslySetInnerHTML={{__html: highlightSearchWord(result.context, result.match || searchQuery)}} />
+                              </div>
+                            ))
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1584,7 +1624,6 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
           </div>
         </div>
       </div>
-    </>
   );
 };
 
