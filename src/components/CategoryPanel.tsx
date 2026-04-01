@@ -36,6 +36,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   onChapterSelect,
   onFoldAll,
   onUnfoldAll,
+  loadingBooks = false,
   ...rest
 }) => {
   // Provide default no-op functions if not passed
@@ -79,16 +80,16 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   // Filter categories/books by user privilege (only after privileges loaded)
   const filteredCategories = (userPrivileges ? categories.map(category => ({
     ...category,
-    books: category.books ? category.books.filter(book => userPrivileges.includes(book.type)) : [],
+    books: category.books ? category.books.filter((book: any) => userPrivileges.includes(book.type)) : [],
     children: category.children ? category.children : [],
   })) : []);
 
 
   // Helper to get all IDs for default expansion
-  function getAllIds(node) {
+  function getAllIds(node: any) {
     let ids = [String(node._id)];
     if (node.children && node.children.length > 0) {
-      node.children.forEach(child => {
+      node.children.forEach((child: any) => {
         ids = ids.concat(getAllIds(child));
       });
     }
@@ -118,7 +119,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
           {/* Render children categories */}
           {node.children && node.children.length > 0 && renderTree(node.children, itemId)}
           {/* Render books at leaf node */}
-          {node.books && node.books.length > 0 && node.books.map((book, bidx) => {
+          {node.books && node.books.length > 0 && node.books.map((book: any, bidx: number) => {
             const bookIdStr = book._id ? String(book._id) : `${itemId}-book-${bidx}`;
             const isSelected = book._id === bookId;
             const isExpanded = !!expandedBooks[book._id];
