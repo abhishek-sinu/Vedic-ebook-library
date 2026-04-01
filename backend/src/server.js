@@ -40,12 +40,17 @@ app.use(helmet({
 }));
 
 // CORS configuration
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    'https://sastranidhi.tech',
+    'http://localhost:3000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 
 // Rate limiting
 const limiter = rateLimit({

@@ -3,6 +3,7 @@ import ForgotPasswordModal from './ForgotPasswordModal';
 import VerifyOtpModal from './VerifyOtpModal';
 import ResetPasswordModal from './ResetPasswordModal';
 import { useState, useEffect } from 'react';
+import { BACKEND_API_URL } from '../lib/config';
 import { Eye, EyeOff, User, Lock, BookOpen } from 'lucide-react';
 
 interface LoginProps {
@@ -38,7 +39,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, noticeMessage }) => {
     setError('');
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${BACKEND_API_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +89,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, noticeMessage }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${BACKEND_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

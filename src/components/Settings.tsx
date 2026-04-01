@@ -23,7 +23,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     setError('');
     setSuccess('');
     try {
-      const res = await fetch('http://localhost:5000/api/auth/profile', {
+      const { BACKEND_API_URL } = await import('../lib/config');
+      const res = await fetch(`${BACKEND_API_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

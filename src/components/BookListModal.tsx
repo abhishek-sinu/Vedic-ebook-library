@@ -71,7 +71,8 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
     // Call backend API to update book
     try {
       const token = localStorage.getItem('vedic_auth_token') || sessionStorage.getItem('vedic_auth_token');
-      const response = await fetch(`http://localhost:5000/api/books/${id}`, {
+      const { BACKEND_API_URL } = await import('../lib/config');
+      const response = await fetch(`${BACKEND_API_URL}/api/books/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

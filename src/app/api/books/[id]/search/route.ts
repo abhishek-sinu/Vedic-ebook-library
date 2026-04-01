@@ -17,7 +17,8 @@ export async function GET(
     console.log('🔄 Proxying search request for book:', id, 'query:', query);
 
     // Forward the request to the backend
-    const backendUrl = `http://localhost:5000/api/books/${id}/search?q=${encodeURIComponent(query)}${limit ? `&limit=${encodeURIComponent(limit)}` : ''}`;
+    const { BACKEND_API_URL } = await import('../../../../lib/config');
+    const backendUrl = `${BACKEND_API_URL}/api/books/${id}/search?q=${encodeURIComponent(query)}${limit ? `&limit=${encodeURIComponent(limit)}` : ''}`;
     console.log('📡 Backend URL:', backendUrl);
 
     const response = await fetch(backendUrl);

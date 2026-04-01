@@ -5,6 +5,7 @@ import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import { Book } from '../lib/bookStorage';
 import { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
+import { BACKEND_API_URL } from '../lib/config';
 
 interface CategoryPanelProps {
   selectedLanguage: string;
@@ -26,7 +27,7 @@ interface CategoryPanelProps {
   onChapterSelect?: (pageNumber: number) => void;
 }
 
-const API_URL = 'http://localhost:5000/api/categories/tree';
+const API_URL = `${BACKEND_API_URL}/api/categories/tree`;
 
 const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: string; wordIndex: number }[] }> = ({
   selectedLanguage,

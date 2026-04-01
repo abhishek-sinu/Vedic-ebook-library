@@ -41,7 +41,8 @@ const SideNav: React.FC<SideNavProps> = ({
   // Change password handler
   const handleChangePassword = async (oldPassword: string, newPassword: string, confirmPassword: string) => {
     const token = localStorage.getItem('vedic_auth_token') || sessionStorage.getItem('vedic_auth_token');
-    const res = await fetch('http://localhost:5000/api/auth/change-password', {
+    const { BACKEND_API_URL } = await import('../lib/config');
+    const res = await fetch(`${BACKEND_API_URL}/api/auth/change-password`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
