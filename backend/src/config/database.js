@@ -7,8 +7,7 @@ export const connectDatabase = async () => {
   try {
     // Connect to MongoDB
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      // useNewUrlParser and useUnifiedTopology are deprecated and not needed in Mongoose 6+
     });
 
     console.log(`📦 MongoDB Connected: ${conn.connection.host}`);
