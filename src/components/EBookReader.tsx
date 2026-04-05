@@ -15,9 +15,10 @@ interface EBookReaderProps {
   onLogout?: () => void;
   onBookSelect?: (book: Book) => void;
   onViewChange?: (view: 'reading' | 'upload' | 'debug') => void;
+  categoryPanelRefreshKey?: number;
 }
 
-const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout, onBookSelect, onViewChange }) => {
+const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout, onBookSelect, onViewChange, categoryPanelRefreshKey }) => {
   // Books and categories state
   const [books, setBooks] = useState<Book[]>([]);
   const [categories, setCategories] = useState<{name: string; books: Book[]; expanded: boolean}[]>([]);
@@ -1329,6 +1330,7 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                 setCurrentPage(pageNumber);
                 setPageInputValue(pageNumber.toString());
               }}
+              refreshKey={categoryPanelRefreshKey}
             />
           )}
 

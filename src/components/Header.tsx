@@ -18,6 +18,7 @@ interface HeaderProps {
 }
 
 
+
 const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange, onNavigate, showNavigation = false }) => {
   const [showBooksModal, setShowBooksModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -25,6 +26,12 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange,
   const [loadingBooks, setLoadingBooks] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showLinkBookModal, setShowLinkBookModal] = useState(false);
+  const [categoryPanelRefreshKey, setCategoryPanelRefreshKey] = useState(0);
+
+  // Handler to trigger category panel refresh
+  const handleBookLinked = () => {
+    setCategoryPanelRefreshKey(prev => prev + 1);
+  };
 
   const handleShowBooks = async () => {
     setShowBooksModal(true);
@@ -177,7 +184,7 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange,
         </div>
       )}
       <UserManagementModal open={showUserModal} onClose={() => setShowUserModal(false)} />
-      <LinkBookModal open={showLinkBookModal} onClose={() => setShowLinkBookModal(false)} />
+      <LinkBookModal open={showLinkBookModal} onClose={() => setShowLinkBookModal(false)} onBookLinked={handleBookLinked} />
     </>
   );
 };

@@ -18,9 +18,10 @@ interface CategoryNode {
 interface LinkBookModalProps {
   open: boolean;
   onClose: () => void;
+  onBookLinked?: () => void;
 }
 
-const LinkBookModal: React.FC<LinkBookModalProps> = ({ open, onClose }) => {
+const LinkBookModal: React.FC<LinkBookModalProps> = ({ open, onClose, onBookLinked }) => {
   const [books, setBooks] = useState<Book[]>([]);
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [selectedBook, setSelectedBook] = useState<string>('');
@@ -151,6 +152,22 @@ const LinkBookModal: React.FC<LinkBookModalProps> = ({ open, onClose }) => {
           <div className="text-red-600 mb-2">{error}</div>
         ) : (
           <>
+            {success && (
+              <div
+                className="mb-4 font-semibold text-center px-4 py-3 rounded-lg"
+                style={{
+                  background: 'linear-gradient(90deg, #bbf7d0 0%, #4ade80 100%)',
+                  color: '#065f46',
+                  border: '1.5px solid #22c55e',
+                  boxShadow: '0 2px 12px 0 rgba(34,197,94,0.10)',
+                  fontSize: '1.08rem',
+                  letterSpacing: '0.01em',
+                  transition: 'background 0.2s, color 0.2s',
+                }}
+              >
+                {success}
+              </div>
+            )}
             <div className="mb-6">
               <label className="block mb-2 font-semibold text-gray-800">Select Book:</label>
               <input
@@ -223,6 +240,8 @@ const LinkBookModal: React.FC<LinkBookModalProps> = ({ open, onClose }) => {
                       setSuccess('Book linked successfully!');
                       setSelectedBook('');
                       setSelectedCategory('');
+                      if (onBookLinked) onBookLinked();
+                      setTimeout(() => setSuccess(''), 2500);
                     } else {
                       setError(data.error || 'Failed to link book.');
                     }

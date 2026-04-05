@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Plus, Book as BookIcon, BookOpen, FileText, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, Plus, Book as BookIcon, BookOpen, FileText, ChevronRight, ChevronDown, RefreshCw } from 'lucide-react';
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import { Book } from '../lib/bookStorage';
 import { useState, useMemo, useEffect } from 'react';
@@ -25,6 +25,7 @@ interface CategoryPanelProps {
   onFoldAll?: () => void;
   onUnfoldAll?: () => void;
   onChapterSelect?: (pageNumber: number) => void;
+  refreshKey?: number;
 }
 
 const API_URL = `${BACKEND_API_URL}/categories/tree`;
@@ -38,6 +39,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   onFoldAll,
   onUnfoldAll,
   loadingBooks = false,
+  refreshKey,
   ...rest
 }) => {
   // Provide default no-op functions if not passed
@@ -47,6 +49,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userPrivileges, setUserPrivileges] = useState<string[] | null>(null);
+  const [manualRefreshKey, setManualRefreshKey] = useState(0);
 
   // Fetch categories and user privileges on client only
   useEffect(() => {
@@ -75,7 +78,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
       }
     } catch {}
     setUserPrivileges(privileges);
-  }, []);
+  }, [refreshKey, manualRefreshKey]);
   // (Removed duplicate userPrivileges and userPrivilege declarations. Only use state variable.)
 
   // Filter categories/books by user privilege (only after privileges loaded)
@@ -530,8 +533,8 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
       </div>
 
       {/* Search Bar */}
-      <div className="p-4" style={{ background: 'var(--card)' }}>
-        <div className="relative">
+      <div className="p-4 flex items-center gap-2" style={{ background: 'var(--card)' }}>
+        <div className="relative flex-1">
           <input
             type="text"
             placeholder="Search the catalog"
@@ -544,6 +547,14 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
           />
           <Search className="absolute right-3 top-2.5 w-4 h-4" style={{ color: 'var(--text)', opacity: 0.5 }} />
         </div>
+        <button
+          title="Refresh book list"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center' }}
+          onClick={() => setManualRefreshKey(k => k + 1)}
+          aria-label="Refresh book list"
+        >
+          <RefreshCw size={20} style={{ color: 'var(--text)', opacity: 0.7 }} />
+        </button>
       </div>
 
       {/* Content Area */}
