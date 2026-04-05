@@ -250,7 +250,7 @@ export const deleteBookFile = async (bookId: string): Promise<boolean> => {
       return false;
     }
     
-    const response = await fetch(`${BACKEND_API_URL}/api/books/${bookId}`, {
+    const response = await fetch(`${BACKEND_API_URL}/books/${bookId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -320,7 +320,7 @@ export const fetchBooksHierarchyTree = async (language?: string): Promise<Hierar
     }
 
     const query = params.toString();
-    const url = `${BACKEND_API_URL}/api/books/tree${query ? `?${query}` : ''}`;
+    const url = `${BACKEND_API_URL}/books/tree${query ? `?${query}` : ''}`;
     const headers: Record<string, string> = {};
 
     if (token) {

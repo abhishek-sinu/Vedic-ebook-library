@@ -1,5 +1,5 @@
 export const updateUser = async (token: string, userId: string, update: Partial<User>): Promise<User> => {
-  const response = await fetch(`${BACKEND_API_URL}/api/admin/users/${userId}`, {
+  const response = await fetch(`${BACKEND_API_URL}/admin/users/${userId}`, {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -34,7 +34,7 @@ export interface User {
 }
 
 export const fetchAllUsers = async (token: string): Promise<User[]> => {
-  const response = await fetch(`${BACKEND_API_URL}/api/admin/users`, {
+  const response = await fetch(`${BACKEND_API_URL}/admin/users`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
