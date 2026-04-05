@@ -39,7 +39,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, noticeMessage }) => {
     setError('');
     setIsLoading(true);
     try {
-      const response = await fetch(`${BACKEND_API_URL}/api/auth/register`, {
+      const response = await fetch(`${BACKEND_API_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, noticeMessage }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${BACKEND_API_URL}/api/auth/login`, {
+      const response = await fetch(`${BACKEND_API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

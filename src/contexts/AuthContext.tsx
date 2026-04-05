@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (storedToken && storedUser) {
           // Verify token with backend
           const { BACKEND_API_URL } = await import('../lib/config');
-          const response = await fetch(`${BACKEND_API_URL}/api/auth/verify`, {
+          const response = await fetch(`${BACKEND_API_URL}/auth/verify`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

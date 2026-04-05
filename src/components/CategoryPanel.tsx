@@ -27,7 +27,7 @@ interface CategoryPanelProps {
   onChapterSelect?: (pageNumber: number) => void;
 }
 
-const API_URL = `${BACKEND_API_URL}/api/categories/tree`;
+const API_URL = `${BACKEND_API_URL}/categories/tree`;
 
 const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: string; wordIndex: number }[] }> = ({
   selectedLanguage,

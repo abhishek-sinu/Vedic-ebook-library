@@ -83,7 +83,7 @@ export const fetchBooks = async (language?: string, page = 1, limit = 20): Promi
       params.append('language', language);
     }
     
-    const response = await fetch(`${BACKEND_API_URL}/api/books?${params}`);
+    const response = await fetch(`${BACKEND_API_URL}/books?${params}`);
     const data = await response.json();
     
     if (data.success) {
@@ -101,7 +101,7 @@ export const fetchBooks = async (language?: string, page = 1, limit = 20): Promi
 export const getBookDetails = async (bookId: string): Promise<Book | null> => {
   try {
     console.log('Fetching book details for:', bookId);
-    const response = await fetch(`${BACKEND_API_URL}/api/books/${bookId}`);
+    const response = await fetch(`${BACKEND_API_URL}/books/${bookId}`);
     
     console.log('Book details response status:', response.status);
     
@@ -140,7 +140,7 @@ export const fetchBookContent = async (bookId: string, page: number = 1, format:
       format: format // 'html' for formatted content, 'text' for plain text
     });
     
-    const url = `${BACKEND_API_URL}/api/books/${bookId}/text?${params}`;
+    const url = `${BACKEND_API_URL}/books/${bookId}/text?${params}`;
     console.log('Fetching book text from:', url);
     
     const headers: Record<string, string> = {};
@@ -220,7 +220,7 @@ export const uploadBook = async (file: File, metadata: { title: string; author: 
       metadata.tags.forEach(tag => formData.append('tags', tag));
     }
 
-    const response = await fetch(`${BACKEND_API_URL}/api/books`, {
+    const response = await fetch(`${BACKEND_API_URL}/books`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`

@@ -39,12 +39,12 @@ const LinkBookModal: React.FC<LinkBookModalProps> = ({ open, onClose }) => {
     setLoading(true);
     setError('');
     // Fetch books
-    fetch(`${BACKEND_API_URL}/api/books/list`)
+    fetch(`${BACKEND_API_URL}/books/list`)
       .then(res => res.json())
       .then(data => setBooks(data.books || []))
       .catch(() => setError('Failed to load books'));
     // Fetch categories tree
-    fetch(`${BACKEND_API_URL}/api/categories/tree`)
+    fetch(`${BACKEND_API_URL}/categories/tree`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(() => setError('Failed to load categories'))
@@ -214,7 +214,7 @@ const LinkBookModal: React.FC<LinkBookModalProps> = ({ open, onClose }) => {
                   setLinking(true);
                   try {
                     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-                    const res = await fetch(`${API_BASE_URL}/api/categories/${selectedCategory}/link-book`, {
+                    const res = await fetch(`${API_BASE_URL}/categories/${selectedCategory}/link-book`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ bookId: selectedBook })
