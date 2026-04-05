@@ -217,15 +217,17 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
                           ))}
                         </select>
                       </td>
-                      <td className="px-4 py-2 border-b flex gap-2 text-center">
-                        <button
-                          className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold shadow-sm transition-all"
-                          onClick={() => handleEditSave(book._id)}
-                        >Save</button>
-                        <button
-                          className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold shadow-sm transition-all"
-                          onClick={handleEditCancel}
-                        >Cancel</button>
+                      <td className="px-4 py-2 border-b align-middle min-h-[48px]">
+                        <div className="flex flex-col md:flex-row gap-2 justify-center items-center">
+                          <button
+                            className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold shadow-sm transition-all"
+                            onClick={() => handleEditSave(book._id)}
+                          >Save</button>
+                          <button
+                            className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold shadow-sm transition-all"
+                            onClick={handleEditCancel}
+                          >Cancel</button>
+                        </div>
                       </td>
                     </>
                   ) : (
@@ -236,15 +238,17 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
                       <td className="px-4 py-2 border-b">{book.category || '-'}</td>
                       <td className="px-4 py-2 border-b max-w-xs truncate" title={book.description}>{book.description || '-'}</td>
                       <td className="px-4 py-2 border-b">{book.type || '-'}</td>
-                      <td className="px-4 py-2 border-b flex gap-2 text-center">
-                        <button
-                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold shadow-sm transition-all"
-                          onClick={() => handleEdit(book._id)}
-                        >Edit</button>
-                        <button
-                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold shadow-sm transition-all"
-                          onClick={() => handleDelete(book._id)}
-                        >Delete</button>
+                      <td className="px-4 py-2 border-b align-middle min-h-[48px]">
+                        <div className="flex flex-col md:flex-row gap-2 justify-center items-center">
+                          <button
+                            className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold shadow-sm transition-all"
+                            onClick={() => handleEdit(book._id)}
+                          >Edit</button>
+                          <button
+                            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold shadow-sm transition-all"
+                            onClick={() => handleDelete(book._id)}
+                          >Delete</button>
+                        </div>
                       </td>
                     </>
                   )}

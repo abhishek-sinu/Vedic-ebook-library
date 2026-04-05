@@ -212,22 +212,7 @@ export const validateBookUpload = [
     .isIn(['english', 'telugu', 'sanskrit'])
     .withMessage('Language must be english, telugu, or sanskrit'),
     
-  body('category')
-    .trim()
-    .isLength({ min: 1, max: 120 })
-    .withMessage('Category is required and cannot exceed 120 characters'),
-
-  body('subcategory')
-    .optional()
-    .trim()
-    .isLength({ max: 120 })
-    .withMessage('Subcategory cannot exceed 120 characters'),
-
-  body('subSubcategory')
-    .optional()
-    .trim()
-    .isLength({ max: 180 })
-    .withMessage('Sub-subcategory cannot exceed 180 characters'),
+  // category, subcategory, and subSubcategory validation removed
     
   body('tags')
     .optional()

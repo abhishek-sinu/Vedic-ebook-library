@@ -3,7 +3,7 @@
 import { BookOpen, Upload, List as ListIcon, Users, Link2 } from 'lucide-react';
 import React, { useState } from 'react';
 import BookListModal from './BookListModal';
-import FileUpload from './FileUpload';
+import UnifiedBookUploadModal from './UnifiedBookUploadModal';
 import { fetchBooks } from '../lib/bookStorage';
 import UserManagementModal from './UserManagementModal';
 import LinkBookModal from './LinkBookModal';
@@ -170,9 +170,10 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange,
         books={books}
       />
       {showUploadModal && (
-        <FileUpload
-          onUploadComplete={() => setShowUploadModal(false)}
+        <UnifiedBookUploadModal
+          open={showUploadModal}
           onClose={() => setShowUploadModal(false)}
+          onUploadSuccess={() => setShowUploadModal(false)}
         />
       )}
       {showBooksModal && loadingBooks && (

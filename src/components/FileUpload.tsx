@@ -29,55 +29,18 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
     title: '',
     author: '',
     category: '',
-    subcategory: '',
-    paramparaCategory: '',
-    acharyaName: '',
     description: '',
     tags: '',
     language: 'english',
     type: ''
   });
 
-  const categoryOptions = {
-    'Vaisnava Literature': ['Parampara', 'Acharya'],
-    'Sruti': ['Rig Veda', 'Sama Veda', 'Yajur Veda', 'Atharva Veda'],
-    'Smriti': ['Upavedas', 'Vedangas', 'Sad Darsanas', 'Puranas', 'Itihasas', 'Tantras', 'Agamas'],
-    'Classical Literature': ['Sanskrit', 'Regional'],
-  } as const;
-
-  const bookCategories = Object.keys(categoryOptions);
-  const paramparaOptions = [
-    'Sri Sampradaya',
-    'Brahma Sampradaya',
-    'Rudra Sampradaya',
-    'Kumara Sampradaya'
+  const bookCategories = [
+    'Vaisnava Literature',
+    'Sruti',
+    'Smriti',
+    'Classical Literature'
   ];
-  const acharyaOptions = [
-    'Śrīla Mādhvācārya',
-    'Śrīla Ramanuja Acharya',
-    'Śrīla Vishnuswami',
-    'Śrīla Nimbarka',
-    'Śrīla Svarūpa Dāmodara',
-    'Śrīla Rūpa Gosvāmī',
-    'Śrīla Sanātana Gosvāmī',
-    'Śrīla Raghunātha dāsa Gosvāmī',
-    'Śrīla Jīva Gosvāmī',
-    'Śrīla Gopāla Bhaṭṭa Gosvāmī',
-    'Śrīla Raghunātha Bhaṭṭa Gosvāmī',
-    'Śrīla Kṛṣṇadāsa Kavirāja Gosvāmī',
-    'Śrīla Narottama dāsa Ṭhākura',
-    'Śrīla Vṛndāvana dāsa Ṭhākura',
-    'Śrīla Viśvanātha Cakravartī Ṭhākura',
-    'Śrīla Baladeva Vidyābhūṣaṇa',
-    'Śrīla Bhaktivinoda Ṭhākura',
-    'Śrīla Gaurakiśora dāsa Bābājī',
-    'Śrīla Bhaktisiddhānta Sarasvatī Ṭhākura',
-    'Śrīla A.C. Bhaktivedanta Swami Prabhupāda'
-  ];
-
-  const availableSubcategories = metadata.category
-    ? categoryOptions[metadata.category as keyof typeof categoryOptions] || []
-    : [];
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -97,15 +60,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
 
     setCurrentFile(file);
     setMetadata({
-      title: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
+      title: file.name.replace(/\.[^/.]+$/, ''),
       author: '',
       category: '',
-      subcategory: '',
-      paramparaCategory: '',
-      acharyaName: '',
       description: '',
       tags: '',
-      language: 'english', // Default to lowercase to match backend
+      language: 'english',
       type: ''
     });
     setShowMetadataForm(true);
@@ -130,15 +90,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
       if (!metadata.category) {
         throw new Error('Category is required');
       }
-      if (!metadata.subcategory) {
-        throw new Error('Subcategory is required');
-      }
-      if (metadata.subcategory === 'Parampara' && !metadata.paramparaCategory) {
-        throw new Error('Parampara category is required');
-      }
-      if (metadata.subcategory === 'Acharya' && !metadata.acharyaName) {
-        throw new Error('Acharya is required');
-      }
+      // Subcategory, paramparaCategory, and acharyaName validation removed
       if (!metadata.language) {
         throw new Error('Language is required');
       }
@@ -147,26 +99,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
         ? metadata.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
         : [];
 
-      const mergedTags = metadata.subcategory
-        ? [
-            metadata.subcategory,
-            ...(metadata.paramparaCategory ? [metadata.paramparaCategory] : []),
-            ...(metadata.acharyaName ? [metadata.acharyaName] : []),
-            ...parsedTags,
-          ]
-        : parsedTags;
-
-      const selectedSubSubcategory = metadata.paramparaCategory || metadata.acharyaName || '';
-      
       await uploadBook(currentFile, {
         title: metadata.title.trim(),
         author: metadata.author.trim(),
         category: metadata.category,
-        subcategory: metadata.subcategory,
-        subSubcategory: selectedSubSubcategory || undefined,
         language: metadata.language.toLowerCase(),
         description: metadata.description.trim() || undefined,
-        tags: mergedTags.length ? mergedTags : undefined,
+        tags: parsedTags.length ? parsedTags : undefined,
         type: metadata.type || 'normal'
       });
 
@@ -176,7 +115,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
       
       setShowMetadataForm(false);
       setCurrentFile(null);
-      setMetadata({ title: '', author: '', category: '', subcategory: '', paramparaCategory: '', acharyaName: '', description: '', tags: '', language: 'english', type: '' });
+      setMetadata({ title: '', author: '', category: '', description: '', tags: '', language: 'english', type: '' });
     } catch (err: any) {
       setError(err.message || 'Failed to upload file');
     } finally {
@@ -300,58 +239,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess, onUploadComple
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
-                <FolderOpen className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
-                Subcategory *
-              </label>
-              <select
-                value={metadata.subcategory}
-                onChange={(e) => setMetadata(prev => ({ ...prev, subcategory: e.target.value, paramparaCategory: '', acharyaName: '' }))}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
-                style={{
-                  background: 'var(--card)',
-                  color: 'var(--text)',
-                  borderColor: 'var(--border)'
-                }}
-                disabled={!metadata.category}
-                required
-              >
-                <option value="">{metadata.category ? 'Select a subcategory...' : 'Select category first...'}</option>
-                {availableSubcategories.map((subcategory) => (
-                  <option key={subcategory} value={subcategory}>
-                    {subcategory}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {metadata.subcategory === 'Parampara' && (
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{color: 'var(--text)'}}>
-                  <FolderOpen className="inline w-4 h-4 mr-2" style={{ color: 'var(--icon)' }} />
-                  Parampara Category *
-                </label>
-                <select
-                  value={metadata.paramparaCategory}
-                  onChange={(e) => setMetadata(prev => ({ ...prev, paramparaCategory: e.target.value }))}
-                  className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
-                  style={{
-                    background: 'var(--card)',
-                    color: 'var(--text)',
-                    borderColor: 'var(--border)'
-                  }}
-                  required
-                >
-                  <option value="">Select Parampara category...</option>
-                  {paramparaOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/* Subcategory and Parampara Category fields removed */}
 
             {metadata.subcategory === 'Acharya' && (
               <div>

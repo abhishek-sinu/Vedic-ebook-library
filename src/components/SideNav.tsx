@@ -118,28 +118,26 @@ const SideNav: React.FC<SideNavProps> = ({
         </button>
       ))}
       
-      {/* Navigation Icons */}
+      {/* Navigation Icons - original only, unified style */}
       <div className="flex flex-col space-y-4 pt-6 border-t" style={{ borderColor: 'var(--color-vb-header-bottom, var(--border))' }}>
         <button
-          className="p-2"
-          style={{ color: 'var(--color-vb-action-bg, var(--icon))' }}
+          className="p-2 rounded-lg shadow-md backdrop-blur-md bg-white/90 hover:bg-white transition-all"
+          style={{ color: 'var(--color-vb-header-top-text, #1e293b)' }}
           title="Settings"
           onClick={() => setShowSettings(true)}
         >
-          <SettingsIcon className="w-5 h-5" style={{ color: 'var(--color-vb-action-bg, var(--icon))' }} />
+          <SettingsIcon className="w-5 h-5" />
         </button>
         {showSettings && (
-          <Settings
-            onClose={() => setShowSettings(false)}
-          />
+          <Settings onClose={() => setShowSettings(false)} />
         )}
         <button
-          className="p-2"
-          style={{ color: 'var(--color-vb-action-bg, var(--icon))' }}
+          className="p-2 rounded-lg shadow-md backdrop-blur-md bg-white/90 hover:bg-white transition-all"
+          style={{ color: 'var(--color-vb-header-top-text, #1e293b)' }}
           title="Profile"
           onClick={() => setShowProfile(true)}
         >
-          <User className="w-5 h-5" style={{ color: 'var(--color-vb-action-bg, var(--icon))' }} />
+          <User className="w-5 h-5" />
         </button>
         {showProfile && authUser && (
           <UserProfile

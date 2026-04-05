@@ -5,9 +5,7 @@ export interface Book {
   author: string;
   description: string;
   language: string;
-  category: string;
-  subcategory?: string;
-  subSubcategory?: string;
+  // category removed
   tags: string[];
   fileInfo: {
     gridfsId: string;
@@ -63,12 +61,12 @@ export interface HierarchySubSubcategoryNode {
 export interface HierarchySubcategoryNode {
   name: string;
   books: HierarchyBookNode[];
-  subSubcategories: HierarchySubSubcategoryNode[];
+  // subSubcategories removed
 }
 
 export interface HierarchyCategoryNode {
   name: string;
-  subcategories: HierarchySubcategoryNode[];
+  // subcategories removed if not needed
 }
 
 // API functions for backend integration
@@ -189,7 +187,7 @@ export const fetchBookContent = async (bookId: string, page: number = 1, format:
   }
 };
 
-export const uploadBook = async (file: File, metadata: { title: string; author: string; category: string; subcategory?: string; subSubcategory?: string; language: string; description?: string; tags?: string[]; type?: string }): Promise<Book | null> => {
+export const uploadBook = async (file: File, metadata: { title: string; author: string; language: string; description?: string; tags?: string[]; type?: string }): Promise<Book | null> => {
   try {
     const token = localStorage.getItem('vedic_auth_token') || sessionStorage.getItem('vedic_auth_token');
     
@@ -201,13 +199,7 @@ export const uploadBook = async (file: File, metadata: { title: string; author: 
     formData.append('book', file);
     formData.append('title', metadata.title);
     formData.append('author', metadata.author);
-    formData.append('category', metadata.category);
-    if (metadata.subcategory) {
-      formData.append('subcategory', metadata.subcategory);
-    }
-    if (metadata.subSubcategory) {
-      formData.append('subSubcategory', metadata.subSubcategory);
-    }
+    // category, subcategory and subSubcategory removed
     formData.append('language', metadata.language);
     
     if (metadata.description) {

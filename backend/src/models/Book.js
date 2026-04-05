@@ -37,26 +37,7 @@ const bookSchema = new mongoose.Schema({
     lowercase: true
   },
   
-  category: {
-    type: String,
-    required: [true, 'Category is required'],
-    trim: true,
-    maxlength: [120, 'Category cannot exceed 120 characters']
-  },
-
-  subcategory: {
-    type: String,
-    trim: true,
-    maxlength: [120, 'Subcategory cannot exceed 120 characters'],
-    default: ''
-  },
-
-  subSubcategory: {
-    type: String,
-    trim: true,
-    maxlength: [180, 'Sub-subcategory cannot exceed 180 characters'],
-    default: ''
-  },
+  // category, subcategory and subSubcategory removed
   
   tags: [{
     type: String,
@@ -190,8 +171,8 @@ bookSchema.index({ title: 'text', author: 'text', description: 'text' }, {
   default_language: 'none',
   language_override: 'textLanguage'  // Use a different field name to avoid conflict
 });
-bookSchema.index({ language: 1, category: 1 });
-bookSchema.index({ category: 1, subcategory: 1, subSubcategory: 1 });
+// bookSchema.index({ language: 1, category: 1 });
+// bookSchema.index({ category: 1, subcategory: 1, subSubcategory: 1 });
 bookSchema.index({ author: 1 });
 bookSchema.index({ tags: 1 });
 bookSchema.index({ 'uploadInfo.uploadDate': -1 });
@@ -233,13 +214,7 @@ bookSchema.statics.findByLanguage = function(language) {
   return this.find({ language: language.toLowerCase(), isActive: true });
 };
 
-bookSchema.statics.findByCategory = function(category, language = null) {
-  const filter = { category, isActive: true };
-  if (language) {
-    filter.language = language.toLowerCase();
-  }
-  return this.find(filter);
-};
+// bookSchema.statics.findByCategory removed (category deprecated)
 
 bookSchema.statics.findByAuthor = function(author, language = null) {
   const filter = { 

@@ -41,9 +41,6 @@ export const uploadBook = catchAsync(async (req, res, next) => {
     author,
     description,
     language,
-    category,
-    subcategory = '',
-    subSubcategory = '',
     tags = [],
     type = 'normal',
     metadata = {}
@@ -66,9 +63,7 @@ export const uploadBook = catchAsync(async (req, res, next) => {
       author,
       description,
       language: language.toLowerCase(),
-      category, // Do not lowercase, preserve exact value
-      subcategory,
-      subSubcategory,
+      // category removed
       tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
       fileInfo: {
         originalName: req.file.originalname,
@@ -120,7 +115,7 @@ export const getAllBooks = catchAsync(async (req, res, next) => {
   const filter = { isActive: true };
   
   if (language) filter.language = language.toLowerCase();
-  if (category) filter.category = category;
+  // if (category) filter.category = category; // category removed
   if (subcategory) filter.subcategory = subcategory;
   if (subSubcategory) filter.subSubcategory = subSubcategory;
   if (author) filter.author = { $regex: author, $options: 'i' };
@@ -380,7 +375,7 @@ export const updateBook = catchAsync(async (req, res, next) => {
   }
 
   const allowedFields = [
-    'title', 'author', 'description', 'language', 'category', 'tags',
+    'title', 'author', 'description', 'language', 'tags',
     'metadata', 'accessControl', 'type'
   ];
 
@@ -501,7 +496,7 @@ export const searchBooks = catchAsync(async (req, res, next) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const books = await Book.find(filter)
-    .select('title author language category description statistics')
+    .select('title author language description statistics')
     .sort({ score: { $meta: 'textScore' } })
     .skip(skip)
     .limit(parseInt(limit));
