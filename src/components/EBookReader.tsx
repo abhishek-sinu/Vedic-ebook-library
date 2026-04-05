@@ -261,10 +261,11 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
     if (!bookId || books.length === 0) return;
 
     const selected = books.find(book => book._id === bookId);
-    if (selected?.category) {
+    // Since category is removed, always expand 'Other' if a book is selected
+    if (selected) {
       setExpandedCategories(prev => ({
         ...prev,
-        [selected.category]: true,
+        ['Other']: true,
       }));
     }
   }, [bookId, books]);
