@@ -240,16 +240,10 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
       return true;
     });
 
-    // Group books strictly by their category field (dynamic categories from DB)
-    const categoryMap = new Map<string, Book[]>();
 
-    filteredBooks.forEach(book => {
-      const category = (book.category || 'Other').trim() || 'Other';
-      if (!categoryMap.has(category)) {
-        categoryMap.set(category, []);
-      }
-      categoryMap.get(category)!.push(book);
-    });
+    // Since category is removed, group all books under 'Other' or by another property if needed
+    const categoryMap = new Map<string, Book[]>();
+    categoryMap.set('Other', filteredBooks);
 
     // Create organized categories in sorted order
     const orderedCategoryNames = Array.from(categoryMap.keys()).sort((a, b) => a.localeCompare(b));
