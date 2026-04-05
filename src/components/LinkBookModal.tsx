@@ -213,8 +213,7 @@ const LinkBookModal: React.FC<LinkBookModalProps> = ({ open, onClose }) => {
                   setSuccess('');
                   setLinking(true);
                   try {
-                    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-                    const res = await fetch(`${API_BASE_URL}/categories/${selectedCategory}/link-book`, {
+                    const res = await fetch(`${BACKEND_API_URL}/categories/${selectedCategory}/link-book`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ bookId: selectedBook })
