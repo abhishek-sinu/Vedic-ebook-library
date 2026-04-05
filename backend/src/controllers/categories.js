@@ -48,7 +48,37 @@ const getCategoryBooks = async (req, res) => {
   }
 };
 
+
+// Link a book to a category (leaf node)
+const linkBookToCategory = async (req, res) => {
+  try {
+    const { id } = req.params; // category id
+    const { bookId } = req.body;
+    if (!bookId) {
+      return res.status(400).json({ error: 'bookId is required' });
+    }
+    const category = await Category.findById(id);
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    // Only allow linking to leaf nodes (no children or type === 'book-list')
+    if ((category.children && category.children.length > 0) || category.type !== 'book-list') {
+      return res.status(400).json({ error: 'Can only link books to leaf (book-list) categories' });
+    }
+    // Prevent duplicate linking
+    if (category.books.includes(bookId)) {
+      return res.status(409).json({ error: 'Book already linked to this category' });
+    }
+    category.books.push(bookId);
+    await category.save();
+    res.json({ success: true, message: 'Book linked to category', category });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to link book', details: err.message });
+  }
+};
+
 export default {
   getCategoryTree,
-  getCategoryBooks
+  getCategoryBooks,
+  linkBookToCategory
 };

@@ -107,62 +107,56 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{
+        background: 'linear-gradient(120deg, rgba(30,32,38,0.32) 0%, rgba(224,231,255,0.18) 100%)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        animation: 'modalFadeIn 0.25s cubic-bezier(.4,2,.6,1)'
+      }}
+    >
       <div
-        className="rounded-lg shadow-lg w-full max-w-6xl p-8 relative border"
+        className="rounded-2xl shadow-2xl w-full max-w-6xl px-10 py-8 relative border border-amber-100"
         style={{
-          background: 'var(--color-vb-modal-bg, #fff)',
-          borderColor: 'var(--color-vb-header-bottom, #eebd89)',
-          color: 'var(--color-vb-normal-text, #222)'
+          background: 'linear-gradient(120deg, #fff 60%, #fef6e4 100%)',
+          color: '#222',
+          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+          transform: 'scale(1)',
+          transition: 'transform 0.2s',
         }}
       >
         <button
-          className="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-2xl"
-          style={{ color: 'var(--color-vb-normal-text, #222)' }}
+          className="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold transition-colors"
           onClick={onClose}
           title="Close"
         >
           &times;
         </button>
-        <h2
-          className="text-2xl font-bold mb-4 text-center"
-          style={{ color: 'var(--color-vb-header-top-text, #b97b2c)' }}
-        >
+        <h2 className="text-3xl font-extrabold mb-6 text-center tracking-tight text-amber-700 drop-shadow-sm" style={{ letterSpacing: '-0.01em' }}>
           All Books
         </h2>
+        <hr className="mb-6 border-amber-100" />
         <div className="overflow-x-auto">
-          <table
-            className="min-w-full border rounded-lg"
-            style={{
-              background: 'var(--color-vb-modal-bg, #fff)',
-              color: 'var(--color-vb-normal-text, #222)'
-            }}
-          >
+          <table className="min-w-full rounded-xl overflow-hidden shadow border border-amber-100">
             <thead>
-              <tr
-                style={{
-                  background: 'var(--color-vb-header-bottom, #fdf6e3)',
-                  color: 'var(--color-vb-header-top-text, #b97b2c)'
-                }}
-              >
-                <th className="px-4 py-2 border-b">Title</th>
-                <th className="px-4 py-2 border-b">Author</th>
-                <th className="px-4 py-2 border-b">Language</th>
-                <th className="px-4 py-2 border-b">Category</th>
-                <th className="px-4 py-2 border-b">Description</th>
-                <th className="px-4 py-2 border-b">Type</th>
-                <th className="px-4 py-2 border-b">Action</th>
+              <tr className="bg-gradient-to-r from-amber-200 to-amber-100 text-amber-900">
+                <th className="px-4 py-2 border-b font-semibold">Title</th>
+                <th className="px-4 py-2 border-b font-semibold">Author</th>
+                <th className="px-4 py-2 border-b font-semibold">Language</th>
+                <th className="px-4 py-2 border-b font-semibold">Category</th>
+                <th className="px-4 py-2 border-b font-semibold">Description</th>
+                <th className="px-4 py-2 border-b font-semibold">Type</th>
+                <th className="px-4 py-2 border-b font-semibold">Action</th>
               </tr>
             </thead>
             <tbody>
               {editBooks.map((book, idx) => (
                 <tr
                   key={book._id}
-                  className="transition"
-                  style={{
-                    background: 'var(--color-vb-modal-bg, #fff)',
-                    color: 'var(--color-vb-normal-text, #222)'
-                  }}
+                  className={
+                    `transition ${idx % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100`}
+                  style={{ color: '#222' }}
                 >
                   {editIdx === book._id ? (
                     <>
@@ -225,11 +219,11 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
                       </td>
                       <td className="px-4 py-2 border-b flex gap-2 text-center">
                         <button
-                          className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                          className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold shadow-sm transition-all"
                           onClick={() => handleEditSave(book._id)}
                         >Save</button>
                         <button
-                          className="px-2 py-1 bg-gray-400 text-white rounded hover:bg-gray-500"
+                          className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold shadow-sm transition-all"
                           onClick={handleEditCancel}
                         >Cancel</button>
                       </td>
@@ -244,11 +238,11 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
                       <td className="px-4 py-2 border-b">{book.type || '-'}</td>
                       <td className="px-4 py-2 border-b flex gap-2 text-center">
                         <button
-                          className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold shadow-sm transition-all"
                           onClick={() => handleEdit(book._id)}
                         >Edit</button>
                         <button
-                          className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold shadow-sm transition-all"
                           onClick={() => handleDelete(book._id)}
                         >Delete</button>
                       </td>
@@ -260,6 +254,12 @@ const BookListModal: React.FC<BookListModalProps> = ({ open, onClose, books }) =
           </table>
         </div>
       </div>
+      <style>{`
+        @keyframes modalFadeIn {
+          from { opacity: 0; transform: scale(0.98); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 };

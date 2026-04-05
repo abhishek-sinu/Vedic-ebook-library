@@ -160,6 +160,8 @@ const upload = multer({
  */
 
 // Public routes (no authentication required)
+import { getBookList } from '../controllers/books.js';
+router.get('/list', optionalAuth, getBookList);
 router.get('/', optionalAuth, getAllBooks);
 router.get('/search', optionalAuth, searchBooks);
 router.get('/language/:language', optionalAuth, getBooksByLanguage);

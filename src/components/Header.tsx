@@ -1,11 +1,12 @@
 'use client';
 
-import { BookOpen, Upload, List as ListIcon } from 'lucide-react';
+import { BookOpen, Upload, List as ListIcon, Users, Link2 } from 'lucide-react';
 import React, { useState } from 'react';
 import BookListModal from './BookListModal';
 import FileUpload from './FileUpload';
 import { fetchBooks } from '../lib/bookStorage';
 import UserManagementModal from './UserManagementModal';
+import LinkBookModal from './LinkBookModal';
 
 interface HeaderProps {
   user?: { role: string; username: string; name?: string } | null;
@@ -23,6 +24,7 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange,
   const [books, setBooks] = useState<any[]>([]);
   const [loadingBooks, setLoadingBooks] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showLinkBookModal, setShowLinkBookModal] = useState(false);
 
   const handleShowBooks = async () => {
     setShowBooksModal(true);
@@ -57,6 +59,8 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange,
     }
   }
 
+  
+
   return (
     <>
       <div
@@ -74,34 +78,68 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange,
           </div>
           <div className="flex items-center space-x-4">
             {user?.name && (
-              <span className="font-semibold" style={{ color: headerUserText }}>{user.name}</span>
+              <span className="font-semibold user-badge" style={{ color: headerUserText }}>{user.name}</span>
             )}
             {user?.role === 'admin' && (
               <>
                 <button
                   onClick={() => setShowUploadModal(true)}
-                  className="p-2 rounded transition-colors"
-                  style={{ color: 'var(--icon)', background: 'transparent' }}
+                  className="icon-btn"
                   title="Upload Books"
                 >
                   <Upload className="w-5 h-5" />
                 </button>
                 <button
+                  onClick={() => setShowLinkBookModal(true)}
+                  className="icon-btn"
+                  title="Link a Book to Category"
+                >
+                  <Link2 className="w-5 h-5" />
+                </button>
+                <button
                   onClick={handleShowBooks}
-                  className="p-2 rounded transition-colors"
-                  style={{ color: 'var(--icon)', background: 'transparent' }}
+                  className="icon-btn"
                   title="Show All Books"
                 >
                   <ListIcon className="w-5 h-5" />
                 </button>
-                  <button
-                    onClick={() => setShowUserModal(true)}
-                    className="p-2 rounded transition-colors"
-                    style={{ color: 'var(--icon)', background: 'transparent' }}
-                    title="Manage Users"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-7a4 4 0 11-8 0 4 4 0 018 0zm6 4a4 4 0 10-8 0 4 4 0 008 0z" /></svg>
-                  </button>
+                <button
+                  onClick={() => setShowUserModal(true)}
+                  className="icon-btn"
+                  title="Manage Users"
+                >
+                  <Users className="w-5 h-5" />
+                </button>
+                    <style>{`
+                      .icon-btn {
+                        padding: 0.5rem;
+                        border-radius: 0.75rem;
+                        background: rgba(255,255,255,0.08);
+                        color: var(--icon, #b97b2c);
+                        transition: background 0.15s, color 0.15s;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                      }
+                      .icon-btn:hover, .icon-btn:focus {
+                        background: #fde68a;
+                        color: #a16207;
+                      }
+                      .user-badge {
+                        background: rgba(255,255,255,0.08);
+                        border-radius: 0.75rem;
+                        padding: 0.5rem 1.25rem;
+                        margin-right: 0.25rem;
+                        font-weight: 600;
+                        font-size: 1.08rem;
+                        transition: background 0.15s, color 0.15s;
+                        display: inline-block;
+                      }
+                      .user-badge:hover, .user-badge:focus {
+                        background: #fde68a;
+                        color: #783f04 !important;
+                      }
+                    `}</style>
               </>
             )}
             {/* Profile icon removed, handled in SideNav */}
@@ -139,6 +177,7 @@ const Header: React.FC<HeaderProps> = ({ user, authUser, onLogout, onViewChange,
         </div>
       )}
       <UserManagementModal open={showUserModal} onClose={() => setShowUserModal(false)} />
+      <LinkBookModal open={showLinkBookModal} onClose={() => setShowLinkBookModal(false)} />
     </>
   );
 };

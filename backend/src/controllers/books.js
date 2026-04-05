@@ -825,6 +825,18 @@ export const preloadCache = catchAsync(async (req, res, next) => {
   });
 });
 
+// ...existing code...
+
+// Get all books (id, title, author only) for dropdowns
+export const getBookList = catchAsync(async (req, res, next) => {
+  const books = await Book.find({ isActive: true }).select('_id title author').sort({ title: 1 });
+  console.log('[getBookList] Book count:', books.length);
+  if (books.length > 0) {
+    console.log('[getBookList] First book:', books[0]);
+  }
+  res.json({ success: true, books });
+});
+
 // Search within a specific book
 export const searchInBook = catchAsync(async (req, res, next) => {
   console.log('🔍 Search endpoint called for book:', req.params.id, 'query:', req.query.q);
