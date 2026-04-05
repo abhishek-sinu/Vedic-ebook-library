@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
+import { BACKEND_API_URL } from '../lib/config';
 
 interface Book {
   _id: string;
@@ -37,14 +38,13 @@ const LinkBookModal: React.FC<LinkBookModalProps> = ({ open, onClose }) => {
     if (!open) return;
     setLoading(true);
     setError('');
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
     // Fetch books
-    fetch(`${API_BASE_URL}/api/books/list`)
+    fetch(`${BACKEND_API_URL}/api/books/list`)
       .then(res => res.json())
       .then(data => setBooks(data.books || []))
       .catch(() => setError('Failed to load books'));
     // Fetch categories tree
-    fetch(`${API_BASE_URL}/api/categories/tree`)
+    fetch(`${BACKEND_API_URL}/api/categories/tree`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(() => setError('Failed to load categories'))
