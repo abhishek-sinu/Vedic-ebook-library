@@ -933,7 +933,13 @@ export const searchInBook = catchAsync(async (req, res, next) => {
         sentences.forEach((sentence, sentenceIdx) => {
           const normalizedSentence = normalizeSearchText(sentence);
           let searchIndex = 0;
+          let matchCount = 0;
+          const MAX_MATCHES_PER_SENTENCE = 1000;
           while (true) {
+            if (matchCount++ > MAX_MATCHES_PER_SENTENCE) {
+              console.warn('⚠️ Too many matches in one sentence, breaking to avoid infinite loop.');
+              break;
+            }
             const foundIndex = normalizedSentence.indexOf(normalizedSearchQuery, searchIndex);
             if (foundIndex === -1) break;
             // Context is just the sentence

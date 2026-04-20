@@ -3,47 +3,63 @@ import Grid from 'gridfs-stream';
 
 let gfs, gridfsBucket;
 
+
 export const connectDatabase = async () => {
-  try {
-    // Connect to MongoDB
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      // useNewUrlParser and useUnifiedTopology are deprecated and not needed in Mongoose 6+
-    });
+  const maxRetries = 5;
+  const retryDelay = 3000; // ms
+  let attempt = 0;
 
-    console.log(`📦 MongoDB Connected: ${conn.connection.host}`);
-    
-    // Initialize GridFS
-    const db = conn.connection.db;
-    
-    // GridFS Stream (for compatibility)
-    gfs = Grid(db, mongoose.mongo);
-    gfs.collection('books');
-    
-    // GridFS Bucket (modern approach)
-    gridfsBucket = new mongoose.mongo.GridFSBucket(db, {
-      bucketName: 'books'
-    });
-
-    console.log('📚 GridFS initialized for book storage');
-    
-    return conn;
-  } catch (error) {
-    console.error('❌ Database connection error:', error.message);
+  if (!process.env.MONGODB_URI) {
+    console.error('❌ MONGODB_URI environment variable is missing.');
     process.exit(1);
+  }
+
+  while (attempt < maxRetries) {
+    try {
+      // Connect to MongoDB
+      const conn = await mongoose.connect(process.env.MONGODB_URI, {
+        // useNewUrlParser and useUnifiedTopology are deprecated and not needed in Mongoose 6+
+      });
+
+      console.log(`📦 MongoDB Connected: ${conn.connection.host}`);
+      // Initialize GridFS
+      const db = conn.connection.db;
+      // GridFS Stream (for compatibility)
+      gfs = Grid(db, mongoose.mongo);
+      gfs.collection('books');
+      // GridFS Bucket (modern approach)
+      gridfsBucket = new mongoose.mongo.GridFSBucket(db, {
+        bucketName: 'books'
+      });
+      console.log('📚 GridFS initialized for book storage');
+      return conn;
+    } catch (error) {
+      attempt++;
+      console.error(`❌ Database connection error (attempt ${attempt}/${maxRetries}):`, error.message);
+      if (attempt >= maxRetries) {
+        console.error('❌ Could not connect to MongoDB after multiple attempts. Exiting.');
+        process.exit(1);
+      }
+      await new Promise(res => setTimeout(res, retryDelay));
+    }
   }
 };
 
 // Export GridFS instances
+
 export const getGfs = () => {
   if (!gfs) {
-    throw new Error('GridFS not initialized. Call connectDatabase first.');
+    console.error('❌ GridFS not initialized. Call connectDatabase first.');
+    return null;
   }
   return gfs;
 };
 
+
 export const getGridfsBucket = () => {
   if (!gridfsBucket) {
-    throw new Error('GridFS Bucket not initialized. Call connectDatabase first.');
+    console.error('❌ GridFS Bucket not initialized. Call connectDatabase first.');
+    return null;
   }
   return gridfsBucket;
 };

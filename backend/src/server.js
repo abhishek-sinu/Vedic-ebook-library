@@ -191,7 +191,7 @@ const startServer = async () => {
       console.error('❌ Cache initialization error:', error.message);
     }
     
-    app.listen(PORT, () => {
+    serverInstance = app.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(`📚 Vedic eBook Library Backend (Optimized Cache)`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
@@ -201,24 +201,38 @@ const startServer = async () => {
       console.log(`⚡ Ready to serve requests!`);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error.message);
+    console.error('❌ Failed to start server:', error);
+    // Only exit if startup fails
     process.exit(1);
   }
 };
 
+let serverInstance = null;
+
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
-  console.log('❌ Unhandled Promise Rejection:', err.message);
-  // Close server & exit process
-  server.close(() => {
+  console.error('❌ Unhandled Promise Rejection:', err);
+  if (serverInstance && typeof serverInstance.close === 'function') {
+    serverInstance.close(() => {
+      console.log('🛑 Server closed after unhandled rejection. Exiting.');
+      process.exit(1);
+    });
+  } else {
     process.exit(1);
-  });
+  }
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-  console.log('❌ Uncaught Exception:', err.message);
-  process.exit(1);
+  console.error('❌ Uncaught Exception:', err);
+  if (serverInstance && typeof serverInstance.close === 'function') {
+    serverInstance.close(() => {
+      console.log('🛑 Server closed after uncaught exception. Exiting.');
+      process.exit(1);
+    });
+  } else {
+    process.exit(1);
+  }
 });
 
 // Graceful shutdown

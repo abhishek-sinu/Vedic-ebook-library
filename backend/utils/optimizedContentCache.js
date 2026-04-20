@@ -2,7 +2,13 @@
 import { extractTextContent, extractHtmlContent } from '../src/utils/textExtractor.js';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const { extractHeadingsWithPositions } = require('./extractHeadingsWithPositions.cjs');
+let extractHeadingsWithPositions;
+try {
+  ({ extractHeadingsWithPositions } = require('./extractHeadingsWithPositions.cjs'));
+} catch (err) {
+  console.error('❌ Failed to load extractHeadingsWithPositions.cjs:', err.message);
+  extractHeadingsWithPositions = null;
+}
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -170,7 +176,13 @@ class OptimizedContentCache {
           }, 'html');
           const html = pageData.content;
           let match;
+          let matchCount = 0;
+          const MAX_MATCHES = 1000;
           while ((match = headingRegex.exec(html)) !== null) {
+            if (++matchCount > MAX_MATCHES) {
+              console.warn('⚠️ Too many heading matches in one page, breaking to avoid infinite loop.');
+              break;
+            }
             const headingText = match[2].replace(/<[^>]+>/g, '').trim();
             if (headingText && !headingMap.has(headingText)) {
               headingMap.set(headingText, page);
@@ -355,7 +367,13 @@ class OptimizedContentCache {
       const pageData = this.paginateHtmlContent(cached.content, page, wordsPerPage, cached.metadata, format);
       const html = pageData.content;
       let match;
+      let matchCount = 0;
+      const MAX_MATCHES = 1000;
       while ((match = headingRegex.exec(html)) !== null) {
+        if (++matchCount > MAX_MATCHES) {
+          console.warn('⚠️ Too many heading matches in one page, breaking to avoid infinite loop.');
+          break;
+        }
         const headingText = match[2].replace(/<[^>]+>/g, '').trim();
         if (headingText && !headingMap.has(headingText)) {
           headingMap.set(headingText, page);
