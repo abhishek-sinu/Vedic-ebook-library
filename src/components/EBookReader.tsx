@@ -1554,12 +1554,17 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
                         <div className="flex items-center gap-2 min-w-0">
                           {/* Mobile: toggle category panel */}
                           <button
-                            className="md:hidden p-1.5 rounded-lg flex-shrink-0"
+                            className="md:hidden flex items-center gap-1 px-2 py-1 rounded-lg flex-shrink-0 text-xs font-semibold"
                             onClick={toggleCategoryPanel}
-                            title="Browse books"
-                            style={{ color: 'var(--icon)', background: 'transparent', border: '1px solid var(--border)' }}
+                            title="Browse Library"
+                            style={{
+                              color: isCategoryPanelVisible ? '#fef3c7' : 'var(--text)',
+                              background: isCategoryPanelVisible ? '#b45309' : 'var(--card)',
+                              border: '1px solid var(--border)',
+                            }}
                           >
-                            <BookOpen className="w-4 h-4" />
+                            <BookOpen className="w-3.5 h-3.5" />
+                            Library
                           </button>
                           <BookOpen className="w-4 h-4 hidden md:block flex-shrink-0" style={{ color: 'var(--icon)' }} />
                           <span className="font-bold text-sm sm:text-base truncate" style={{ color: 'var(--book-content-text-light)' }}>{title}</span>
@@ -1648,14 +1653,46 @@ const EBookReader: React.FC<EBookReaderProps> = ({ bookId, title, user, onLogout
 
                     {/* Book Content */}
                     <div ref={contentRef} className="flex-1 overflow-y-auto p-3 sm:p-6 ebook-reader-book-content" style={{ background: 'var(--book-content-bg)', color: 'var(--book-content-text)' }}>
-                      <div 
+                      <div
                         className="prose max-w-none leading-relaxed"
                         style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight, color: 'var(--book-content-text)' }}
-                        dangerouslySetInnerHTML={{ 
+                        dangerouslySetInnerHTML={{
                           __html: highlightedContent
                         }}
                       />
+                      {/* Bottom padding so FAB doesn't obscure last line on mobile */}
+                      {isMobile && <div style={{ height: '5rem' }} />}
                     </div>
+
+                    {/* Mobile FAB — Browse Library */}
+                    {isMobile && !isCategoryPanelVisible && (
+                      <button
+                        onClick={() => setIsCategoryPanelVisible(true)}
+                        style={{
+                          position: 'fixed',
+                          bottom: '1.25rem',
+                          right: '1.25rem',
+                          zIndex: 35,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.45rem',
+                          padding: '0.65rem 1.1rem',
+                          borderRadius: '999px',
+                          background: 'linear-gradient(135deg, #b45309, #d97706)',
+                          color: '#fef3c7',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          border: 'none',
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 16px rgba(180,83,9,0.45)',
+                          fontFamily: 'inherit',
+                        }}
+                        title="Browse Library"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        Browse Library
+                      </button>
+                    )}
 
                   </div>
                 )}
