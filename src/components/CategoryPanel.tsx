@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Plus, Book as BookIcon, BookOpen, FileText, ChevronRight, ChevronDown, RefreshCw } from 'lucide-react';
+import { Search, Plus, Book as BookIcon, BookOpen, FileText, ChevronRight, ChevronDown, RefreshCw, X } from 'lucide-react';
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import { Book } from '../lib/bookStorage';
 import { useState, useMemo, useEffect } from 'react';
@@ -50,6 +50,9 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   const [loading, setLoading] = useState(true);
   const [userPrivileges, setUserPrivileges] = useState<string[] | null>(null);
   const [manualRefreshKey, setManualRefreshKey] = useState(0);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [panelWidth, setPanelWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
 
   // Fetch categories and user privileges on client only
   useEffect(() => {
@@ -62,7 +65,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
       })
       .catch(() => setLoading(false));
 
-    // Get user privilege from localStorage/sessionStorage
+    // Get user privilege and role from localStorage/sessionStorage
     let privileges: string[] = ['normal'];
     try {
       const userStr = localStorage.getItem('vedic_user') || sessionStorage.getItem('vedic_user');
@@ -75,10 +78,34 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
             privileges = [userObj.privilegeForBooks];
           }
         }
+        if (userObj.role) {
+          setUserRole(userObj.role);
+        }
       }
     } catch {}
     setUserPrivileges(privileges);
   }, [refreshKey, manualRefreshKey]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const nextWidth = Math.min(620, Math.max(260, e.clientX));
+      setPanelWidth(nextWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
   // (Removed duplicate userPrivileges and userPrivilege declarations. Only use state variable.)
 
   // Filter categories/books by user privilege (only after privileges loaded)
@@ -102,6 +129,27 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
 
   // Track expanded state for each book
   const [expandedBooks, setExpandedBooks] = useState<{ [bookId: string]: boolean }>({});
+  const [unlinkingBookId, setUnlinkingBookId] = useState<string | null>(null);
+
+  const handleUnlinkBook = async (categoryId: string, bookId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to unlink this book from the category?')) return;
+    setUnlinkingBookId(bookId);
+    try {
+      const token = localStorage.getItem('vedic_auth_token') || sessionStorage.getItem('vedic_auth_token');
+      const res = await axios.delete(`${BACKEND_API_URL}/categories/${categoryId}/unlink-book`, {
+        data: { bookId },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.data?.success) {
+        setManualRefreshKey(k => k + 1);
+      }
+    } catch (err) {
+      alert('Failed to unlink book. Please try again.');
+    } finally {
+      setUnlinkingBookId(null);
+    }
+  };
 
   const handleBookToggle = (book: Book) => {
     setExpandedBooks(prev => ({
@@ -118,15 +166,23 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   const renderTree = (nodes: any[], parentId = '') => {
     return nodes.map((node, idx) => {
       const itemId = node._id ? String(node._id) : `${parentId}${node.name || node.title || 'node'}-${idx}`;
+      const categoryId = node._id ? String(node._id) : '';
       return (
         <TreeItem key={itemId} itemId={itemId} label={node.name || node.title}>
           {/* Render children categories */}
           {node.children && node.children.length > 0 && renderTree(node.children, itemId)}
           {/* Render books at leaf node */}
-          {node.books && node.books.length > 0 && node.books.map((book: any, bidx: number) => {
-            const bookIdStr = book._id ? String(book._id) : `${itemId}-book-${bidx}`;
+          {node.books && node.books.length > 0 && node.books
+            .filter((book: any, idx: number, arr: any[]) =>
+              arr.findIndex((b: any) => String(b._id) === String(book._id)) === idx
+            )
+            .map((book: any, bidx: number) => {
+            // Tree item IDs must be globally unique in the tree.
+            // Scope book IDs by category to support same book linked in multiple categories.
+            const bookIdStr = book._id ? `${itemId}-book-${String(book._id)}` : `${itemId}-book-${bidx}`;
             const isSelected = book._id === bookId;
             const isExpanded = !!expandedBooks[book._id];
+            const isUnlinking = unlinkingBookId === String(book._id);
             return (
               <TreeItem
                 key={bookIdStr}
@@ -134,15 +190,53 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                 label={
                   <div>
                     <span
-                      onClick={() => handleBookToggle(book)}
-                      style={{ cursor: 'pointer', fontWeight: isSelected ? 'bold' : 'normal', color: isSelected ? undefined : undefined, display: 'flex', alignItems: 'center', gap: 4 }}
+                      style={{ cursor: 'pointer', fontWeight: isSelected ? 'bold' : 'normal', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'space-between', width: '100%', minWidth: 0 }}
                     >
-                      <span style={{ color: 'white', fontSize: '1em', display: 'inline-block', width: 18, textAlign: 'center' }}>
-                        {rest.bookChapters && isSelected ? (
-                          isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />
-                        ) : ''}
+                      <span
+                        onClick={() => handleBookToggle(book)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}
+                      >
+                        <span style={{ color: 'white', fontSize: '1em', display: 'inline-block', width: 18, textAlign: 'center' }}>
+                          {rest.bookChapters && isSelected ? (
+                            isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />
+                          ) : ''}
+                        </span>
+                        <span
+                          title={book.title}
+                          style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            display: 'block',
+                            flex: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          {book.title}
+                        </span>
                       </span>
-                      {book.title}
+                      {/* Unlink button — admin only */}
+                      {userRole === 'admin' && categoryId && (
+                        <button
+                          title="Unlink book from category"
+                          disabled={isUnlinking}
+                          onClick={(e) => handleUnlinkBook(categoryId, String(book._id), e)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '0 2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            opacity: isUnlinking ? 0.4 : 0.6,
+                            flexShrink: 0,
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                          onMouseLeave={e => (e.currentTarget.style.opacity = isUnlinking ? '0.4' : '0.6')}
+                        >
+                          <X size={13} color="#ef4444" />
+                        </button>
+                      )}
                     </span>
                     {/* Show chapters if this book is selected, expanded, and bookChapters exist */}
                     {isSelected && isExpanded && rest.bookChapters && rest.bookChapters.length > 0 && (
@@ -448,8 +542,9 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   // Dynamically set text color for light theme
   return (
     <div
-      className="w-80 flex flex-col flex-shrink-0 category-panel-root"
+      className="flex flex-col flex-shrink-0 category-panel-root relative"
       style={{
+        width: panelWidth,
         background: 'var(--card)'
       }}
     >
@@ -593,6 +688,22 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
           Unfold all
         </button>
       </div>
+
+      {/* Drag handle to resize category panel width */}
+      <div
+        onMouseDown={() => setIsResizing(true)}
+        title="Drag to resize"
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: -3,
+          width: 6,
+          height: '100%',
+          cursor: 'col-resize',
+          zIndex: 20,
+          background: isResizing ? 'rgba(251, 191, 36, 0.35)' : 'transparent',
+        }}
+      />
     </div>
   );
 };
