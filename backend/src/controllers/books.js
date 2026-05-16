@@ -8,6 +8,7 @@ import ReadingProgress from '../models/ReadingProgress.js';
 import { AppError, catchAsync, validationError } from '../middleware/errorHandler.js';
 import { extractTextContent, getPaginatedContent, extractHtmlContent } from '../utils/textExtractor.js';
 import optimizedCache from '../../utils/optimizedContentCache.js';
+import { getBooksUploadDir, getBooksDeletedDir, getBookFilePath } from '../../utils/storagePaths.js';
 
 const normalizeSearchText = (input = '') => {
   return input
@@ -48,9 +49,9 @@ export const uploadBook = catchAsync(async (req, res, next) => {
   } = req.body;
 
   try {
-    // Save file to uploads/books directory
+    // Save file to configured books upload directory
     const filename = `${Date.now()}_${req.file.originalname}`;
-    const uploadDir = path.join(process.cwd(), 'uploads', 'books');
+    const uploadDir = getBooksUploadDir();
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -233,8 +234,8 @@ export const getBookContent = catchAsync(async (req, res, next) => {
   }
 
   try {
-    // Construct file path
-    const filePath = path.join(process.cwd(), 'uploads', 'books', book.fileInfo.filename);
+    // Construct file path based on current storage provider
+    const filePath = getBookFilePath(book.fileInfo.filename);
     
     // Check if file exists
     if (!fs.existsSync(filePath)) {
@@ -433,9 +434,9 @@ export const deleteBook = catchAsync(async (req, res, next) => {
   // Remove related reading progress documents
   await ReadingProgress.deleteMany({ bookId: book._id });
 
-  // Permanently delete file from uploads/books (and deleted/books if it exists there)
-  const uploadsDir = path.join(process.cwd(), 'uploads', 'books');
-  const deletedDir = path.join(process.cwd(), 'deleted', 'books');
+  // Permanently delete file from configured storage paths
+  const uploadsDir = getBooksUploadDir();
+  const deletedDir = getBooksDeletedDir();
   const srcFile = path.join(uploadsDir, book.fileInfo.filename);
   const deletedFile = path.join(deletedDir, book.fileInfo.filename);
 
