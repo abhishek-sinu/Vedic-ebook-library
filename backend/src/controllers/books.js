@@ -3,12 +3,10 @@ import mongoose from 'mongoose';
 import path from 'path';
 import fs from 'fs';
 import Book from '../models/Book.js';
-import Category from '../models/Category.js';
 import ReadingProgress from '../models/ReadingProgress.js';
 import { AppError, catchAsync, validationError } from '../middleware/errorHandler.js';
 import { extractTextContent, getPaginatedContent, extractHtmlContent } from '../utils/textExtractor.js';
 import optimizedCache from '../../utils/optimizedContentCache.js';
-import { getBooksUploadDir, getBooksDeletedDir, getBookFilePath } from '../../utils/storagePaths.js';
 
 const normalizeSearchText = (input = '') => {
   return input
@@ -49,9 +47,9 @@ export const uploadBook = catchAsync(async (req, res, next) => {
   } = req.body;
 
   try {
-    // Save file to configured books upload directory
+    // Save file to uploads/books directory
     const filename = `${Date.now()}_${req.file.originalname}`;
-    const uploadDir = getBooksUploadDir();
+    const uploadDir = path.join(process.cwd(), 'uploads', 'books');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -234,8 +232,8 @@ export const getBookContent = catchAsync(async (req, res, next) => {
   }
 
   try {
-    // Construct file path based on current storage provider
-    const filePath = getBookFilePath(book.fileInfo.filename);
+    // Construct file path
+    const filePath = path.join(process.cwd(), 'uploads', 'books', book.fileInfo.filename);
     
     // Check if file exists
     if (!fs.existsSync(filePath)) {
@@ -413,63 +411,53 @@ export const updateBook = catchAsync(async (req, res, next) => {
 
 // Delete book (admin only)
 export const deleteBook = catchAsync(async (req, res, next) => {
-  console.log(`[DELETE] Book request received for ID: ${req.params.id}`);
+    console.log(`[DELETE] Book request received for ID: ${req.params.id}`);
   const book = await Book.findById(req.params.id);
-  if (book) {
-    console.log(`[DELETE] Book found: ${book.title} (${book._id})`);
-  } else {
-    console.log(`[DELETE] Book not found for ID: ${req.params.id}`);
-  }
-
+    if (book) {
+      console.log(`[DELETE] Book found: ${book.title} (${book._id})`);
+    } else {
+      console.log(`[DELETE] Book not found for ID: ${req.params.id}`);
+    }
+  
   if (!book) {
     return next(new AppError('Book not found', 404));
+    console.log(`[DELETE] Marking book as inactive and moving file...`);
   }
 
-  // Remove book from all category tree nodes
-  await Category.updateMany(
-    { books: book._id },
-    { $pull: { books: book._id } }
-  );
+  // Soft delete - mark as inactive
+  book.isActive = false;
+  book.uploadInfo.lastModified = new Date();
+  book.uploadInfo.modifiedBy = req.user.id;
 
-  // Remove related reading progress documents
-  await ReadingProgress.deleteMany({ bookId: book._id });
-
-  // Permanently delete file from configured storage paths
-  const uploadsDir = getBooksUploadDir();
-  const deletedDir = getBooksDeletedDir();
+  // Move file from uploads/books to deleted/books
+  const uploadsDir = path.join(process.cwd(), 'uploads', 'books');
+  const deletedDir = path.join(process.cwd(), 'deleted', 'books');
+  if (!fs.existsSync(deletedDir)) {
+    fs.mkdirSync(deletedDir, { recursive: true });
+  }
   const srcFile = path.join(uploadsDir, book.fileInfo.filename);
-  const deletedFile = path.join(deletedDir, book.fileInfo.filename);
-
-  console.log(`[DELETE] Removing files for: ${book.fileInfo.filename}`);
+  const destFile = path.join(deletedDir, book.fileInfo.filename);
+  console.log(`[DELETE] Moving file from ${srcFile} to ${destFile}`);
   if (fs.existsSync(srcFile)) {
+        console.log(`[DELETE] File moved successfully.`);
     try {
-      fs.unlinkSync(srcFile);
-      console.log(`[DELETE] Removed upload file: ${srcFile}`);
+      fs.renameSync(srcFile, destFile);
     } catch (err) {
-      console.error('Error removing upload file:', err);
+      console.error('Error moving deleted book file:', err);
+      console.log(`[DELETE] Source file not found: ${srcFile}`);
     }
   }
 
-  if (fs.existsSync(deletedFile)) {
-    try {
-      fs.unlinkSync(deletedFile);
-      console.log(`[DELETE] Removed deleted file: ${deletedFile}`);
-    } catch (err) {
-      console.error('Error removing deleted file:', err);
-    }
-  }
-
-  // Permanently delete the book document
-  await Book.deleteOne({ _id: book._id });
+  await book.save();
 
   // Clear cache for deleted book
   await optimizedCache.clearBookCache(req.params.id);
-  console.log(`Cache cleared for deleted book: ${book.title}`);
-  console.log(`[DELETE] Book permanently deleted for ID: ${req.params.id}`);
+  console.log(`🗑️ Cache cleared for deleted book: ${book.title}`);
+    console.log(`[DELETE] Book deletion process completed for ID: ${req.params.id}`);
 
   res.json({
     success: true,
-    message: 'Book permanently deleted and unlinked from categories'
+    message: 'Book deleted successfully'
   });
 });
 

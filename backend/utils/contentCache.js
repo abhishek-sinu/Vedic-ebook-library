@@ -2,7 +2,6 @@ import { extractTextContent, extractHtmlContent } from '../src/utils/textExtract
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { getBookFilePath } from './storagePaths.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -66,7 +65,7 @@ class ContentCache {
       console.log(`Extracting and caching content for book: ${book.title}`);
       const startTime = Date.now();
       
-      const filePath = getBookFilePath(book.fileInfo.filename);
+      const filePath = path.join(__dirname, '../uploads/books', book.fileInfo.filename);
       
       // Extract both text and HTML content
       const textContent = await extractTextContent(filePath, book.fileInfo.fileExtension);

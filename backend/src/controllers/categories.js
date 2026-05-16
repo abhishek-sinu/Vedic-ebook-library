@@ -65,8 +65,8 @@ const linkBookToCategory = async (req, res) => {
     if ((category.children && category.children.length > 0) || category.type !== 'book-list') {
       return res.status(400).json({ error: 'Can only link books to leaf (book-list) categories' });
     }
-    // Prevent duplicate linking (ObjectId/string-safe comparison)
-    if (category.books.some((id) => id.toString() === bookId.toString())) {
+    // Prevent duplicate linking
+    if (category.books.includes(bookId)) {
       return res.status(409).json({ error: 'Book already linked to this category' });
     }
     category.books.push(bookId);
@@ -77,35 +77,8 @@ const linkBookToCategory = async (req, res) => {
   }
 };
 
-// Unlink a book from a category (leaf node)
-const unlinkBookFromCategory = async (req, res) => {
-  try {
-    const { id } = req.params; // category id
-    const { bookId } = req.body;
-    if (!bookId) {
-      return res.status(400).json({ error: 'bookId is required' });
-    }
-    const category = await Category.findById(id);
-    if (!category) {
-      return res.status(404).json({ error: 'Category not found' });
-    }
-    const initialLength = category.books.length;
-    category.books = category.books.filter(
-      (id) => id.toString() !== bookId.toString()
-    );
-    if (category.books.length === initialLength) {
-      return res.status(404).json({ error: 'Book not found in this category' });
-    }
-    await category.save();
-    res.json({ success: true, message: 'Book unlinked from category', category });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to unlink book', details: err.message });
-  }
-};
-
 export default {
   getCategoryTree,
   getCategoryBooks,
-  linkBookToCategory,
-  unlinkBookFromCategory
+  linkBookToCategory
 };

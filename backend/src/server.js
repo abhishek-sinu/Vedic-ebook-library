@@ -39,8 +39,14 @@ app.use(helmet({
   },
 }));
 
-// CORS configuration (allow all origins)
-app.use(cors());
+// CORS configuration
+
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || false,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+}));
+
 
 // Rate limiting
 const limiter = rateLimit({

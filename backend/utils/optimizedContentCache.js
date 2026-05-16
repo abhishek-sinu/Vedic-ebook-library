@@ -15,7 +15,6 @@ import { dirname } from 'path';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import crypto from 'crypto';
-import { getBookFilePath } from './storagePaths.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -145,7 +144,7 @@ class OptimizedContentCache {
   async cacheBookContent(book, priority = 'normal') {
     console.log('Start First loading of cacheBookContent.');
     const bookId = book._id.toString();
-    const filePath = getBookFilePath(book.fileInfo.filename);
+    const filePath = path.join(__dirname, '../uploads/books', book.fileInfo.filename);
     
     try {
       console.log(`📖 Extracting content for book: ${book.title} (Priority: ${priority})`);
