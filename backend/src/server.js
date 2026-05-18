@@ -11,6 +11,7 @@ import { connectDatabase } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { specs, swaggerUi } from './config/swagger.js';
 import optimizedCache from '../utils/optimizedContentCache.js';
+import { checkBookStorageHealth } from '../utils/bookStorage.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -39,8 +40,24 @@ app.use(helmet({
   },
 }));
 
-// CORS configuration (allow all origins)
-app.use(cors());
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://sastranidhi.org',
+  ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN] : [])
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow server-to-server requests and tools like Postman (no Origin header)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -102,6 +119,27 @@ app.get('/api/health', (req, res) => {
     message: 'Vedic eBook Library Backend is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV
+  });
+});
+
+// Storage health check endpoint
+app.get('/api/health/storage', async (req, res) => {
+  const storage = await checkBookStorageHealth();
+
+  if (!storage.ok) {
+    return res.status(503).json({
+      status: 'ERROR',
+      message: 'Book storage provider is not healthy',
+      timestamp: new Date().toISOString(),
+      storage,
+    });
+  }
+
+  return res.json({
+    status: 'OK',
+    message: 'Book storage provider is healthy',
+    timestamp: new Date().toISOString(),
+    storage,
   });
 });
 
