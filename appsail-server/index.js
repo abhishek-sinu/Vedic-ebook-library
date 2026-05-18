@@ -1,15 +1,30 @@
-const express = require('express');
-const path = require('path');
-const app = express();
+const { createServer } = require('http');
+const { parse } = require('url');
+const next = require('next');
 
-// Serve React build files
-app.use(express.static(path.join(__dirname, 'build')));
+const dev = process.env.NODE_ENV !== 'production';
+const hostname = '0.0.0.0';
+const port = parseInt(process.env.X_ZOHO_CATALYST_LISTEN_PORT || '9000', 10);
 
-// Fallback to index.html for React Router
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+const app = next({ dev, hostname, port });
+const handle = app.getRequestHandler();
+
+app.prepare().then(() => {
+  createServer(async (req, res) => {
+    try {
+      const parsedUrl = parse(req.url, true);
+      await handle(req, res, parsedUrl);
+    } catch (err) {
+      console.error('Error handling', req.url, err);
+      res.statusCode = 500;
+      res.end('Internal server error');
+    }
+  })
+    .once('error', (err) => {
+      console.error(err);
+      process.exit(1);
+    })
+    .listen(port, hostname, () => {
+      console.log(`> Vedic Library ready on http://${hostname}:${port}`);
+    });
 });
-
-// AppSails requires this env variable for the port
-const PORT = process.env.X_ZOHO_CATALYST_LISTEN_PORT || 9000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

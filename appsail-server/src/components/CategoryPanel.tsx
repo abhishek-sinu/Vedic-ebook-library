@@ -78,7 +78,6 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
     } catch {}
     setUserPrivileges(privileges);
   }, [refreshKey, manualRefreshKey]);
-  // (Removed duplicate userPrivileges and userPrivilege declarations. Only use state variable.)
 
   // Filter categories/books by user privilege (only after privileges loaded)
   const filteredCategories = (userPrivileges ? categories.map(category => ({
@@ -204,10 +203,10 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   // Organize books by author first letter
   const authorGroups = useMemo(() => {
     const groups: {[key: string]: {author: string; books: Book[]}[]} = {};
-    
+
     // Get all books from all filtered categories
     const allBooks = filteredCategories.flatMap(category => category.books);
-    
+
     // Group books by author
     const authorMap = new Map<string, Book[]>();
     allBooks.forEach(book => {
@@ -218,23 +217,23 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
         authorMap.get(book.author)!.push(book);
       }
     });
-    
+
     // Function to get the first meaningful letter after removing honorifics
     const getFirstMeaningfulLetter = (authorName: string): string => {
       // Remove honorific titles
       const honorifics = ['Srila', 'His Holiness', 'His Divine Grace', 'Sri', 'Srimad', 'A.C.', 'H.H.', 'H.D.G.'];
       let cleanedName = authorName.trim();
-      
+
       // Remove honorifics from the beginning
       for (const honorific of honorifics) {
         if (cleanedName.startsWith(honorific + ' ')) {
           cleanedName = cleanedName.substring(honorific.length + 1).trim();
         }
       }
-      
+
       return cleanedName.charAt(0).toUpperCase();
     };
-    
+
     // Group authors by first meaningful letter
     authorMap.forEach((books, author) => {
       const firstLetter = getFirstMeaningfulLetter(author);
@@ -243,23 +242,23 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
       }
       groups[firstLetter].push({ author, books });
     });
-    
+
     return groups;
   }, [filteredCategories]);
 
   // Organize books by title first letter
   const titleGroups = useMemo(() => {
     const groups: {[key: string]: Book[]} = {};
-    
+
     // Get all books from all filtered categories
     const allBooks = filteredCategories.flatMap(category => category.books);
-    
+
     // Function to get the first alphabetical letter from title, ignoring numbers and honorifics
     const getFirstAlphabeticalLetter = (title: string): string => {
       // Remove common prefixes and honorifics from titles
       const prefixes = ['Śrī', 'Sri', 'Shri', 'Śrīmad', 'Srimad', 'The', 'A ', 'An '];
       let cleanedTitle = title.trim();
-      
+
       // Remove prefixes from the beginning
       for (const prefix of prefixes) {
         if (cleanedTitle.startsWith(prefix + ' ') || cleanedTitle.startsWith(prefix)) {
@@ -268,7 +267,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
           break; // Only remove the first matching prefix
         }
       }
-      
+
       // Find the first alphabetical character (ignore numbers and special characters)
       for (let i = 0; i < cleanedTitle.length; i++) {
         const char = cleanedTitle.charAt(i).toUpperCase();
@@ -276,11 +275,11 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
           return char;
         }
       }
-      
+
       // If no alphabetical character found, return 'A' as default
       return 'A';
     };
-    
+
     // Group books by first alphabetical letter of title
     allBooks.forEach(book => {
       const firstLetter = getFirstAlphabeticalLetter(book.title);
@@ -289,7 +288,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
       }
       groups[firstLetter].push(book);
     });
-    
+
     return groups;
   }, [filteredCategories]);
 
@@ -610,9 +609,9 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
             )}
           </>
         )}
-        
+
         {activeTab === 'authors' && renderAuthorsTab()}
-        
+
         {activeTab === 'title' && renderTitlesTab()}
       </div>
 
