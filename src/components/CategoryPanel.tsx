@@ -26,6 +26,7 @@ interface CategoryPanelProps {
   onUnfoldAll?: () => void;
   onChapterSelect?: (pageNumber: number) => void;
   refreshKey?: number;
+  onClose?: () => void;
 }
 
 const API_URL = `${BACKEND_API_URL}/categories/tree`;
@@ -40,19 +41,14 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   onUnfoldAll,
   loadingBooks = false,
   refreshKey,
+  onClose,
   ...rest
 }) => {
-  // Provide default no-op functions if not passed
-  const handleFoldAll = onFoldAll || (() => {});
-  const handleUnfoldAll = onUnfoldAll || (() => {});
   // Local state for categories and user privileges
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userPrivileges, setUserPrivileges] = useState<string[] | null>(null);
   const [manualRefreshKey, setManualRefreshKey] = useState(0);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [panelWidth, setPanelWidth] = useState(320);
-  const [isResizing, setIsResizing] = useState(false);
 
   // Fetch categories and user privileges on client only
   useEffect(() => {
@@ -65,7 +61,7 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
       })
       .catch(() => setLoading(false));
 
-    // Get user privilege and role from localStorage/sessionStorage
+    // Get user privilege from localStorage/sessionStorage
     let privileges: string[] = ['normal'];
     try {
       const userStr = localStorage.getItem('vedic_user') || sessionStorage.getItem('vedic_user');
@@ -78,34 +74,10 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
             privileges = [userObj.privilegeForBooks];
           }
         }
-        if (userObj.role) {
-          setUserRole(userObj.role);
-        }
       }
     } catch {}
     setUserPrivileges(privileges);
   }, [refreshKey, manualRefreshKey]);
-
-  useEffect(() => {
-    if (!isResizing) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const nextWidth = Math.min(620, Math.max(260, e.clientX));
-      setPanelWidth(nextWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizing]);
   // (Removed duplicate userPrivileges and userPrivilege declarations. Only use state variable.)
 
   // Filter categories/books by user privilege (only after privileges loaded)
@@ -116,40 +88,32 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   })) : []);
 
 
-  // Helper to get all IDs for default expansion
-  function getAllIds(node: any) {
-    let ids = [String(node._id)];
-    if (node.children && node.children.length > 0) {
-      node.children.forEach((child: any) => {
-        ids = ids.concat(getAllIds(child));
-      });
-    }
+  // Controlled expansion state for the MUI TreeView
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  // Collect all category/subcategory node IDs recursively, mirroring renderTree's itemId logic
+  function getAllCategoryIds(nodes: any[], seen = new Set<string>(), parentId = ''): string[] {
+    const ids: string[] = [];
+    nodes.forEach((node, idx) => {
+      const itemId = node._id
+        ? String(node._id)
+        : `${parentId}${node.name || node.title || 'node'}-${idx}`;
+      if (!seen.has(itemId)) {
+        seen.add(itemId);
+        ids.push(itemId);
+      }
+      if (node.children && node.children.length > 0) {
+        ids.push(...getAllCategoryIds(node.children, seen, itemId));
+      }
+    });
     return ids;
   }
 
+  const handleFoldAll = () => setExpandedItems([]);
+  const handleUnfoldAll = () => setExpandedItems(getAllCategoryIds(filteredCategories));
+
   // Track expanded state for each book
   const [expandedBooks, setExpandedBooks] = useState<{ [bookId: string]: boolean }>({});
-  const [unlinkingBookId, setUnlinkingBookId] = useState<string | null>(null);
-
-  const handleUnlinkBook = async (categoryId: string, bookId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm('Are you sure you want to unlink this book from the category?')) return;
-    setUnlinkingBookId(bookId);
-    try {
-      const token = localStorage.getItem('vedic_auth_token') || sessionStorage.getItem('vedic_auth_token');
-      const res = await axios.delete(`${BACKEND_API_URL}/categories/${categoryId}/unlink-book`, {
-        data: { bookId },
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.data?.success) {
-        setManualRefreshKey(k => k + 1);
-      }
-    } catch (err) {
-      alert('Failed to unlink book. Please try again.');
-    } finally {
-      setUnlinkingBookId(null);
-    }
-  };
 
   const handleBookToggle = (book: Book) => {
     setExpandedBooks(prev => ({
@@ -166,23 +130,15 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   const renderTree = (nodes: any[], parentId = '') => {
     return nodes.map((node, idx) => {
       const itemId = node._id ? String(node._id) : `${parentId}${node.name || node.title || 'node'}-${idx}`;
-      const categoryId = node._id ? String(node._id) : '';
       return (
         <TreeItem key={itemId} itemId={itemId} label={node.name || node.title}>
           {/* Render children categories */}
           {node.children && node.children.length > 0 && renderTree(node.children, itemId)}
           {/* Render books at leaf node */}
-          {node.books && node.books.length > 0 && node.books
-            .filter((book: any, idx: number, arr: any[]) =>
-              arr.findIndex((b: any) => String(b._id) === String(book._id)) === idx
-            )
-            .map((book: any, bidx: number) => {
-            // Tree item IDs must be globally unique in the tree.
-            // Scope book IDs by category to support same book linked in multiple categories.
+          {node.books && node.books.length > 0 && node.books.map((book: any, bidx: number) => {
             const bookIdStr = book._id ? `${itemId}-book-${String(book._id)}` : `${itemId}-book-${bidx}`;
             const isSelected = book._id === bookId;
             const isExpanded = !!expandedBooks[book._id];
-            const isUnlinking = unlinkingBookId === String(book._id);
             return (
               <TreeItem
                 key={bookIdStr}
@@ -190,53 +146,15 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
                 label={
                   <div>
                     <span
-                      style={{ cursor: 'pointer', fontWeight: isSelected ? 'bold' : 'normal', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'space-between', width: '100%', minWidth: 0 }}
+                      onClick={() => handleBookToggle(book)}
+                      style={{ cursor: 'pointer', fontWeight: isSelected ? 'bold' : 'normal', color: isSelected ? undefined : undefined, display: 'flex', alignItems: 'center', gap: 4 }}
                     >
-                      <span
-                        onClick={() => handleBookToggle(book)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}
-                      >
-                        <span style={{ color: 'white', fontSize: '1em', display: 'inline-block', width: 18, textAlign: 'center' }}>
-                          {rest.bookChapters && isSelected ? (
-                            isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />
-                          ) : ''}
-                        </span>
-                        <span
-                          title={book.title}
-                          style={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            display: 'block',
-                            flex: 1,
-                            minWidth: 0,
-                          }}
-                        >
-                          {book.title}
-                        </span>
+                      <span style={{ color: 'var(--text)', fontSize: '1em', display: 'inline-block', width: 18, textAlign: 'center' }}>
+                        {rest.bookChapters && isSelected ? (
+                          isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />
+                        ) : ''}
                       </span>
-                      {/* Unlink button — admin only */}
-                      {userRole === 'admin' && categoryId && (
-                        <button
-                          title="Unlink book from category"
-                          disabled={isUnlinking}
-                          onClick={(e) => handleUnlinkBook(categoryId, String(book._id), e)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '0 2px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            opacity: isUnlinking ? 0.4 : 0.6,
-                            flexShrink: 0,
-                          }}
-                          onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                          onMouseLeave={e => (e.currentTarget.style.opacity = isUnlinking ? '0.4' : '0.6')}
-                        >
-                          <X size={13} color="#ef4444" />
-                        </button>
-                      )}
+                      {book.title}
                     </span>
                     {/* Show chapters if this book is selected, expanded, and bookChapters exist */}
                     {isSelected && isExpanded && rest.bookChapters && rest.bookChapters.length > 0 && (
@@ -265,10 +183,10 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
     });
   };
   const [activeTab, setActiveTab] = useState<'categories' | 'authors' | 'title'>('categories');
+  const [searchQuery, setSearchQuery] = useState('');
   const [expandedLetters, setExpandedLetters] = useState<{[key: string]: boolean}>({});
   const [expandedAuthors, setExpandedAuthors] = useState<{[key: string]: boolean}>({});
   const [expandedTitleLetters, setExpandedTitleLetters] = useState<{[key: string]: boolean}>({});
-  // removed expandedBookChapters and expandedCategories
 
   useEffect(() => {
     if (!bookId) return;
@@ -375,6 +293,52 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
     return groups;
   }, [filteredCategories]);
 
+  // Filtered data per tab based on searchQuery
+  const filteredTree = useMemo(() => {
+    if (!searchQuery.trim()) return filteredCategories;
+    const q = searchQuery.toLowerCase();
+    function filterNodes(nodes: any[]): any[] {
+      return nodes.reduce((acc: any[], node) => {
+        const children = filterNodes(node.children || []);
+        const nameMatch = (node.name || '').toLowerCase().includes(q);
+        if (nameMatch || children.length > 0) {
+          acc.push({ ...node, children });
+        }
+        return acc;
+      }, []);
+    }
+    return filterNodes(filteredCategories);
+  }, [filteredCategories, searchQuery]);
+
+  const filteredAuthorGroups = useMemo(() => {
+    if (!searchQuery.trim()) return authorGroups;
+    const q = searchQuery.toLowerCase();
+    const result: typeof authorGroups = {};
+    Object.entries(authorGroups).forEach(([letter, authors]) => {
+      const matched = authors.filter(({ author }) => author.toLowerCase().includes(q));
+      if (matched.length > 0) result[letter] = matched;
+    });
+    return result;
+  }, [authorGroups, searchQuery]);
+
+  const filteredTitleGroups = useMemo(() => {
+    if (!searchQuery.trim()) return titleGroups;
+    const q = searchQuery.toLowerCase();
+    const result: typeof titleGroups = {};
+    Object.entries(titleGroups).forEach(([letter, books]) => {
+      const matched = books.filter(book => book.title.toLowerCase().includes(q));
+      if (matched.length > 0) result[letter] = matched;
+    });
+    return result;
+  }, [titleGroups, searchQuery]);
+
+  // Auto-expand categories tree when searching
+  useEffect(() => {
+    if (activeTab === 'categories' && searchQuery.trim()) {
+      setExpandedItems(getAllCategoryIds(filteredTree));
+    }
+  }, [searchQuery, activeTab, filteredTree]);
+
   const toggleTitleLetterExpanded = (letter: string) => {
     setExpandedTitleLetters(prev => ({
       ...prev,
@@ -400,80 +364,75 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
     if (loadingBooks) {
       return (
         <div className="p-4 text-center">
-          <div className="text-gray-400">Loading...</div>
+          <div className="" style={{ color: "var(--text-muted)" }}>Loading...</div>
         </div>
       );
     }
 
-    const sortedLetters = Object.keys(authorGroups).sort();
-    
+    const sortedLetters = Object.keys(filteredAuthorGroups).sort();
+    const isSearching = !!searchQuery.trim();
+
     return (
       <>
-        {sortedLetters.map((letter) => (
-          <div key={letter} className="border-b border-gray-700">
-            <button
-              onClick={() => toggleLetterExpanded(letter)}
-              className="w-full p-4 text-left hover:bg-gray-700 flex items-center justify-between group transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <Plus
-                  className={`w-4 h-4 transition-transform ${expandedLetters[letter] ? 'transform rotate-45' : ''}`}
-                  style={{
-                    color:
-                      typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
-                        ? 'var(--text) !important'
-                        : 'var(--color-vb-input-border) !important'
-                  }}
-                />
-                <span className="font-medium text-gray-200 text-lg">{letter}</span>
-              </div>
-            </button>
-            
-            {expandedLetters[letter] && (
-              <div className="bg-gray-750">
-                {authorGroups[letter].map(({ author, books }) => (
-                  <div key={author} className="border-b border-gray-600 last:border-b-0">
-                    <button
-                      onClick={() => toggleAuthorExpanded(author)}
-                      className="w-full p-3 pl-8 text-left hover:bg-gray-700 flex items-center justify-between group transition-colors"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Plus
-                          className={`w-3 h-3 transition-transform ${expandedAuthors[author] ? 'transform rotate-45' : ''}`}
-                          style={{
-                            color:
-                              typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
-                                ? 'var(--text) !important'
-                                : 'var(--color-vb-input-border) !important'
-                          }}
-                        />
-                        <span className="font-medium text-gray-300">{author}</span>
+        {sortedLetters.map((letter) => {
+          const isLetterOpen = isSearching || !!expandedLetters[letter];
+          return (
+            <div key={letter} className="border-b border-yellow-200">
+              <button
+                onClick={() => toggleLetterExpanded(letter)}
+                className="w-full p-4 text-left hover:bg-yellow-100 flex items-center justify-between group transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <Plus
+                    className={`w-4 h-4 transition-transform ${isLetterOpen ? 'transform rotate-45' : ''}`}
+                    style={{ color: 'var(--accent-deep)' }}
+                  />
+                  <span className="font-medium text-lg" style={{ color: "var(--text)" }}>{letter}</span>
+                </div>
+              </button>
+
+              {isLetterOpen && (
+                <div className="bg-yellow-50">
+                  {filteredAuthorGroups[letter].map(({ author, books }) => {
+                    const isAuthorOpen = isSearching || !!expandedAuthors[author];
+                    return (
+                      <div key={author} className="border-b border-yellow-200 last:border-b-0">
+                        <button
+                          onClick={() => toggleAuthorExpanded(author)}
+                          className="w-full p-3 pl-8 text-left hover:bg-yellow-100 flex items-center justify-between group transition-colors"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Plus
+                              className={`w-3 h-3 transition-transform ${isAuthorOpen ? 'transform rotate-45' : ''}`}
+                              style={{ color: 'var(--accent-deep)' }}
+                            />
+                            <span className="font-medium" style={{ color: "var(--text)" }}>{author}</span>
+                          </div>
+                        </button>
+
+                        {isAuthorOpen && (
+                          <div className="bg-yellow-50">
+                            {books.map((book) => (
+                              <button
+                                key={book._id}
+                                onClick={() => onBookSelection(book)}
+                                className={`w-full p-3 pl-16 text-left hover:bg-yellow-200 transition-colors ${
+                                  bookId === book._id ? 'bg-yellow-200 text-amber-900' : ''
+                                }`}
+                              >
+                                <div className="text-sm font-medium">{book.title}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </button>
-                    
-                    {expandedAuthors[author] && (
-                      <div className="bg-gray-800">
-                        {books.map((book) => (
-                          <button
-                            key={book._id}
-                            onClick={() => onBookSelection(book)}
-                            className={`w-full p-3 pl-16 text-left hover:bg-gray-600 transition-colors ${
-                              bookId === book._id
-                                ? 'bg-gray-600 text-yellow-400'
-                                : 'text-gray-300'
-                            }`}
-                          >
-                            <div className="text-sm font-medium">{book.title}</div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </>
     );
   };
@@ -482,59 +441,56 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
     if (loadingBooks) {
       return (
         <div className="p-4 text-center">
-          <div className="text-gray-400">Loading...</div>
+          <div className="" style={{ color: "var(--text-muted)" }}>Loading...</div>
         </div>
       );
     }
 
-    const sortedLetters = Object.keys(titleGroups).sort();
-    
+    const sortedLetters = Object.keys(filteredTitleGroups).sort();
+    const isSearching = !!searchQuery.trim();
+
     return (
       <>
-        {sortedLetters.map((letter) => (
-          <div key={letter} className="border-b border-gray-700">
-            <button
-              onClick={() => toggleTitleLetterExpanded(letter)}
-              className="w-full p-4 text-left hover:bg-gray-700 flex items-center justify-between group transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <Plus
-                  className={`w-4 h-4 transition-transform ${expandedTitleLetters[letter] ? 'transform rotate-45' : ''}`}
-                  style={{
-                    color:
-                      typeof window !== 'undefined' && document.body.getAttribute('data-theme') === 'dark'
-                        ? 'var(--text) !important'
-                        : 'var(--color-vb-input-border) !important'
-                  }}
-                />
-                <span className="font-medium text-gray-200 text-lg">{letter}</span>
-              </div>
-            </button>
-            
-            {expandedTitleLetters[letter] && (
-              <div className="bg-gray-750">
-                {titleGroups[letter]
-                  .sort((a, b) => a.title.localeCompare(b.title)) // Sort books alphabetically by title
-                  .map((book) => (
-                    <button
-                      key={book._id}
-                      onClick={() => onBookSelection(book)}
-                      className={`w-full p-3 pl-12 text-left hover:bg-gray-600 transition-colors ${
-                        bookId === book._id
-                          ? 'bg-gray-600 text-yellow-400'
-                          : 'text-gray-300'
-                      }`}
-                    >
-                      <div className="text-sm font-medium">{book.title}</div>
-                      {book.author && (
-                        <div className="text-xs text-gray-500 mt-1">{book.author}</div>
-                      )}
-                    </button>
-                  ))}
-              </div>
-            )}
-          </div>
-        ))}
+        {sortedLetters.map((letter) => {
+          const isOpen = isSearching || !!expandedTitleLetters[letter];
+          return (
+            <div key={letter} className="border-b border-yellow-200">
+              <button
+                onClick={() => toggleTitleLetterExpanded(letter)}
+                className="w-full p-4 text-left hover:bg-yellow-100 flex items-center justify-between group transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <Plus
+                    className={`w-4 h-4 transition-transform ${isOpen ? 'transform rotate-45' : ''}`}
+                    style={{ color: 'var(--accent-deep)' }}
+                  />
+                  <span className="font-medium text-lg" style={{ color: "var(--text)" }}>{letter}</span>
+                </div>
+              </button>
+
+              {isOpen && (
+                <div className="bg-yellow-50">
+                  {filteredTitleGroups[letter]
+                    .sort((a, b) => a.title.localeCompare(b.title))
+                    .map((book) => (
+                      <button
+                        key={book._id}
+                        onClick={() => onBookSelection(book)}
+                        className={`w-full p-3 pl-12 text-left hover:bg-yellow-200 transition-colors ${
+                          bookId === book._id ? 'bg-yellow-200 text-amber-900' : ''
+                        }`}
+                      >
+                        <div className="text-sm font-medium">{book.title}</div>
+                        {book.author && (
+                          <div className="text-xs mt-1">{book.author}</div>
+                        )}
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </>
     );
   };
@@ -542,113 +498,90 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
   // Dynamically set text color for light theme
   return (
     <div
-      className="flex flex-col flex-shrink-0 category-panel-root relative"
+      className="flex flex-col flex-shrink-0 category-panel-root"
       style={{
-        width: panelWidth,
-        background: 'var(--card)'
+        background: 'var(--card)',
+        borderRight: '1px solid var(--border)',
+        width: '18rem',
+        minWidth: 0,
       }}
     >
-      {/* Language Section Header */}
+      {/* Panel Header */}
       <div
-        className="p-4 category-panel-header"
+        className="px-4 py-3 category-panel-header flex items-center justify-between"
         style={{
-          background: 'var(--accent)'
+          background: 'linear-gradient(135deg, #b45309, #d97706)',
+          borderBottom: '1px solid rgba(0,0,0,0.08)',
         }}
       >
-        <h3 className="text-lg font-semibold category-panel-header-text">
+        <h3 className="text-sm font-bold" style={{ color: '#fef3c7', letterSpacing: '0.02em' }}>
           {languageConfig[selectedLanguage as keyof typeof languageConfig].label} ({languageConfig[selectedLanguage as keyof typeof languageConfig].count})
         </h3>
+        {onClose && (
+          <button
+            onClick={onClose}
+            style={{ color: 'rgba(254,243,199,0.8)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', borderRadius: '0.25rem' }}
+            title="Close panel"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       {/* Filter Tabs */}
       <div
-        className="flex border-b"
+        className="flex"
         style={{
-          background: 'var(--accent)',
-          borderColor: 'var(--color-vb-header-bottom, var(--border))',
+          background: 'linear-gradient(135deg, #b45309, #d97706)',
         }}
       >
-        <button
-          onClick={() => setActiveTab('categories')}
-          className="flex-1 p-3 text-sm font-medium"
-          style={
-            activeTab === 'categories'
-              ? {
-                  borderBottom: '2px solid var(--text)',
-                  color: 'var(--text)',
-                  background: 'var(--accent)',
-                }
-              : {
-                  color: 'var(--text)',
-                  opacity: 0.7,
-                  background: 'var(--accent)',
-                }
-          }
-        >
-          CATEGORIES
-        </button>
-        <button
-          onClick={() => setActiveTab('authors')}
-          className="flex-1 p-3 text-sm font-medium"
-          style={
-            activeTab === 'authors'
-              ? {
-                  borderBottom: '2px solid var(--text)',
-                  color: 'var(--text)',
-                  background: 'var(--accent)',
-                }
-              : {
-                  color: 'var(--text)',
-                  opacity: 0.7,
-                  background: 'var(--accent)',
-                }
-          }
-        >
-          AUTHORS
-        </button>
-        <button
-          onClick={() => setActiveTab('title')}
-          className="flex-1 p-3 text-sm font-medium"
-          style={
-            activeTab === 'title'
-              ? {
-                  borderBottom: '2px solid var(--text)',
-                  color: 'var(--text)',
-                  background: 'var(--accent)',
-                }
-              : {
-                  color: 'var(--text)',
-                  opacity: 0.7,
-                  background: 'var(--accent)',
-                }
-          }
-        >
-          TITLE
-        </button>
+        {(['categories', 'authors', 'title'] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className="flex-1 py-2 text-xs font-semibold tracking-wide"
+            style={{
+              color: '#fef3c7',
+              borderBottom: activeTab === tab ? '2px solid #fef3c7' : '2px solid transparent',
+              background: activeTab === tab ? 'rgba(0,0,0,0.18)' : 'transparent',
+              textTransform: 'capitalize',
+              opacity: activeTab === tab ? 1 : 0.8,
+              transition: 'all 0.15s',
+            }}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
       </div>
 
       {/* Search Bar */}
-      <div className="p-4 flex items-center gap-2" style={{ background: 'var(--card)' }}>
+      <div className="px-3 py-2.5 flex items-center gap-1.5" style={{ background: 'var(--card)', borderBottom: '1px solid var(--border)' }}>
         <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--text-light)' }} />
           <input
             type="text"
-            placeholder="Search the catalog"
-            className="w-full border rounded px-4 py-2 pr-10 focus:outline-none"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={
+              activeTab === 'categories' ? 'Search categories…' :
+              activeTab === 'authors'    ? 'Search authors…'    :
+                                          'Search titles…'
+            }
+            className="w-full rounded-md py-1.5 pl-8 pr-3 text-sm focus:outline-none focus:ring-1"
             style={{
               background: 'var(--bg)',
               color: 'var(--text)',
-              borderColor: 'var(--color-vb-input-border) !important',
+              border: '1px solid var(--border)',
             }}
           />
-          <Search className="absolute right-3 top-2.5 w-4 h-4" style={{ color: 'var(--text)', opacity: 0.5 }} />
         </div>
         <button
           title="Refresh book list"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', borderRadius: '0.375rem' }}
           onClick={() => setManualRefreshKey(k => k + 1)}
           aria-label="Refresh book list"
         >
-          <RefreshCw size={20} style={{ color: 'var(--text)', opacity: 0.7 }} />
+          <RefreshCw size={15} style={{ color: 'var(--text-light)' }} />
         </button>
       </div>
 
@@ -658,11 +591,21 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
           <>
             {loading || !userPrivileges ? (
               <div className="p-4 text-center">
-                <div className="text-gray-400">Loading...</div>
+                <div className="" style={{ color: "var(--text-muted)" }}>Loading...</div>
               </div>
             ) : (
-              <SimpleTreeView sx={{ background: 'var(--card)' }}>
-                {renderTree(filteredCategories)}
+              <SimpleTreeView
+                expandedItems={expandedItems}
+                onExpandedItemsChange={(_: React.SyntheticEvent | null, itemIds: string[]) => setExpandedItems(itemIds)}
+                sx={{
+                  background: 'var(--card)',
+                  color: 'var(--text)',
+                  '& .MuiTreeItem-label': { color: 'var(--text)', fontSize: '0.875rem' },
+                  '& .MuiTreeItem-content': { '&:hover': { background: 'var(--card-hover)' } },
+                  '& .MuiTreeItem-iconContainer svg': { color: 'var(--accent-deep)' },
+                }}
+              >
+                {renderTree(filteredTree)}
               </SimpleTreeView>
             )}
           </>
@@ -674,36 +617,29 @@ const CategoryPanel: React.FC<CategoryPanelProps & { bookChapters?: { text: stri
       </div>
 
       {/* Footer Controls */}
-      <div className="p-4 border-t flex justify-between items-center gap-2 category-panel-footer" style={{ borderColor: 'var(--color-vb-header-bottom, var(--border))' }}>
-        <button 
+      <div
+        className="flex justify-between items-center category-panel-footer"
+        style={{
+          padding: '0.5rem 1rem',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--panel-header-bg)',
+        }}
+      >
+        <button
           onClick={handleFoldAll}
-          className="text-sm px-3 py-1 rounded category-panel-footer-btn"
+          className="text-xs category-panel-footer-btn"
+          style={{ color: 'var(--text-light)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
         >
           Fold all
         </button>
-        <button 
+        <button
           onClick={handleUnfoldAll}
-          className="text-sm px-3 py-1 rounded category-panel-footer-btn"
+          className="text-xs category-panel-footer-btn"
+          style={{ color: 'var(--text-light)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
         >
           Unfold all
         </button>
       </div>
-
-      {/* Drag handle to resize category panel width */}
-      <div
-        onMouseDown={() => setIsResizing(true)}
-        title="Drag to resize"
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: -3,
-          width: 6,
-          height: '100%',
-          cursor: 'col-resize',
-          zIndex: 20,
-          background: isResizing ? 'rgba(251, 191, 36, 0.35)' : 'transparent',
-        }}
-      />
     </div>
   );
 };

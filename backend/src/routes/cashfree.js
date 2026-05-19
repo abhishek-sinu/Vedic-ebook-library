@@ -8,7 +8,6 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const router = express.Router();
-// Allow all origins for CORS
 router.use(cors());
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
